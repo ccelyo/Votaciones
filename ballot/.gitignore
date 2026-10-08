@@ -1,0 +1,49 @@
+# ── Binarios ──────────────────────────────
+bin/
+server
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# ── Tests y cobertura ─────────────────────
+*.test
+*.out
+coverage.*
+*.coverprofile
+profile.cov
+
+# ── Dependencias ──────────────────────────
+# Descomenta si usas `go mod vendor` y no quieres versionarlo
+# vendor/
+
+# ── Variables de entorno y secretos ───────
+.env
+.env.*
+!.env.example
+
+# Certificados para mTLS (nunca al repo)
+*.pem
+*.key
+*.crt
+*.csr
+certs/
+
+# ── Código generado ───────────────────────
+# En Go se suele versionar el código generado de protobuf.
+# Descomenta si prefieres regenerarlo en CI.
+# internal/pb/
+
+# ── Debug ─────────────────────────────────
+__debug_bin*
+*.prof
+*.pprof
+
+# ── Editores y sistema ────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
