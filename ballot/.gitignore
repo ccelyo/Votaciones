@@ -1,6 +1,7 @@
 # ── Binarios ──────────────────────────────
 bin/
 server
+!internal/server/
 *.exe
 *.exe~
 *.dll
