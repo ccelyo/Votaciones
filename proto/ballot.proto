@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package votaciones.ballot.v1;
+
+option go_package = "github.com/ccelyo/Votaciones/ballot/internal/pb;pb";
+
+// BallotAdminService is the private administration API for the ballot service.
+// The first prototype uses an internal plaintext listener; mTLS is deferred.
+service BallotAdminService {
+  rpc RegisterElection(RegisterElectionRequest) returns (RegisterElectionResponse);
+  rpc AddTokenVerificationKey(AddTokenVerificationKeyRequest) returns (AddTokenVerificationKeyResponse);
+  rpc CloseElection(CloseElectionRequest) returns (ElectionStatusResponse);
+  rpc CountBallots(CountBallotsRequest) returns (CountBallotsResponse);
+  rpc GetElectionStatus(GetElectionStatusRequest) returns (ElectionStatusResponse);
+}
+
+message TokenVerificationKey {
+  string kid = 1;
+  // RSA public key in DER SubjectPublicKeyInfo encoding.
+  bytes public_key_der = 2;
+  // Proposed value: RSABSSA-SHA384-PSS-Randomized. Pending agreement with M6.
+  string signature_variant = 3;
+}
+
+message RegisterElectionRequest {
+  string election_id = 1;
+  repeated string options = 2;
+  // Opaque election encryption public key; private election keys are never sent.
+  bytes encryption_public_key = 3;
+  repeated TokenVerificationKey token_verification_keys = 4;
+  int64 opens_at_unix_seconds = 5;
+  int64 closes_at_unix_seconds = 6;
+  // Exact canonical parameter bytes signed by identity. The canonical encoding
+  // and signature algorithm are proposed and pending agreement with M1/M6.
+  bytes signed_parameters = 7;
+  string parameter_signing_key_id = 8;
+  string parameter_signature_algorithm = 9;
+  bytes parameter_signature = 10;
+}
+
+message RegisterElectionResponse {
+  // False means the identical election registration already existed.
+  bool created = 1;
+}
+
+message AddTokenVerificationKeyRequest {
+  string election_id = 1;
+  TokenVerificationKey key = 2;
+}
+
+message AddTokenVerificationKeyResponse {
+  // False means this key ID and key were already registered identically.
+  bool created = 1;
+}
+
+message CloseElectionRequest {
+  string election_id = 1;
+}
+
+message CountBallotsRequest {
+  string election_id = 1;
+}
+
+message CountBallotsResponse {
+  // Participation only. This API never returns vote contents or results.
+  uint64 total_ballots = 1;
+}
+
+message GetElectionStatusRequest {
+  string election_id = 1;
+}
+
+message ElectionStatusResponse {
+  ElectionStatus status = 1;
+}
+
+enum ElectionStatus {
+  ELECTION_STATUS_UNSPECIFIED = 0;
+  ELECTION_STATUS_OPEN = 1;
+  ELECTION_STATUS_CLOSED = 2;
+  ELECTION_STATUS_NOT_FOUND = 3;
+}
