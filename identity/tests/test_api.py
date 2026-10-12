@@ -1,6 +1,6 @@
 import json
 import time
-from datetime import UTC
+from datetime import UTC, datetime, timedelta
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
@@ -9,7 +9,7 @@ from sqlalchemy import inspect, select
 
 from app import parameters
 from app.encoding import b64url_decode, b64url_encode
-from app.models import STATUS_OPEN, Election, IssuedToken
+from app.models import STATUS_CLOSED, STATUS_OPEN, Election, IssuedToken
 from tests import rsabssa_client
 from tests.conftest import ADMIN, voter
 
@@ -115,6 +115,45 @@ def test_tampered_parameters_fail_signature(client, election_payload, keys, new_
 def test_create_election_requires_admin(client, election_payload, new_user):
     assert client.post("/elections", json=election_payload).status_code == 401
     assert create_election(client, election_payload, voter(new_user())).status_code == 403
+
+
+def test_list_open_elections_is_public_and_filters_by_current_window(
+    client, election_payload, session_factory
+):
+    active_id = create_ok(client, election_payload)
+    now = datetime.now(UTC).replace(tzinfo=None)
+
+    with session_factory() as session:
+        session.add_all(
+            [
+                Election(
+                    name="Elección futura",
+                    status=STATUS_OPEN,
+                    starts_at=now + timedelta(hours=1),
+                    ends_at=now + timedelta(hours=2),
+                ),
+                Election(
+                    name="Elección finalizada",
+                    status=STATUS_OPEN,
+                    starts_at=now - timedelta(hours=2),
+                    ends_at=now - timedelta(hours=1),
+                ),
+                Election(
+                    name="Elección cerrada",
+                    status=STATUS_CLOSED,
+                    starts_at=now - timedelta(minutes=1),
+                    ends_at=now + timedelta(hours=1),
+                ),
+            ]
+        )
+        session.commit()
+
+    response = client.get("/elections/open")
+
+    assert response.status_code == 200
+    assert [election["id"] for election in response.json()] == [int(active_id)]
+    assert response.json()[0]["name"] == election_payload["name"]
+    assert response.json()[0]["starts_at"].endswith("+00:00")
 
 
 def test_create_election_rejects_invalid_input(client, election_payload):

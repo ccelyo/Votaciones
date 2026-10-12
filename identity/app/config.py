@@ -8,7 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 def normalize_database_url(url: str) -> str:
-    """Acepta ``postgresql://`` (formato de `.env.example`) y elige el driver psycopg 3."""
+    """Acepta ``postgresql://`` y ``postgres://`` y usa el driver psycopg 3."""
     for legacy in ("postgresql://", "postgres://"):
         if url.startswith(legacy):
             return "postgresql+psycopg://" + url[len(legacy) :]
@@ -17,33 +17,50 @@ def normalize_database_url(url: str) -> str:
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_prefix="IDENTITY_", env_file=".env", extra="ignore", populate_by_name=True
+        env_prefix="IDENTITY_",
+        env_file=".env",
+        extra="ignore",
+        populate_by_name=True,
     )
 
-    # PostgreSQL (zona de identidad). Se acepta `DATABASE_URL` (como en .env.example)
-    # o `IDENTITY_DATABASE_URL`.
+    # PostgreSQL de la zona de identidad.
+    # Se acepta DATABASE_URL o IDENTITY_DATABASE_URL.
     database_url: str = Field(
         default="postgresql+psycopg://user:password@localhost:5432/votaciones",
-        validation_alias=AliasChoices("IDENTITY_DATABASE_URL", "DATABASE_URL", "database_url"),
+        validation_alias=AliasChoices(
+            "IDENTITY_DATABASE_URL",
+            "DATABASE_URL",
+            "database_url",
+        ),
     )
 
-    # Crear las tablas al arrancar. `schema.sql` es la fuente de verdad del esquema
-    # (se carga al iniciar PostgreSQL), así que por defecto NO se crean aquí.
+    # schema.sql es la fuente de verdad del esquema.
+    # Por defecto la aplicación no crea las tablas al iniciar.
     auto_create_tables: bool = False
 
-    # Listener gRPC interno de `ballot` (zona de votación). Sin mTLS en el Prototype 1.
+    # Listener gRPC interno de ballot, en la zona de votación.
+    # En Prototype 1 todavía se usa sin mTLS.
     ballot_grpc_addr: str = "127.0.0.1:9091"
     ballot_grpc_timeout_seconds: float = 5.0
 
-    # Directorio de claves privadas de identidad (firma ciega y firma de parámetros).
-    # Si no existen se crean con permisos 0600. En producción deben provenir de un
-    # gestor de secretos montado como volumen.
+    # Directorio donde identidad almacena sus claves privadas.
+    # En producción deberían provenir de un gestor de secretos.
     keys_dir: Path = Path("./keys")
 
-    # Autenticación simulada SOLO para desarrollo: acepta las cabeceras X-Dev-User
-    # (id numérico de `users`) y X-Dev-Roles. Debe reemplazarse por la sesión real
-    # de login + MFA (M5).
+    # Autenticación simulada SOLO para desarrollo y pruebas.
+    # Permite X-Dev-User y X-Dev-Roles cuando se activa explícitamente.
+    # La autenticación normal usa login + MFA + sesión Bearer.
     dev_auth: bool = False
+
+    # MFA simplificado para Prototype 1.
+    # El código de demostración puede sobrescribirse con IDENTITY_MFA_CODE.
+    mfa_code: str = "123456"
+
+    # Tiempo de vida del challenge MFA, en segundos.
+    mfa_challenge_ttl_seconds: int = 300
+
+    # Duración de la sesión autenticada, en segundos.
+    session_ttl_seconds: int = 3600
 
     @field_validator("database_url")
     @classmethod

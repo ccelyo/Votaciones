@@ -97,3 +97,35 @@ CREATE TABLE election_parameters (
         REFERENCES elections(id)
         ON DELETE CASCADE
 );
+
+-- Desafíos temporales del segundo factor de autenticación.
+CREATE TABLE mfa_challenges (
+    id SERIAL PRIMARY KEY,
+    challenge_hash VARCHAR(64) NOT NULL UNIQUE,
+    user_id INTEGER NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_mfa_challenges_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE
+);
+
+
+-- Sesiones creadas después de completar login y MFA.
+-- Solo se almacena el hash del token entregado al cliente.
+CREATE TABLE sessions (
+    id SERIAL PRIMARY KEY,
+    token_hash VARCHAR(64) NOT NULL UNIQUE,
+    user_id INTEGER NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    revoked_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_sessions_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE
+);
