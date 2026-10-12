@@ -115,3 +115,36 @@ def update_voter_eligibility(
         is_eligible=entry.is_eligible,
         has_voted=entry.has_voted,
     )
+
+def confirm_vote(
+    session: Session,
+    *,
+    election_id: str,
+    user_id: int,
+) -> VoterRollData:
+    election = get_election(session, election_id)
+
+    entry = session.scalar(
+        select(VoterRollEntry).where(
+            VoterRollEntry.election_id == election.id,
+            VoterRollEntry.user_id == user_id,
+        )
+    )
+
+    if entry is None:
+        raise InvalidRequest("user is not enrolled in this election")
+
+    if not entry.is_eligible:
+        raise InvalidRequest("user is not eligible for this election")
+
+    # La confirmación es idempotente: repetirla no causa problemas.
+    if not entry.has_voted:
+        entry.has_voted = True
+        session.commit()
+
+    return VoterRollData(
+        user_id=entry.user_id,
+        election_id=str(election.id),
+        is_eligible=entry.is_eligible,
+        has_voted=entry.has_voted,
+    )

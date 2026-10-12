@@ -114,3 +114,75 @@ def test_duplicate_voter_is_rejected(client, session_factory):
     )
 
     assert response.status_code == 400
+
+def test_voter_can_confirm_vote(client, session_factory):
+    user_id, election_id = create_user_and_election(session_factory)
+
+    client.post(
+        f"/elections/{election_id}/voters",
+        json={"user_id": user_id},
+        headers=ADMIN,
+    )
+
+    voter_headers = {
+        "X-Dev-User": str(user_id),
+        "X-Dev-Roles": "voter",
+    }
+
+    response = client.post(
+        "/vote-confirmation",
+        json={"election_id": election_id},
+        headers=voter_headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["election_id"] == election_id
+    assert response.json()["has_voted"] is True
+
+
+def test_vote_confirmation_is_idempotent(client, session_factory):
+    user_id, election_id = create_user_and_election(session_factory)
+
+    client.post(
+        f"/elections/{election_id}/voters",
+        json={"user_id": user_id},
+        headers=ADMIN,
+    )
+
+    voter_headers = {
+        "X-Dev-User": str(user_id),
+        "X-Dev-Roles": "voter",
+    }
+
+    first = client.post(
+        "/vote-confirmation",
+        json={"election_id": election_id},
+        headers=voter_headers,
+    )
+
+    second = client.post(
+        "/vote-confirmation",
+        json={"election_id": election_id},
+        headers=voter_headers,
+    )
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert second.json()["has_voted"] is True
+
+
+def test_non_enrolled_user_cannot_confirm_vote(client, session_factory):
+    user_id, election_id = create_user_and_election(session_factory)
+
+    voter_headers = {
+        "X-Dev-User": str(user_id),
+        "X-Dev-Roles": "voter",
+    }
+
+    response = client.post(
+        "/vote-confirmation",
+        json={"election_id": election_id},
+        headers=voter_headers,
+    )
+
+    assert response.status_code == 400

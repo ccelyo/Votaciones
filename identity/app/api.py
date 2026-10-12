@@ -68,6 +68,9 @@ class MFARequest(_Strict):
     challenge_id: str = Field(min_length=1, max_length=256)
     code: str = Field(min_length=6, max_length=6)
 
+class VoteConfirmationRequest(_Strict):
+    election_id: str = Field(min_length=1, max_length=128)
+
 class EnrollVoterRequest(_Strict):
     user_id: int = Field(gt=0)
     is_eligible: bool = True
@@ -331,6 +334,23 @@ def update_voter(
         "has_voted": entry.has_voted,
     }
 
+#----- confirmación de voto -------------------------------------------------------cd 
+@router.post("/vote-confirmation")
+def confirm_vote(
+    body: VoteConfirmationRequest,
+    principal: Principal = Depends(get_principal),
+    session: Session = Depends(get_session),
+) -> dict:
+    entry = voter_roll_service.confirm_vote(
+        session,
+        election_id=body.election_id,
+        user_id=principal.user_id,
+    )
+
+    return {
+        "election_id": entry.election_id,
+        "has_voted": entry.has_voted,
+    }
 
 @router.get("/")
 def root() -> dict:
