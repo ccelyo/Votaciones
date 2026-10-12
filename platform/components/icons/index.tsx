@@ -11,12 +11,14 @@ export function Icon({ icon: Component, size = 20, className }: IconProps) {
 }
 
 export {
+  type RemixiconComponentType,
   RiAddCircleLine,
   RiBarChartBoxLine,
+  RiCloseLine,
   RiDashboardLine,
   RiDeleteBinLine,
   RiHomeLine,
   RiImageAddLine,
-  RiArrowDownSLine,
-  type RemixiconComponentType,
+  RiLogoutBoxLine,
+  RiMenuLine,
 } from "@remixicon/react";
