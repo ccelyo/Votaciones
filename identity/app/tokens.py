@@ -2,7 +2,7 @@
 
 El navegador genera el token, lo ciega y lo envía. Identidad:
 
-1. comprueba que la urna esté abierta y el usuario figure en el padrón;
+1. comprueba que la urna esté abierta y el usuario figure en el padrón (``is_eligible``);
 2. firma el mensaje cegado (sin poder ver el token);
 3. registra ``usuario -> recibió token`` bajo ``UNIQUE(user_id, election_id)``.
 
@@ -18,10 +18,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app import blind_rsa
+from app.elections import get_election, is_open_for_tokens
 from app.errors import ElectionNotOpen, InvalidRequest, NotEligible, TokenAlreadyIssued
-from app.elections import get_election
 from app.keys import IdentityKeys
-from app.models import STATUS_OPEN, IssuedToken, VoterRollEntry
+from app.models import IssuedToken, VoterRollEntry
 
 
 @dataclass(frozen=True)
@@ -35,19 +35,21 @@ def issue_blind_signature(
     session: Session,
     keys: IdentityKeys,
     *,
-    user_id: str,
+    user_id: int,
     election_id: str,
     blinded_message: bytes,
     now: int | None = None,
 ) -> BlindSignature:
     now = int(time.time()) if now is None else now
     election = get_election(session, election_id)
-    if election.status != STATUS_OPEN or not election.opens_at <= now < election.closes_at:
+    if not is_open_for_tokens(election, now):
         raise ElectionNotOpen()
 
     in_roll = session.scalar(
-        select(VoterRollEntry).where(
-            VoterRollEntry.user_id == user_id, VoterRollEntry.election_id == election_id
+        select(VoterRollEntry.id).where(
+            VoterRollEntry.user_id == user_id,
+            VoterRollEntry.election_id == election.id,
+            VoterRollEntry.is_eligible.is_(True),
         )
     )
     if in_roll is None:
@@ -59,7 +61,7 @@ def issue_blind_signature(
     except blind_rsa.BlindSignError as error:
         raise InvalidRequest(str(error)) from error
 
-    session.add(IssuedToken(user_id=user_id, election_id=election_id, kid=keys.token_kid))
+    session.add(IssuedToken(user_id=user_id, election_id=election.id))
     try:
         session.commit()
     except IntegrityError as error:

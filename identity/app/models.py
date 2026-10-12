@@ -1,26 +1,32 @@
 """Modelo relacional de la zona de identidad (PostgreSQL).
 
-Mi frente (M6) es `elections` e `issued_tokens`. `voter_roll` es el contrato mínimo
-que necesito del padrón; M5 es dueño de usuarios, roles y padrón y puede reemplazar
-esa tabla conservando las columnas `user_id` y `election_id`.
+La fuente de verdad del esquema es ``identity/schema.sql`` (Kevin). Estos modelos
+solo lo reflejan; ``tests/test_schema.py`` falla si dejan de coincidir.
+
+* ``roles`` y ``users``: de M5. Aquí solo existen para resolver las claves foráneas.
+* ``elections``, ``voter_roll`` e ``issued_tokens``: esquema de Kevin, usado tal cual.
+* ``election_parameters``: tabla nueva (M6) 1 a 1 con ``elections`` para lo que
+  `ballot` exige y ``elections`` no guarda: opciones, claves y parámetros firmados.
 """
 
 from datetime import datetime
 
 from sqlalchemy import (
     JSON,
-    BigInteger,
+    Boolean,
+    CheckConstraint,
     DateTime,
     ForeignKey,
-    Index,
     Integer,
     LargeBinary,
     String,
     UniqueConstraint,
     func,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+STATUS_DRAFT = "draft"
 STATUS_OPEN = "open"
 STATUS_CLOSED = "closed"
 
@@ -29,42 +35,77 @@ class Base(DeclarativeBase):
     pass
 
 
+class Role(Base):
+    __tablename__ = "roles"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(50), unique=True)
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    username: Mapped[str] = mapped_column(String(100), unique=True)
+    password_hash: Mapped[str] = mapped_column(String(255))
+    role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp())
+
+
 class Election(Base):
-    """Una urna: una elección con sus parámetros públicos ya firmados."""
-
     __tablename__ = "elections"
+    __table_args__ = (
+        CheckConstraint("status IN ('draft', 'open', 'closed')", name="ck_elections_status"),
+    )
 
-    id: Mapped[str] = mapped_column(String(128), primary_key=True)
-    options: Mapped[list[str]] = mapped_column(JSON)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(150))
+    status: Mapped[str] = mapped_column(String(20), default=STATUS_DRAFT)
+    # TIMESTAMP sin zona horaria: se interpretan siempre como UTC.
+    starts_at: Mapped[datetime | None] = mapped_column(DateTime)
+    ends_at: Mapped[datetime | None] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp())
+
+
+class ElectionParameters(Base):
+    """Parámetros públicos de la urna, ya firmados por identidad."""
+
+    __tablename__ = "election_parameters"
+
+    election_id: Mapped[int] = mapped_column(
+        ForeignKey("elections.id", ondelete="CASCADE"), primary_key=True
+    )
+    options: Mapped[list[str]] = mapped_column(JSON().with_variant(JSONB, "postgresql"))
     encryption_public_key: Mapped[bytes] = mapped_column(LargeBinary)
-    opens_at: Mapped[int] = mapped_column(BigInteger)  # epoch, segundos UTC
-    closes_at: Mapped[int] = mapped_column(BigInteger)
-    status: Mapped[str] = mapped_column(String(16), default=STATUS_OPEN)
 
-    # Clave pública de verificación de tokens registrada para esta elección.
+    # Clave pública RSA con la que `ballot` verifica los tokens de esta elección.
     token_kid: Mapped[str] = mapped_column(String(64))
     token_public_key_der: Mapped[bytes] = mapped_column(LargeBinary)
     token_variant: Mapped[str] = mapped_column(String(64))
 
-    # Parámetros canónicos firmados por identidad (los descarga el navegador).
+    # Bytes canónicos y firma que descarga el navegador.
     signed_parameters: Mapped[bytes] = mapped_column(LargeBinary)
     parameter_signing_key_id: Mapped[str] = mapped_column(String(64))
     parameter_signature_algorithm: Mapped[str] = mapped_column(String(64))
     parameter_signature: Mapped[bytes] = mapped_column(LargeBinary)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp())
 
 
 class VoterRollEntry(Base):
-    """Padrón: el usuario puede votar en la elección (propiedad de M5)."""
+    """Padrón (M5): el usuario puede votar en la elección si ``is_eligible``."""
 
     __tablename__ = "voter_roll"
-
-    # Sin FK a `users` hasta que M5 publique su modelo.
-    user_id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    election_id: Mapped[str] = mapped_column(
-        ForeignKey("elections.id", ondelete="CASCADE"), primary_key=True
+    __table_args__ = (
+        UniqueConstraint("user_id", "election_id", name="uq_voter_roll_user_election"),
     )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    election_id: Mapped[int] = mapped_column(ForeignKey("elections.id"))
+    is_eligible: Mapped[bool] = mapped_column(Boolean, default=True)
+    has_voted: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class IssuedToken(Base):
@@ -78,13 +119,9 @@ class IssuedToken(Base):
     __table_args__ = (
         # Restricción crítica: un token por usuario y elección.
         UniqueConstraint("user_id", "election_id", name="uq_issued_tokens_user_election"),
-        Index("ix_issued_tokens_election", "election_id"),
     )
 
-    id: Mapped[int] = mapped_column(
-        BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True
-    )
-    user_id: Mapped[str] = mapped_column(String(64))
-    election_id: Mapped[str] = mapped_column(ForeignKey("elections.id"))
-    kid: Mapped[str] = mapped_column(String(64))
-    issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    election_id: Mapped[int] = mapped_column(ForeignKey("elections.id"))
+    issued_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp())

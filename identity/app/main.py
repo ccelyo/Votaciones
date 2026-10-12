@@ -30,7 +30,8 @@ def create_app(
         owned_ballot = None
         if session_factory is None:
             engine = create_engine(settings.database_url, pool_pre_ping=True)
-            Base.metadata.create_all(engine)  # Prototype 1: sin migraciones.
+            if settings.auto_create_tables:  # Solo desarrollo; la fuente es schema.sql.
+                Base.metadata.create_all(engine)
             app.state.session_factory = sessionmaker(engine, expire_on_commit=False)
         if ballot is None:
             owned_ballot = GrpcBallotClient(

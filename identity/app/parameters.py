@@ -22,6 +22,7 @@ VERSION = 1
 def canonical_parameters(
     *,
     election_id: str,
+    name: str,
     options: list[str],
     encryption_public_key: bytes,
     opens_at: int,
@@ -31,6 +32,7 @@ def canonical_parameters(
     document = {
         "v": VERSION,
         "election_id": election_id,
+        "name": name,
         "options": options,
         "encryption_public_key": b64url_encode(encryption_public_key),
         "opens_at": opens_at,

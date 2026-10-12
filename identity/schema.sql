@@ -75,3 +75,25 @@ VALUES
     ('admin'),
     ('voter')
 ON CONFLICT (name) DO NOTHING;
+
+-- Parámetros públicos de cada elección (M6), 1 a 1 con `elections`.
+-- `ballot` los exige al registrar la urna y el navegador los descarga ya firmados.
+-- El `election_id` que viaja a `ballot` y dentro del token es el texto de elections.id.
+CREATE TABLE election_parameters (
+    election_id INTEGER PRIMARY KEY,
+    options JSONB NOT NULL,
+    encryption_public_key BYTEA NOT NULL,
+    token_kid VARCHAR(64) NOT NULL,
+    token_public_key_der BYTEA NOT NULL,
+    token_variant VARCHAR(64) NOT NULL,
+    signed_parameters BYTEA NOT NULL,
+    parameter_signing_key_id VARCHAR(64) NOT NULL,
+    parameter_signature_algorithm VARCHAR(64) NOT NULL,
+    parameter_signature BYTEA NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_election_parameters_election
+        FOREIGN KEY (election_id)
+        REFERENCES elections(id)
+        ON DELETE CASCADE
+);

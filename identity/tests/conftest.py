@@ -1,8 +1,9 @@
+import itertools
 import time
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -11,13 +12,13 @@ from app.config import Settings
 from app.errors import BallotUnavailable
 from app.keys import load_keys
 from app.main import create_app
-from app.models import Base, VoterRollEntry
+from app.models import Base, Role, User, VoterRollEntry
 
-ADMIN = {"X-Dev-User": "admin-1", "X-Dev-Roles": "admin"}
+ADMIN = {"X-Dev-User": "1", "X-Dev-Roles": "admin"}
 
 
-def voter(user_id: str) -> dict:
-    return {"X-Dev-User": user_id, "X-Dev-Roles": "voter"}
+def voter(user_id: int) -> dict:
+    return {"X-Dev-User": str(user_id), "X-Dev-Roles": "voter"}
 
 
 class FakeBallot:
@@ -76,6 +77,11 @@ def session_factory():
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
+
+    @event.listens_for(engine, "connect")
+    def _enforce_foreign_keys(connection, _):  # PostgreSQL siempre las aplica.
+        connection.execute("PRAGMA foreign_keys=ON")
+
     Base.metadata.create_all(engine)
     return sessionmaker(engine, expire_on_commit=False)
 
@@ -90,10 +96,34 @@ def client(session_factory, ballot, keys):
 
 
 @pytest.fixture
-def enroll(session_factory):
-    def _enroll(user_id: str, election_id: str) -> None:
+def new_user(session_factory):
+    """Crea un usuario real en `users` (con su rol) y devuelve su id."""
+    counter = itertools.count(100)
+
+    def _new_user() -> int:
         with session_factory() as session:
-            session.add(VoterRollEntry(user_id=user_id, election_id=election_id))
+            role = session.scalar(select(Role).where(Role.name == "voter"))
+            if role is None:
+                role = Role(name="voter")
+                session.add(role)
+                session.flush()
+            user = User(username=f"user{next(counter)}", password_hash="x", role_id=role.id)
+            session.add(user)
+            session.commit()
+            return user.id
+
+    return _new_user
+
+
+@pytest.fixture
+def enroll(session_factory):
+    def _enroll(user_id: int, election_id: str, *, is_eligible: bool = True) -> None:
+        with session_factory() as session:
+            session.add(
+                VoterRollEntry(
+                    user_id=user_id, election_id=int(election_id), is_eligible=is_eligible
+                )
+            )
             session.commit()
 
     return _enroll
@@ -103,7 +133,7 @@ def enroll(session_factory):
 def election_payload():
     now = int(time.time())
     return {
-        "election_id": "elec-2026",
+        "name": "Elección de representantes 2026",
         "options": ["Alpha", "Beta", "Blanco"],
         "encryption_public_key": "cHVibGljLWVsZWN0aW9uLWtleQ",  # "public-election-key"
         "opens_at": now - 60,
