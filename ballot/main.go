@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -13,12 +14,33 @@ import (
 
 	ballotflow "github.com/ccelyo/Votaciones/ballot/internal/ballot"
 	"github.com/ccelyo/Votaciones/ballot/internal/election"
+	"github.com/ccelyo/Votaciones/ballot/internal/httpapi"
+	"github.com/ccelyo/Votaciones/ballot/internal/mongostore"
 	"github.com/ccelyo/Votaciones/ballot/internal/server"
 	"github.com/ccelyo/Votaciones/ballot/internal/token"
 	"google.golang.org/grpc"
 )
 
-const defaultGRPCAddress = "127.0.0.1:9091"
+const (
+	defaultGRPCAddress = "127.0.0.1:9091"
+	defaultHTTPAddress = ":8080"
+	defaultMongoDB     = "votaciones"
+)
+
+// commitStore is satisfied by both the Mongo adapter and the in-memory fake.
+type commitStore interface {
+	ballotflow.CommitStore
+	election.ParticipationCounter
+}
+
+// electionBackend is satisfied by both the Mongo adapter and election.MemoryStore.
+type electionBackend interface {
+	election.Store
+	token.KeyResolver
+	token.ElectionStateReader
+	ballotflow.ElectionCommitGate
+	httpapi.ElectionReader
+}
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
@@ -29,39 +51,118 @@ func main() {
 }
 
 func run(logger *slog.Logger) error {
-	if _, err := token.LoadReceiptPrivateKey(); err != nil {
+	receiptKey, err := token.LoadReceiptPrivateKey()
+	if err != nil {
 		return errors.New("receipt signing key configuration is missing or invalid")
 	}
-	address := strings.TrimSpace(os.Getenv("BALLOT_GRPC_ADDR"))
-	if address == "" {
-		address = defaultGRPCAddress
-	}
-	if _, _, err := net.SplitHostPort(address); err != nil {
+	grpcAddress := envOr("BALLOT_GRPC_ADDR", defaultGRPCAddress)
+	if _, _, err := net.SplitHostPort(grpcAddress); err != nil {
 		return errors.New("BALLOT_GRPC_ADDR must be a host:port address")
 	}
-	listener, err := net.Listen("tcp", address)
-	if err != nil {
-		return err
+	httpAddress := httpListenAddress()
+	if _, _, err := net.SplitHostPort(httpAddress); err != nil {
+		return errors.New("BALLOT_HTTP_ADDR must be a host:port address")
 	}
-
-	store := election.NewMemoryStore()
-	ballots := ballotflow.NewMemoryCommitStore()
-	grpcServer := server.NewGRPCServer(server.NewAdminService(store, nil, ballots))
-	serveErrors := make(chan error, 1)
-	go func() { serveErrors <- grpcServer.Serve(listener) }()
-	logger.Info("ballot internal gRPC listener started", "address", listener.Addr().String())
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	select {
-	case err := <-serveErrors:
-		if err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+
+	var elections electionBackend
+	var ballots commitStore
+	var ready httpapi.ReadinessChecker
+	if uri := strings.TrimSpace(os.Getenv("MONGODB_URI")); uri != "" {
+		connectCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+		mongo, err := mongostore.Connect(connectCtx, uri, envOr("MONGODB_DATABASE", defaultMongoDB))
+		if err == nil {
+			err = mongo.EnsureIndexes(connectCtx)
+		}
+		cancel()
+		if err != nil {
 			return err
 		}
-		return nil
-	case <-ctx.Done():
-		logger.Info("ballot internal gRPC listener shutting down")
-		server.StopGracefully(grpcServer, 10*time.Second)
-		return nil
+		defer func() {
+			disconnectCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			_ = mongo.Disconnect(disconnectCtx)
+		}()
+		elections, ballots, ready = mongo, mongo, mongo.Ping
+		logger.Info("ballot store connected", "backend", "mongodb")
+	} else {
+		elections, ballots = election.NewMemoryStore(), ballotflow.NewMemoryCommitStore()
+		logger.Warn("MONGODB_URI is not set; elections and ballots are kept in memory and lost on restart")
 	}
+
+	acceptor := ballotflow.NewAcceptor(
+		token.NewVerifier(elections, elections),
+		ballotflow.StructuralProofVerifier{},
+		ballots,
+		elections,
+		receiptKey,
+	)
+	httpServer := &http.Server{
+		Addr: httpAddress,
+		Handler: httpapi.NewHandler(httpapi.Config{
+			Acceptor:       acceptor,
+			Elections:      elections,
+			Ready:          ready,
+			AllowedOrigins: splitList(os.Getenv("BALLOT_ALLOWED_ORIGINS")),
+			Logger:         logger,
+		}),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    16 << 10,
+	}
+
+	grpcListener, err := net.Listen("tcp", grpcAddress)
+	if err != nil {
+		return err
+	}
+	grpcServer := server.NewGRPCServer(server.NewAdminService(elections, nil, ballots))
+
+	serveErrors := make(chan error, 2)
+	go func() { serveErrors <- grpcServer.Serve(grpcListener) }()
+	go func() { serveErrors <- httpServer.ListenAndServe() }()
+	logger.Info("ballot service started", "grpc_address", grpcListener.Addr().String(), "http_address", httpAddress)
+
+	var serveErr error
+	select {
+	case err := <-serveErrors:
+		if err != nil && !errors.Is(err, grpc.ErrServerStopped) && !errors.Is(err, http.ErrServerClosed) {
+			serveErr = err
+		}
+	case <-ctx.Done():
+		logger.Info("ballot service shutting down")
+	}
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_ = httpServer.Shutdown(shutdownCtx)
+	server.StopGracefully(grpcServer, 10*time.Second)
+	return serveErr
+}
+
+// httpListenAddress honors Cloud Run's PORT before BALLOT_HTTP_ADDR.
+func httpListenAddress() string {
+	if port := strings.TrimSpace(os.Getenv("PORT")); port != "" {
+		return ":" + port
+	}
+	return envOr("BALLOT_HTTP_ADDR", defaultHTTPAddress)
+}
+
+func envOr(name, fallback string) string {
+	if value := strings.TrimSpace(os.Getenv(name)); value != "" {
+		return value
+	}
+	return fallback
+}
+
+func splitList(value string) []string {
+	var items []string
+	for _, item := range strings.Split(value, ",") {
+		if item = strings.TrimSpace(item); item != "" {
+			items = append(items, item)
+		}
+	}
+	return items
 }

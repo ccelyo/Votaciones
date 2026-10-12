@@ -94,7 +94,7 @@ func (s *MemoryStore) Register(ctx context.Context, config Election) (bool, erro
 	if err := ctx.Err(); err != nil {
 		return false, err
 	}
-	if s == nil || config.ID == "" || !config.ClosesAt.After(config.OpensAt) || len(config.TokenKeys) == 0 {
+	if s == nil || !ValidRegistration(config) {
 		return false, ErrInvalidElection
 	}
 	s.mu.Lock()
@@ -119,7 +119,7 @@ func (s *MemoryStore) AddTokenVerificationKey(ctx context.Context, electionID st
 	if err := ctx.Err(); err != nil {
 		return false, err
 	}
-	if s == nil || !validTokenKey(key) || electionID == "" {
+	if s == nil || !ValidTokenKey(key) || electionID == "" {
 		return false, ErrInvalidElection
 	}
 	s.mu.Lock()
@@ -241,6 +241,20 @@ func (s *MemoryStore) AddParticipation(ctx context.Context, electionID string) e
 	return nil
 }
 
+// Parameters returns a copy of an election's public configuration.
+func (s *MemoryStore) Parameters(ctx context.Context, electionID string) (Election, error) {
+	if err := ctx.Err(); err != nil {
+		return Election{}, err
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	record, ok := s.elections[electionID]
+	if !ok {
+		return Election{}, ErrElectionNotFound
+	}
+	return cloneElection(record.config), nil
+}
+
 // ResolveTokenKey implements token.KeyResolver for registered election keys.
 func (s *MemoryStore) ResolveTokenKey(ctx context.Context, electionID, kid string) (token.VerificationKey, bool, error) {
 	if err := ctx.Err(); err != nil {
@@ -305,6 +319,22 @@ func cloneElection(config Election) Election {
 func cloneTokenKey(key TokenKey) TokenKey {
 	key.PublicKeyDER = append([]byte(nil), key.PublicKeyDER...)
 	return key
+}
+
+// ValidRegistration reports whether an election has the minimum lifecycle fields.
+func ValidRegistration(config Election) bool {
+	return config.ID != "" && config.ClosesAt.After(config.OpensAt) && len(config.TokenKeys) > 0
+}
+
+// SameRegistration reports whether requested repeats an existing registration;
+// requested token keys must be a subset of the (possibly rotated) existing keys.
+func SameRegistration(existing, requested Election) bool {
+	return sameElection(existing, requested)
+}
+
+// ValidTokenKey reports whether key is an acceptable RSABSSA verification key.
+func ValidTokenKey(key TokenKey) bool {
+	return validTokenKey(key)
 }
 
 func validTokenKey(key TokenKey) bool {
