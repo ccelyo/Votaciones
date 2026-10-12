@@ -14,14 +14,17 @@ Endpoints de mi frente (M6); ``/login`` y la confirmación de voto son de M5/M1:
 """
 
 from collections.abc import Iterator
+from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response, status as http_status
+from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import elections as election_service
 from app import tokens as token_service
-from app.auth import Principal, get_principal, require_admin
+from app.auth import Principal, bearer_scheme, get_principal, require_admin
 from app.ballot_client import BallotGateway
 from app.encoding import b64url_decode, b64url_encode
 from app.keys import IdentityKeys
@@ -31,9 +34,14 @@ from app.login import authenticate_user
 import secrets
 
 from app.errors import Unauthenticated
-from app.sessions import create_mfa_challenge, complete_mfa_challenge
+from app.sessions import (
+    complete_mfa_challenge,
+    create_mfa_challenge,
+    revoke_session,
+)
 
 from app import voter_roll as voter_roll_service
+from app.models import STATUS_OPEN, Election, Role, User
 
 router = APIRouter()
 
@@ -143,6 +151,40 @@ def verify_mfa(
         "expires_in": settings.session_ttl_seconds,
     }
 
+
+@router.get("/auth/me")
+def current_user(
+    principal: Principal = Depends(get_principal),
+    session: Session = Depends(get_session),
+) -> dict:
+    result = session.execute(
+        select(User, Role.name)
+        .join(Role, User.role_id == Role.id)
+        .where(User.id == principal.user_id)
+    ).first()
+    if result is None:
+        raise Unauthenticated("authenticated user not found")
+
+    user, role_name = result
+    return {
+        "id": user.id,
+        "username": user.username,
+        "role": role_name,
+    }
+
+
+@router.post("/logout", status_code=http_status.HTTP_204_NO_CONTENT)
+def logout(
+    principal: Principal = Depends(get_principal),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    session: Session = Depends(get_session),
+) -> Response:
+    if credentials is None:
+        raise Unauthenticated("authentication required")
+    revoke_session(session, credentials.credentials)
+    return Response(status_code=http_status.HTTP_204_NO_CONTENT)
+
+
 # --- votante ----------------------------------------------------------------
 
 
@@ -198,6 +240,32 @@ def election_parameters(
 
 
 # --- público ----------------------------------------------------------------
+
+
+@router.get("/elections/open")
+def list_open_elections(
+    session: Session = Depends(get_session),
+) -> list[dict]:
+    now = datetime.now(UTC).replace(tzinfo=None)
+    elections = session.scalars(
+        select(Election)
+        .where(
+            Election.status == STATUS_OPEN,
+            Election.starts_at <= now,
+            Election.ends_at > now,
+        )
+        .order_by(Election.starts_at, Election.id)
+    ).all()
+    return [
+        {
+            "id": election.id,
+            "name": election.name,
+            "starts_at": election.starts_at.replace(tzinfo=UTC).isoformat(),
+            "ends_at": election.ends_at.replace(tzinfo=UTC).isoformat(),
+            "created_at": election.created_at.replace(tzinfo=UTC).isoformat(),
+        }
+        for election in elections
+    ]
 
 
 @router.get("/keys")

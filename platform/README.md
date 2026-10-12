@@ -42,13 +42,20 @@ credentials or submit real votes.
 
 To connect to the real backend, set `NEXT_PUBLIC_API_MODE=api` and
 `NEXT_PUBLIC_API_URL` to the API base URL. The frontend sends JSON
-requests to `POST /login` (`email`, `password`) and `POST /register`
-(`full_name`, `email`, `password`). The home page reads open
-elections from `GET /elections?status=open`, which should return an array of
-elections matching the `Election` type in `lib/types/election.ts`.
+requests to `POST /login` (`username`, `password`) and then `POST /login/mfa`
+(`challenge_id`, `code`). The MFA response's bearer token is stored in
+`sessionStorage` and sent with authenticated requests. `GET /auth/me` returns
+the current user's `id`, `username`, and `role`; `POST /logout` revokes the
+current bearer session. Registration is unavailable against the current API;
+the registration page and links are only shown in mock mode.
+
+The home page reads active elections from the public `GET /elections/open`.
+It returns an array with `id`, `name`, `starts_at`, `ends_at`, and `created_at`,
+limited to elections with status `open` whose current UTC time is within the
+election's `[starts_at, ends_at)` window.
 The API should return a non-2xx status when a request fails; the frontend reads
 FastAPI `detail` messages and the identity service's `error.message` format.
-Requests include credentials so the API can establish or use a session cookie.
+Requests include credentials and authenticated calls use the bearer header.
 
 Administrators can create an election at `/admin/elections/new`. The form posts
 `name`, `options`, `encryption_public_key` (base64url without padding), `opens_at`,

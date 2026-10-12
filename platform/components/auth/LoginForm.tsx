@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { login } from "@/lib/api";
+import { completeMfaLogin, login } from "@/lib/api";
 
 const INPUT_CLASS = "auth-input auth-input-compact";
 
@@ -18,8 +18,10 @@ export function LoginForm() {
       ? requestedNextPath
       : "/";
 
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [challengeId, setChallengeId] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -29,9 +31,13 @@ export function LoginForm() {
 
     startTransition(async () => {
       try {
-        await login({ email, password });
-        router.push(nextPath);
-        router.refresh();
+        const result = await login({ username, password });
+        if ("challenge_id" in result) {
+          setChallengeId(result.challenge_id);
+        } else {
+          router.push(nextPath);
+          router.refresh();
+        }
       } catch (submitError) {
         setError(
           submitError instanceof Error
@@ -42,55 +48,129 @@ export function LoginForm() {
     });
   }
 
+  function handleMfaSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    if (!challengeId) return;
+
+    startTransition(async () => {
+      try {
+        await completeMfaLogin(challengeId, mfaCode);
+        router.push(nextPath);
+        router.refresh();
+      } catch (submitError) {
+        setError(
+          submitError instanceof Error
+            ? submitError.message
+            : "No se pudo verificar el código MFA.",
+        );
+      }
+    });
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form
+      onSubmit={challengeId ? handleMfaSubmit : handleSubmit}
+      className="space-y-4"
+    >
       {error ? (
         <div role="alert" className="ds-alert ds-alert-error">
           {error}
         </div>
       ) : null}
 
-      <div>
-        <label htmlFor="email" className="ds-label">
-          Correo
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          required
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          className={INPUT_CLASS}
-          placeholder="usuario@unal.edu.co"
-          autoComplete="email"
-        />
-      </div>
+      {challengeId ? (
+        <>
+          <p className="text-sm text-muted">
+            Ingresa el código de verificación de 6 dígitos.
+          </p>
+          <div>
+            <label htmlFor="mfa-code" className="ds-label">
+              Código MFA
+            </label>
+            <input
+              id="mfa-code"
+              name="code"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]{6}"
+              minLength={6}
+              maxLength={6}
+              required
+              value={mfaCode}
+              onChange={(event) =>
+                setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 6))
+              }
+              className={INPUT_CLASS}
+              placeholder="123456"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={isPending}
+            className="ds-btn ds-btn-primary w-full"
+          >
+            {isPending ? "Verificando..." : "Verificar código"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setChallengeId(null);
+              setMfaCode("");
+              setError(null);
+            }}
+            className="w-full text-sm text-muted hover:text-foreground"
+          >
+            Volver al inicio de sesión
+          </button>
+        </>
+      ) : (
+        <>
+          <div>
+            <label htmlFor="username" className="ds-label">
+              Usuario
+            </label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              required
+              maxLength={100}
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              className={INPUT_CLASS}
+              autoComplete="username"
+            />
+          </div>
 
-      <div>
-        <label htmlFor="password" className="ds-label">
-          Contraseña
-        </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          required
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          className={INPUT_CLASS}
-          placeholder="••••••••"
-          autoComplete="current-password"
-        />
-      </div>
+          <div>
+            <label htmlFor="password" className="ds-label">
+              Contraseña
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              maxLength={128}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className={INPUT_CLASS}
+              placeholder="••••••••"
+              autoComplete="current-password"
+            />
+          </div>
 
-      <button
-        type="submit"
-        disabled={isPending}
-        className="ds-btn ds-btn-primary w-full"
-      >
-        {isPending ? "Ingresando..." : "Ingresar"}
-      </button>
+          <button
+            type="submit"
+            disabled={isPending}
+            className="ds-btn ds-btn-primary w-full"
+          >
+            {isPending ? "Ingresando..." : "Ingresar"}
+          </button>
+        </>
+      )}
     </form>
   );
 }

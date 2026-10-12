@@ -40,6 +40,8 @@ function GuestAuthActions({
 }: {
   activePath?: HeaderProps["activePath"];
 }) {
+  const isMockApi = process.env.NEXT_PUBLIC_API_MODE === "mock";
+
   return (
     <>
       <Link
@@ -49,13 +51,15 @@ function GuestAuthActions({
       >
         Iniciar sesión
       </Link>
-      <Link
-        href={ROUTES.register}
-        aria-current={activePath === ROUTES.register ? "page" : undefined}
-        className="ds-btn ds-btn-primary ds-btn-pill shrink-0 px-4 py-2 text-sm"
-      >
-        Registrarse
-      </Link>
+      {isMockApi ? (
+        <Link
+          href={ROUTES.register}
+          aria-current={activePath === ROUTES.register ? "page" : undefined}
+          className="ds-btn ds-btn-primary ds-btn-pill shrink-0 px-4 py-2 text-sm"
+        >
+          Registrarse
+        </Link>
+      ) : null}
     </>
   );
 }
@@ -64,6 +68,7 @@ export function Header({ activePath }: HeaderProps) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [userLoadError, setUserLoadError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
@@ -73,10 +78,21 @@ export function Header({ activePath }: HeaderProps) {
     let cancelled = false;
 
     async function loadUser() {
-      const currentUser = await getCurrentUser();
-      if (!cancelled) {
-        setUser(currentUser);
-        setIsLoading(false);
+      try {
+        const currentUser = await getCurrentUser();
+        if (!cancelled) setUser(currentUser);
+      } catch (error) {
+        if (!cancelled) {
+          setUserLoadError(
+            error instanceof Error
+              ? error.message
+              : "No se pudo comprobar la sesión.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     }
 
@@ -152,6 +168,14 @@ export function Header({ activePath }: HeaderProps) {
           <GuestAuthActions activePath={activePath} />
         )}
       </div>
+      {userLoadError ? (
+        <div
+          role="alert"
+          className="fixed bottom-4 right-4 z-[60] max-w-sm rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-lg"
+        >
+          {userLoadError}
+        </div>
+      ) : null}
       {user ? (
         <>
           <AppSidebar

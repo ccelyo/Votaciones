@@ -84,17 +84,19 @@ function getElectionsFromStorage(): Election[] {
 }
 
 export async function login(payload: LoginPayload): Promise<User> {
-  const email = payload.email.trim().toLowerCase();
-  if (!email || !payload.password) {
-    throw new Error("Ingresa un correo y una contraseña.");
+  const username = payload.username.trim().toLowerCase();
+  if (!username || !payload.password) {
+    throw new Error("Ingresa un usuario y una contraseña.");
   }
 
   const user = [...FIXTURE_USERS, ...getRegisteredUsers()].find(
-    (candidate) => candidate.email.toLowerCase() === email,
+    (candidate) =>
+      candidate.email?.toLowerCase() === username ||
+      candidate.username?.toLowerCase() === username,
   );
   if (!user) {
     throw new Error(
-      "No existe un usuario con ese correo en el mock. Usa una cuenta demo o regístrate.",
+      "No existe ese usuario en el mock. Usa una cuenta demo o regístrate.",
     );
   }
 
@@ -111,7 +113,7 @@ export async function register(
 ): Promise<MessageResponse> {
   const email = payload.email.trim().toLowerCase();
   const users = [...FIXTURE_USERS, ...getRegisteredUsers()];
-  if (users.some((user) => user.email.toLowerCase() === email)) {
+  if (users.some((user) => user.email?.toLowerCase() === email)) {
     throw new Error("Ya existe una cuenta con ese correo.");
   }
 

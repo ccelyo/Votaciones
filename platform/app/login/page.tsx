@@ -16,9 +16,7 @@ export default function LoginPage() {
             <h1 className="ds-headline text-3xl text-foreground">
               Iniciar sesión
             </h1>
-            <p className="mt-2 text-sm text-muted">
-              Bienvenido
-            </p>
+            <p className="mt-2 text-sm text-muted">Bienvenido</p>
           </header>
 
           <div className="mt-6">
@@ -29,12 +27,14 @@ export default function LoginPage() {
             </Suspense>
           </div>
 
-          <div className="mt-8 border-t border-dashed border-border pt-6 text-center text-sm text-muted">
-            ¿No tienes cuenta?{" "}
-            <Link href="/register" className="ds-link">
-              Regístrate
-            </Link>
-          </div>
+          {process.env.NEXT_PUBLIC_API_MODE === "mock" ? (
+            <div className="mt-8 border-t border-dashed border-border pt-6 text-center text-sm text-muted">
+              ¿No tienes cuenta?{" "}
+              <Link href="/register" className="ds-link">
+                Regístrate
+              </Link>
+            </div>
+          ) : null}
         </div>
       </main>
     </div>

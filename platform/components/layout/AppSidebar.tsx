@@ -38,8 +38,9 @@ const NAVIGATION_ITEMS: NavigationItem[] = [
   },
 ];
 
-function getInitial(fullName: string): string {
-  return (fullName.trim()[0] ?? "?").toUpperCase();
+function getInitial(user: User): string {
+  const displayName = user.full_name || user.username || user.email || "";
+  return (displayName.trim()[0] ?? "?").toUpperCase();
 }
 
 export function AppSidebar({
@@ -50,6 +51,8 @@ export function AppSidebar({
   onLogout,
 }: SidebarProps) {
   const pathname = usePathname();
+  const displayName = user.full_name || user.username || "Usuario";
+  const displayDetail = user.email || user.username || "";
 
   return (
     <>
@@ -71,13 +74,13 @@ export function AppSidebar({
             <div className="flex items-center justify-between border-b border-border px-5 py-5">
               <div className="flex min-w-0 items-center gap-3">
                 <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-emerald-800 text-base font-semibold text-white">
-                  {getInitial(user.full_name)}
+                  {getInitial(user)}
                 </span>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-foreground">
-                    {user.full_name}
+                    {displayName}
                   </p>
-                  <p className="truncate text-xs text-muted">{user.email}</p>
+                  <p className="truncate text-xs text-muted">{displayDetail}</p>
                 </div>
               </div>
               <button

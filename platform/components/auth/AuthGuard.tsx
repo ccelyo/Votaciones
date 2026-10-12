@@ -15,21 +15,32 @@ export function AdminGuard({ children }: AdminGuardProps) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     async function checkAccess() {
-      const currentUser = await getCurrentUser();
-      if (cancelled) return;
+      try {
+        const currentUser = await getCurrentUser();
+        if (cancelled) return;
 
-      setUser(currentUser);
-      setIsLoading(false);
+        setUser(currentUser);
+        setIsLoading(false);
 
-      if (!currentUser) {
-        router.replace(`/login?next=${encodeURIComponent(pathname)}`);
-      } else if (currentUser.role !== "admin") {
-        router.replace("/");
+        if (!currentUser) {
+          router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+        } else if (currentUser.role !== "admin") {
+          router.replace("/");
+        }
+      } catch (checkError) {
+        if (cancelled) return;
+        setError(
+          checkError instanceof Error
+            ? checkError.message
+            : "No se pudieron verificar los permisos.",
+        );
+        setIsLoading(false);
       }
     }
 
@@ -39,7 +50,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
     };
   }, [pathname, router]);
 
-  if (isLoading || user?.role !== "admin") {
+  if (isLoading) {
     return (
       <main
         className="mx-auto flex min-h-[50vh] max-w-7xl items-center justify-center px-4 text-sm text-muted"
@@ -49,6 +60,19 @@ export function AdminGuard({ children }: AdminGuardProps) {
       </main>
     );
   }
+
+  if (error) {
+    return (
+      <main
+        role="alert"
+        className="mx-auto flex min-h-[50vh] max-w-7xl items-center justify-center px-4 text-sm text-red-700"
+      >
+        No se pudieron verificar los permisos: {error}
+      </main>
+    );
+  }
+
+  if (user?.role !== "admin") return null;
 
   return children;
 }
