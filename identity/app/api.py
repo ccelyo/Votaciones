@@ -26,6 +26,8 @@ from app.ballot_client import BallotGateway
 from app.encoding import b64url_decode, b64url_encode
 from app.keys import IdentityKeys
 
+from app.login import authenticate_user
+
 router = APIRouter()
 
 
@@ -51,6 +53,10 @@ def get_keys(request: Request) -> IdentityKeys:
 class _Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+class LoginRequest(_Strict):
+    username: str = Field(min_length=1, max_length=100)
+    password: str = Field(min_length=1, max_length=128)    
+
 
 class CreateElectionRequest(_Strict):
     name: str = Field(max_length=150)
@@ -63,6 +69,26 @@ class CreateElectionRequest(_Strict):
 class BlindTokenRequest(_Strict):
     election_id: str = Field(max_length=128)
     blinded_token: str = Field(max_length=4096, description="Mensaje cegado, base64url")
+
+# --- autenticación ----------------------------------------------------------
+
+
+@router.post("/login")
+def login(
+    body: LoginRequest,
+    session: Session = Depends(get_session),
+) -> dict:
+    principal = authenticate_user(
+        session,
+        username=body.username,
+        password=body.password,
+    )
+
+    return {
+        "user_id": principal.user_id,
+        "roles": sorted(principal.roles),
+        "mfa_required": True,
+    }    
 
 
 # --- votante ----------------------------------------------------------------
