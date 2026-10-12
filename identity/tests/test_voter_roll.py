@@ -186,3 +186,48 @@ def test_non_enrolled_user_cannot_confirm_vote(client, session_factory):
     )
 
     assert response.status_code == 400
+
+def test_vote_confirmation_with_real_session(client, session_factory):
+    user_id, election_id = create_user_and_election(session_factory)
+
+    client.post(
+        f"/elections/{election_id}/voters",
+        json={"user_id": user_id},
+        headers=ADMIN,
+    )
+
+    login = client.post(
+        "/login",
+        json={
+            "username": "votante1",
+            "password": "prueba123",
+        },
+    )
+
+    assert login.status_code == 200
+
+    challenge_id = login.json()["challenge_id"]
+
+    mfa = client.post(
+        "/login/mfa",
+        json={
+            "challenge_id": challenge_id,
+            "code": "123456",
+        },
+    )
+
+    assert mfa.status_code == 200
+
+    access_token = mfa.json()["access_token"]
+
+    response = client.post(
+        "/vote-confirmation",
+        json={"election_id": election_id},
+        headers={
+            "Authorization": f"Bearer {access_token}",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["election_id"] == election_id
+    assert response.json()["has_voted"] is True
