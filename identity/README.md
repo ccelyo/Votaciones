@@ -36,18 +36,18 @@ clave de verificación de tokens y parámetros firmados).
 | `app/ballot_client.py` | Cliente gRPC de `BallotAdminService` (`proto/ballot.proto`) |
 | `app/keys.py` | Claves privadas (RSA de tokens, Ed25519 de parámetros) |
 | `app/models.py` | Modelos que reflejan `schema.sql` |
-| `app/auth.py` | Autenticación Bearer, resolución de `Principal` y modo de desarrollo |
-| `app/login.py` | Validación de usuario y contraseña |
-| `app/sessions.py` | Challenges MFA y sesiones persistentes |
-| `app/voter_roll.py` | Administración del padrón y confirmación `has_voted` |
+| `app/auth.py` | Contrato `Principal` + autenticación Bearer y modo de desarrollo |
 | `app/pb/` | Stubs generados desde `proto/ballot.proto` (versionados) |
 
 ## Endpoints
 
 | Método y ruta | Acceso | Descripción |
 |---|---|---|
-| `POST /login` | público | Valida usuario y contraseña y genera un challenge MFA |
-| `POST /login/mfa` | público | Valida MFA y entrega una sesión Bearer |
+| `POST /login` | público | Valida usuario/contraseña y crea un challenge MFA |
+| `POST /login/mfa` | público | Consume el challenge y entrega un bearer de sesión |
+| `GET /auth/me` | sesión | Devuelve `id`, `username` y `role` del usuario autenticado |
+| `POST /logout` | sesión | Revoca la sesión Bearer actual (204) |
+| `GET /elections/open` | público | Lista elecciones `open` dentro de su ventana UTC |
 | `POST /elections` | admin | Crea la urna, firma sus parámetros y la registra en `ballot` por gRPC |
 | `POST /elections/{id}/close` | admin | Cierra la urna en `ballot` (irreversible, idempotente) y en PostgreSQL |
 | `GET /elections/{id}/status` | admin | Estado en ambos lados y participación (`CountBallots`) |
@@ -67,6 +67,13 @@ ni datos de la papeleta.
 `POST /elections` recibe `{name, options[], encryption_public_key (base64url), opens_at, closes_at}`
 (epoch en segundos UTC) y responde `{election_id, status}`. La fila se crea como `draft` y pasa a
 `open` solo cuando `ballot` confirma el registro; si `ballot` falla se revierte todo.
+
+`POST /login` recibe `{username, password}` y responde `{mfa_required, challenge_id}`.
+`POST /login/mfa` recibe `{challenge_id, code}` y devuelve `{access_token, token_type, expires_in}`.
+Las rutas de sesión requieren `Authorization: Bearer <access_token>`.
+`GET /elections/open` no requiere sesión y solo devuelve elecciones cuyo estado es `open` y cuya
+hora UTC actual cae en `[starts_at, ends_at)`. Cada elemento contiene `id`, `name`,
+`starts_at`, `ends_at` y `created_at`.
 
 Errores: `{"error": {"code": "...", "message": "..."}}`. Códigos principales:
 `401 unauthenticated`, `403 forbidden | not_in_voter_roll`, `404 election_not_found`,

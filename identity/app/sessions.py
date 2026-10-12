@@ -81,6 +81,21 @@ def complete_mfa_challenge(
     return token
 
 
+def revoke_session(session: Session, token: str) -> None:
+    """Revoca una sesión autenticada sin persistir el bearer en claro."""
+    user_session = session.scalar(
+        select(UserSession).where(
+            UserSession.token_hash == _hash_token(token),
+            UserSession.revoked_at.is_(None),
+        )
+    )
+    if user_session is None:
+        raise Unauthenticated("invalid session")
+
+    user_session.revoked_at = _now()
+    session.commit()
+
+
 def principal_from_token(
     session: Session,
     token: str,
