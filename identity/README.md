@@ -1,8 +1,8 @@
 # Identity (Python)
 
-Servicio de la **zona de identidad**. Este README cubre el frente de M6: **urnas**, **token
-anónimo (firma ciega)** y **cliente gRPC hacia `ballot`**. Login/MFA, roles y padrón
-(PostgreSQL) son de M5.
+Servicio de la **zona de identidad**. Incluye el frente M5: **login, MFA, sesiones,
+roles, padrón electoral y confirmación de participación**, además del frente M6:
+**urnas, token anónimo (firma ciega)** y **cliente gRPC hacia `ballot`**.
 
 ## Qué sabe y qué no sabe identidad
 
@@ -36,20 +36,33 @@ clave de verificación de tokens y parámetros firmados).
 | `app/ballot_client.py` | Cliente gRPC de `BallotAdminService` (`proto/ballot.proto`) |
 | `app/keys.py` | Claves privadas (RSA de tokens, Ed25519 de parámetros) |
 | `app/models.py` | Modelos que reflejan `schema.sql` |
-| `app/auth.py` | Contrato `Principal` + autenticación **provisional** (ver abajo) |
+| `app/auth.py` | Autenticación Bearer, resolución de `Principal` y modo de desarrollo |
+| `app/login.py` | Validación de usuario y contraseña |
+| `app/sessions.py` | Challenges MFA y sesiones persistentes |
+| `app/voter_roll.py` | Administración del padrón y confirmación `has_voted` |
 | `app/pb/` | Stubs generados desde `proto/ballot.proto` (versionados) |
 
 ## Endpoints
 
 | Método y ruta | Acceso | Descripción |
 |---|---|---|
+| `POST /login` | público | Valida usuario y contraseña y genera un challenge MFA |
+| `POST /login/mfa` | público | Valida MFA y entrega una sesión Bearer |
 | `POST /elections` | admin | Crea la urna, firma sus parámetros y la registra en `ballot` por gRPC |
 | `POST /elections/{id}/close` | admin | Cierra la urna en `ballot` (irreversible, idempotente) y en PostgreSQL |
 | `GET /elections/{id}/status` | admin | Estado en ambos lados y participación (`CountBallots`) |
 | `GET /elections/{id}/parameters` | sesión | Parámetros firmados que descarga el navegador |
+| `POST /elections/{id}/voters` | admin | Inscribe un usuario en el padrón electoral |
+| `GET /elections/{id}/voters` | admin | Consulta el padrón de una elección |
+| `PATCH /elections/{id}/voters/{user_id}` | admin | Actualiza la elegibilidad de un votante |
 | `POST /tokens/blind` | votante | Firma ciega del token. Body: `{"election_id", "blinded_token"}` (base64url) |
+| `POST /vote-confirmation` | votante | Marca `has_voted=true` para el usuario autenticado |
 | `GET /keys` | público | Claves públicas de identidad (token y firma de parámetros) |
 | `GET /`, `GET /health` | público | Liveness |
+
+`POST /vote-confirmation` recibe únicamente `election_id`. El `user_id` se obtiene de la
+sesión autenticada y no se envían a identidad el recibo, el `ballot_hash`, el token anónimo
+ni datos de la papeleta.
 
 `POST /elections` recibe `{name, options[], encryption_public_key (base64url), opens_at, closes_at}`
 (epoch en segundos UTC) y responde `{election_id, status}`. La fila se crea como `draft` y pasa a
@@ -116,11 +129,6 @@ Todo va en **base64url sin relleno**, no base64 estándar (`btoa`).
 
 ## Pendiente de otros frentes
 
-- **M5**: autenticación con login, MFA y sesiones persistentes implementada.
-  `IDENTITY_DEV_AUTH=true` conserva `X-Dev-User` y `X-Dev-Roles` únicamente para desarrollo y pruebas;
-  está **apagado por defecto**.
-- **M5/M1**: implementado `POST /vote-confirmation`, autenticado con sesión, para marcar
-  `has_voted=true` usando únicamente `election_id`, sin enviar datos de la papeleta ni del recibo.
 - **M2**: Dockerfile, carga de `schema.sql` al iniciar PostgreSQL y mTLS del canal gRPC
   (hoy `grpc.insecure_channel`, igual que el listener de `ballot`).
 - **M8**: ejecutar un token real firmado por este servicio contra el verificador Go.
@@ -135,6 +143,9 @@ Todo va en **base64url sin relleno**, no base64 estándar (`btoa`).
 | `IDENTITY_BALLOT_GRPC_TIMEOUT_SECONDS` | `5` | Deadline por llamada |
 | `IDENTITY_KEYS_DIR` | `./keys` | Claves privadas; se crean con `0600` si faltan. Están en `.gitignore` |
 | `IDENTITY_DEV_AUTH` | `false` | Autenticación simulada (solo desarrollo) |
+| `IDENTITY_MFA_CODE` | `123456` | Código MFA de demostración para Prototype 1 |
+| `IDENTITY_MFA_CHALLENGE_TTL_SECONDS` | `300` | Vigencia del challenge MFA en segundos |
+| `IDENTITY_SESSION_TTL_SECONDS` | `3600` | Vigencia de la sesión autenticada en segundos |
 
 ## Ejecutar
 
@@ -142,9 +153,12 @@ Todo va en **base64url sin relleno**, no base64 estándar (`btoa`).
 cd identity
 uv sync
 psql "$DATABASE_URL" -f schema.sql                 # una vez, sobre una base vacía
-IDENTITY_DEV_AUTH=true uv run uvicorn main:app     # http://localhost:8000/docs
-uv run pytest                                       # 45 pruebas
+uv run uvicorn main:app --reload                   # http://localhost:8000/docs
+uv run pytest -q
 ```
+
+`IDENTITY_DEV_AUTH=true` queda disponible únicamente para desarrollo y pruebas.
+El flujo normal usa login, MFA y sesión Bearer.
 
 ## Regenerar los stubs gRPC
 
