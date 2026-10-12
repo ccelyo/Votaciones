@@ -29,6 +29,17 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Authentication API
+
+Set `NEXT_PUBLIC_API_URL` to the base URL of the API. The frontend sends JSON
+requests to `POST /login` (`email`, `password`) and `POST /register`
+(`full_name`, `email`, `password`). The home page reads open
+elections from `GET /elections?status=open`, which should return an array of
+elections matching the `Election` type in `lib/types/election.ts`.
+The API should return a non-2xx status and a `detail` message when a request
+fails. Requests include credentials so the API can establish or use a session
+cookie.
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
