@@ -1,695 +1,485 @@
-# Sistema de Votaciones — Definición previa al desarrollo del Prototype 1
+# Prototipo 1 — Sistema de Votaciones
+## Plan de construcción y reparto de tareas
 
-## 1. Objetivo
+**Curso:** Software Architecture 2026-II · Universidad Nacional de Colombia
+**Entrega del artefacto (`p1_X.pdf`):** lunes 12 de octubre de 2026 (MiCampus UNAL)
+**Presentación:** martes 13 de octubre de 2026 (en clase)
+**Equipo:** 8 integrantes
 
-El equipo desarrollará un **sistema de votaciones distribuido** cuyo primer prototipo implementará el *happy path* de una votación electrónica, desde la autenticación del votante hasta el registro de una papeleta cifrada y la entrega de un recibo.
-
-El diseño debe cumplir con los requisitos del Prototype 1 de Software Architecture:
-
-- Definir el dominio y el enfoque funcional del sistema.
-- Definir el alcance funcional del prototipo.
-- Utilizar una arquitectura distribuida.
-- Incluir un componente de presentación web.
-- Incluir al menos dos componentes de lógica.
-- Incluir una base de datos relacional y una NoSQL.
-- Utilizar al menos dos tipos diferentes de conectores basados en HTTP.
-- Utilizar al menos tres lenguajes de propósito general.
-- Utilizar un despliegue orientado a contenedores.
+> Este documento es el plan **interno** del equipo (qué construir, quién lo construye y cuándo). El artefacto que se entrega al profesor (`p1_X.pdf`) se arma a partir de las secciones 2, 3 y 10.
 
 ---
 
-# 2. Alcance del Prototype 1
+## 1. Objetivo y alcance
 
-## 2.1. Happy path
+Construir un **prototipo vertical** de un sistema de votaciones electrónicas: una rebanada funcional que atraviese todas las capas (presentación → lógica → datos) y que se ejecute completa con contenedores.
 
-El flujo principal que se pretende demostrar es:
+### 1.1 Alcance funcional del prototipo (dentro)
 
-```text
-Login
-  ↓
-MFA
-  ↓
-Validación en padrón
-  ↓
-Emisión de token anónimo
-  ↓
-Firma ciega
-  ↓
-Descarga de parámetros de elección
-  ↓
-Cifrado local del voto
-  ↓
-Generación de prueba de validez
-  ↓
-Envío de papeleta
-  ↓
-Validación del token y prueba
-  ↓
-Registro en MongoDB
-  ↓
-Recibo firmado
-  ↓
-Confirmación del voto
-```
-
-El prototipo debe concentrarse inicialmente en este camino exitoso. Funcionalidades como recuperación ante errores, escenarios excepcionales, auditorías completas, cierre de urna y escrutinio pueden implementarse posteriormente o quedar documentadas como trabajo futuro, dependiendo del alcance acordado por el equipo.
-
----
-
-# 3. Arquitectura propuesta
-
-La arquitectura conceptual propuesta es:
-
-```text
-                    ┌─────────────────────────┐
-                    │   Navegador (Next.js)   │
-                    │   Cifra el voto         │
-                    └────────────┬────────────┘
-                                 │
-                                 ▼
-                    ┌─────────────────────────┐
-                    │ Cloud Armor +            │
-                    │ Load Balancer            │
-                    └────────────┬────────────┘
-                                 │
-              ┌──────────────────┴──────────────────┐
-              │                                     │
-              ▼                                     ▼
-    ┌──────────────────────┐             ┌──────────────────────┐
-    │    Zona identidad    │             │     Zona votación    │
-    │                      │             │                      │
-    │ Python: identidad    │             │ Go: recepción        │
-    │ PostgreSQL           │             │ Redis                │
-    │ Pub/Sub: eventos     │             │ Pub/Sub: votos       │
-    │ TypeScript: avisos   │             │ Go: escritor         │
-    │                      │             │ MongoDB               │
-    │                      │             │ Rust: boletín         │
-    │                      │             │ Escrutinio            │
-    └──────────────────────┘             └──────────────────────┘
-```
-
-La arquitectura se divide conceptualmente en dos zonas:
-
-- **Zona de identidad:** maneja la autenticación y la relación entre una persona y su derecho a votar.
-- **Zona de votación:** recibe y procesa papeletas sin necesitar conocer la identidad del votante.
-
-La separación entre ambas zonas es fundamental para evitar que la información utilizada durante el login pueda vincularse posteriormente con la papeleta.
-
----
-
-# 4. Componentes
-
-| Componente | Responsabilidad | Tecnología |
+| # | Funcionalidad | Servicio principal |
 |---|---|---|
-| Navegador | Interfaz, MFA, generación/cegado del token, cifrado del voto y pruebas | Next.js / TypeScript |
-| Identidad | Usuarios, roles, padrón, elecciones y emisión de tokens | Python |
-| Base de identidad | Padrón, usuarios, roles y estado de votación | PostgreSQL |
-| Eventos de identidad | Avisos y auditoría | Pub/Sub |
-| Avisos | Notificaciones por correo/SMS | TypeScript |
-| Recepción | Validación del token y prueba; entrada de papeletas | Go |
-| Tokens usados | Control de tokens consumidos | Redis |
-| Eventos de votación | Transporte de eventos/papeletas | Pub/Sub |
-| Escritor | Persistencia de papeletas y encadenamiento por hash | Go |
-| Base de papeletas | Almacenamiento de votos cifrados | MongoDB |
-| Boletín | Publicación de información de solo lectura | Rust |
-| Escrutinio | Procesamiento de resultados al cierre | Por definir |
+| F1 | Login de usuarios con rol (`admin`, `votante`) | Python |
+| F2 | Administración de usuarios y roles | Python |
+| F3 | Creación de urnas (elecciones) con sus opciones/candidatos | Python |
+| F4 | Padrón: asignar qué votantes pueden votar en cada urna | Python |
+| F5 | Abrir / cerrar una urna (y propagarlo al servicio de votación) | Python → Go (gRPC) |
+| F6 | Emisión de **token anónimo** de voto (un token por votante y urna) | Python → Go (gRPC) |
+| F7 | Cifrado del voto en el navegador | Next.js |
+| F8 | Recepción, validación del token y almacenamiento del voto cifrado | Go |
+| F9 | Recibo de voto y verificación de que el voto fue registrado | Go / Next.js |
+
+### 1.2 Fuera del alcance de P1 (se deja para prototipos posteriores)
+
+- Escrutinio / descifrado y conteo de resultados (solo se expone el **conteo de votos recibidos**, no el resultado).
+- Firmas ciegas (*blind signatures*) para desvincular totalmente token e identidad.
+- Alta disponibilidad, balanceo, orquestación (Kubernetes), observabilidad avanzada.
+- Recuperación de contraseña, correo electrónico, 2FA.
 
 ---
 
-# 5. Happy path detallado
+## 2. Arquitectura (vista de Componentes y Conectores)
 
-## 5.1. Login — Python
+La arquitectura parte del diagrama adjunto. Guardar la imagen como `docs/cc-view.png` para incluirla en el artefacto final.
 
-El usuario inicia sesión mediante el navegador.
+![Vista C&C](docs/cc-view.png)
 
-1. El navegador solicita autenticación.
-2. El usuario se autentica mediante MFA.
-3. Python valida las credenciales y el segundo factor.
-4. Python consulta PostgreSQL.
-5. Se verifica que:
-   - el usuario pertenece al padrón de la elección/urna;
-   - la urna está abierta;
-   - el usuario está habilitado para votar.
+```mermaid
+flowchart TD
+    W["Next.js (TypeScript)<br/>Cifra el voto en el navegador"]
+    P["Python: identidad y admin<br/>Usuarios, urnas, roles"]
+    G["Go: votación<br/>Valida token, guarda voto"]
+    PG[("PostgreSQL<br/>Padrón, roles, urnas")]
+    MG[("MongoDB<br/>Votos cifrados, solo insert")]
 
-El resultado de esta etapa permite al usuario continuar con la obtención de un token anónimo.
-
----
-
-## 5.2. Emisión del token anónimo — Python
-
-El objetivo es obtener un token firmado que permita votar sin revelar posteriormente la identidad del votante.
-
-1. El navegador genera un token aleatorio.
-2. El navegador ciega el token mediante un esquema de firma ciega.
-3. El navegador envía el token cegado a Python.
-4. Python verifica en PostgreSQL que el usuario todavía no haya recibido un token para esa elección.
-5. Debe existir una restricción equivalente a:
-
-```text
-UNIQUE(user_id, election_id)
+    W -- "REST/JSON (HTTP/1.1)<br/>Login, token anónimo" --> P
+    W -- "REST/JSON (HTTP/1.1)<br/>Voto cifrado + token" --> G
+    P -. "gRPC (HTTP/2) + mTLS" .-> G
+    P -- "SQL (driver)" --> PG
+    G -- "Mongo wire (driver)" --> MG
 ```
 
-6. Python firma el token cegado.
-7. Python registra el evento de emisión del token.
-8. El navegador recibe la firma.
-9. El navegador desciega el token.
-10. El resultado es un token firmado que Python no puede vincular posteriormente con la papeleta.
+### 2.1 Cumplimiento de los requisitos no funcionales
 
-### Propiedad buscada
-
-Python conoce:
-
-```text
-usuario → recibió token
-```
-
-pero no debe poder conocer:
-
-```text
-usuario → papeleta X
-```
-
----
-
-# 6. Parámetros de la elección
-
-El navegador descarga los parámetros necesarios para construir una papeleta válida:
-
-- Identificador de la elección.
-- Clave pública de la elección.
-- Lista de opciones.
-- Firma de los parámetros.
-
-El navegador debe poder verificar que los parámetros utilizados corresponden a una elección válida antes de cifrar el voto.
-
----
-
-# 7. Cifrado local
-
-El usuario selecciona una opción en el navegador.
-
-El navegador:
-
-1. Obtiene la opción seleccionada.
-2. Cifra el voto utilizando la clave pública de la elección.
-3. Genera la prueba de validez correspondiente.
-4. Calcula un identificador de papeleta.
-
-El voto en claro no debe enviarse al servidor.
-
-El servidor de votación recibe únicamente la información necesaria para validar y registrar la papeleta cifrada.
-
----
-
-# 8. Auditoría opcional — Benaloh
-
-El usuario puede disponer de una opción de auditoría.
-
-Conceptualmente:
-
-```text
-Usuario selecciona opción
-        ↓
-Se genera voto cifrado
-        ↓
-¿Auditar?
-   ┌────┴────┐
-   │         │
-  Sí         No
-   │         │
-Auditar    Emitir
-   │
-Repetir proceso
-```
-
-El alcance exacto de esta funcionalidad deberá definirse antes de implementarla. El equipo debe decidir qué parte de la auditoría Benaloh será realmente demostrada en el Prototype 1.
-
----
-
-# 9. Envío de la papeleta — Go
-
-El navegador envía la papeleta al componente de recepción.
-
-La petición debe contener conceptualmente:
-
-```json
-{
-  "election_id": "...",
-  "encrypted_vote": "...",
-  "proof": "...",
-  "signed_token": "..."
-}
-```
-
-### Restricción importante
-
-Esta petición debe realizarse:
-
-- sin cookies;
-- sin sesión de usuario;
-- sin identificadores de identidad;
-- sin información que permita vincular directamente la papeleta con el login.
-
-El objetivo es mantener la separación entre la identidad y la papeleta.
-
----
-
-# 10. Validación y registro — Go
-
-El componente Go realiza la validación de la papeleta.
-
-### 10.1. Token
-
-Go verifica la firma del token utilizando la clave pública correspondiente de Python.
-
-Go **no debe necesitar llamar a Python** para realizar esta verificación.
-
-### 10.2. Prueba
-
-Go valida la prueba de validez asociada con el voto cifrado.
-
-### 10.3. Token gastado y papeleta
-
-Si las validaciones son exitosas:
-
-1. Se verifica que el token no haya sido utilizado anteriormente.
-2. Se registra el token como gastado.
-3. Se registra la papeleta.
-4. La papeleta se encadena mediante hash con la papeleta anterior.
-
-La operación de consumo del token y registro de la papeleta debe diseñarse como una operación atómica para evitar que un token pueda utilizarse dos veces.
-
----
-
-# 11. MongoDB
-
-MongoDB almacenará las papeletas de la elección.
-
-Un esquema conceptual inicial podría ser:
-
-```text
-ballot
-├── ballot_id
-├── election_id
-├── encrypted_vote
-├── proof
-├── token_hash
-├── previous_hash
-├── ballot_hash
-└── timestamp
-```
-
-El esquema definitivo debe ser acordado por el equipo antes de implementar el componente.
-
-La papeleta debe poder formar parte de una cadena de hashes:
-
-```text
-Ballot 1
-   │
-   ▼
-Ballot 2
-   │
-   ▼
-Ballot 3
-   │
-   ▼
-...
-```
-
-De esta forma se puede detectar una modificación de la secuencia publicada.
-
----
-
-# 12. Recibo
-
-Después de registrar correctamente la papeleta:
-
-1. Go genera un recibo.
-2. El recibo está asociado al hash de la papeleta.
-3. Go firma el recibo.
-4. El navegador recibe el recibo.
-5. El navegador lo muestra al usuario.
-
-Conceptualmente:
-
-```text
-Papeleta
-   ↓
-Hash
-   ↓
-Recibo firmado
-   ↓
-Usuario
-```
-
-El usuario debe poder conservar el recibo para posteriormente verificar que su papeleta aparece en la información pública.
-
----
-
-# 13. Confirmación del voto
-
-Después de recibir el recibo, debe definirse cómo se informa al componente de identidad que el usuario ya votó.
-
-El diseño propuesto contempla:
-
-```text
-Go
- ↓
-Recibo
- ↓
-Navegador
- ↓
-Confirmación
- ↓
-Python
- ↓
-Usuario marcado como "votó"
-```
-
-También puede considerarse un mecanismo asíncrono.
-
-### Decisión pendiente
-
-El equipo debe definir cómo realizar esta confirmación **sin introducir una relación entre la identidad del votante y la papeleta registrada**.
-
-Esta es una de las decisiones arquitectónicas que debe resolverse antes de implementar el flujo completo.
-
----
-
-# 14. Cierre y escrutinio
-
-Al cerrar la urna:
-
-1. Se detiene la recepción de nuevos votos.
-2. Los responsables utilizan la clave correspondiente distribuida mediante un esquema de umbral.
-3. Se descifran las papeletas.
-4. Se calcula el resultado.
-5. Se publican los resultados.
-6. Se publican las pruebas necesarias para verificar el proceso.
-7. Los ciudadanos pueden verificar sus recibos contra la lista pública de papeletas.
-
-El alcance exacto del escrutinio debe definirse según lo que el equipo quiera demostrar en el prototipo.
-
----
-
-# 15. API: contratos que deben definirse
-
-Antes de comenzar el desarrollo, el equipo debe definir los contratos HTTP de cada componente.
-
-Como mínimo, se deben especificar operaciones equivalentes a:
-
-```text
-POST /login
-POST /tokens/blind
-GET  /elections/{election_id}/parameters
-POST /ballots
-POST /vote-confirmation
-```
-
-Para cada endpoint se debe documentar:
-
-- Método HTTP.
-- URL.
-- Request.
-- Response.
-- Headers.
-- Autenticación.
-- Códigos HTTP.
-- Errores posibles.
-- Información que puede contener la petición.
-- Información que está prohibido enviar.
-- Componente responsable.
-
-Los nombres definitivos de los endpoints quedan a decisión del equipo.
-
----
-
-# 16. Conectores HTTP
-
-El Prototype 1 exige al menos **dos tipos diferentes de conectores basados en HTTP**.
-
-El equipo debe decidir explícitamente cuáles utilizará y en qué relaciones entre componentes.
-
-Esta decisión debe quedar documentada en la vista C&C y en los contratos de las APIs.
-
----
-
-# 17. Modelo de datos
-
-## 17.1. PostgreSQL
-
-Como punto de partida:
-
-```text
-users
-roles
-elections
-voter_roll
-issued_tokens
-```
-
-Debe definirse:
-
-- Relaciones.
-- Claves primarias.
-- Claves foráneas.
-- Índices.
-- Restricciones de unicidad.
-- Estado de la elección.
-- Estado del votante.
-- Registro de tokens emitidos.
-
-Restricción crítica:
-
-```text
-UNIQUE(user_id, election_id)
-```
-
-## 17.2. MongoDB
-
-Colección principal:
-
-```text
-ballots
-```
-
-Debe definirse el esquema de:
-
-- Papeleta cifrada.
-- Prueba.
-- Elección.
-- Hash anterior.
-- Hash propio.
-- Identificador de papeleta.
-- Información temporal necesaria.
-
----
-
-# 18. Seguridad y criptografía
-
-Antes de implementar, el equipo debe acordar explícitamente:
-
-- Algoritmo de firma de Python.
-- Algoritmo de firma del recibo.
-- Esquema de firma ciega.
-- Algoritmo de cifrado del voto.
-- Esquema de generación de pruebas de validez.
-- Formato de los tokens.
-- Generación de aleatoriedad.
-- Gestión de claves.
-- Almacenamiento de claves privadas.
-- Distribución de claves públicas.
-- Esquema de clave repartida en umbral.
-- Qué información conoce cada componente.
-- Qué información nunca debe cruzar entre las zonas.
-
-No se deben comenzar las implementaciones criptográficas sin haber definido primero estas decisiones y sus interfaces.
-
----
-
-# 19. Despliegue orientado a contenedores
-
-La arquitectura debe poder ejecutarse mediante contenedores.
-
-Una organización inicial podría ser:
-
-```text
-docker-compose
-│
-├── frontend
-├── identity-python
-├── voting-go
-├── ballot-writer
-├── bulletin-rust
-├── postgres
-├── mongodb
-├── redis
-└── pubsub
-```
-
-El despliegue definitivo dependerá de la infraestructura elegida por el equipo.
-
-Se debe definir:
-
-- Imagen de cada componente.
-- Variables de entorno.
-- Redes.
-- Puertos.
-- Dependencias.
-- Volúmenes.
-- Configuración de bases de datos.
-- Gestión de secretos.
-- Orden/inicialización de servicios.
-
----
-
-# 20. Lenguajes
-
-La arquitectura propuesta contempla al menos:
-
-- **TypeScript** — navegador/Next.js y avisos.
-- **Python** — identidad.
-- **Go** — recepción y escritura de papeletas.
-- **Rust** — boletín.
-
-Esto satisface el requisito de utilizar al menos tres lenguajes de propósito general.
-
-El equipo debe decidir cuáles serán realmente incluidos en el Prototype 1 y evitar introducir un lenguaje únicamente para cumplir el requisito si no tiene una responsabilidad arquitectónica clara.
-
----
-
-# 21. Responsabilidades del equipo
-
-Antes de desarrollar, se debe asignar explícitamente la responsabilidad de cada componente.
-
-Por ejemplo:
-
-| Área | Responsable |
+| Requisito (enunciado) | Cómo se cumple |
 |---|---|
-| Next.js / navegador | Por definir |
-| Python / identidad | Por definir |
-| PostgreSQL | Por definir |
-| Go / recepción | Por definir |
-| Go / escritor | Por definir |
-| MongoDB | Por definir |
-| Redis | Por definir |
-| Pub/Sub | Por definir |
-| Rust / boletín | Por definir |
-| Criptografía | Por definir |
-| Docker / integración | Por definir |
-| Documentación | Por definir |
+| Arquitectura **distribuida** | 3 procesos de aplicación + 2 bases de datos, cada uno en su contenedor y comunicados por red. |
+| ≥ 1 componente de **presentación** (web front-end) | `web` — Next.js (TypeScript). |
+| ≥ 2 componentes de **lógica** | `identity` (Python) y `voting` (Go). |
+| ≥ 2 componentes de **datos** (relacional + NoSQL) | `postgres` (relacional) y `mongo` (NoSQL documental). |
+| ≥ 2 tipos distintos de **conectores basados en HTTP** | **REST/JSON sobre HTTP/1.1** (navegador → Python y navegador → Go) y **gRPC sobre HTTP/2** (Python → Go). |
+| ≥ 3 lenguajes de propósito general | TypeScript, Python y Go. |
+| Despliegue orientado a **contenedores** | Un `Dockerfile` por servicio y un `docker-compose.yml` que levanta todo. |
 
-Una persona puede tener varias responsabilidades, pero debe existir un responsable claro para cada componente.
+> **Punto a defender en la presentación:** gRPC es un conector basado en HTTP porque usa HTTP/2 como transporte (con Protocol Buffers como formato). Es un tipo de conector distinto al REST/JSON. Dejarlo explícito en el artefacto.
 
----
+### 2.2 Estilos arquitectónicos a describir en el artefacto
 
-# 22. Decisiones que deben estar cerradas antes de programar
+- **Cliente-Servidor** (navegador ↔ servicios).
+- **Orientada a servicios / microservicios** (dos servicios con responsabilidades separadas).
+- **Base de datos por servicio** (*database per service*) con **aislamiento**: PostgreSQL solo accesible desde `identity`; MongoDB solo desde `voting`.
+- **Petición-respuesta (REST)** para la interacción con el cliente y **RPC (gRPC)** para la interacción servicio a servicio.
+- **Separación de identidad y voto** como decisión de diseño: quien sabe *quién eres* (Python) no guarda *qué votaste*; quien guarda *qué votaste* (Go) no sabe *quién eres*.
 
-La reunión de arquitectura debería terminar con respuestas concretas a estas preguntas:
+### 2.3 Elementos y relaciones
 
-### Dominio y funcionalidad
+| Elemento | Tipo | Tecnología | Responsabilidad |
+|---|---|---|---|
+| `web` | Presentación | Next.js + TypeScript | UI de votante y administrador; cifrado del voto en el navegador con Web Crypto. |
+| `identity` | Lógica | Python (FastAPI) | Autenticación, roles, usuarios, urnas, padrón, emisión del token anónimo, cliente gRPC. |
+| `voting` | Lógica | Go | API de voto, validación y consumo del token, servidor gRPC, persistencia de votos. |
+| `postgres` | Datos (relacional) | PostgreSQL | Usuarios, roles, urnas, opciones, padrón. |
+| `mongo` | Datos (NoSQL) | MongoDB | Configuración publicada de urnas, tokens emitidos/usados, votos cifrados. |
 
-- ¿Qué problema exacto resuelve el sistema?
-- ¿Qué actores existen?
-- ¿Qué es una elección?
-- ¿Qué es una urna?
-- ¿Qué es un votante?
-- ¿Qué constituye un voto válido?
-
-### Alcance
-
-- ¿Qué partes del happy path estarán implementadas?
-- ¿Qué partes quedarán fuera del Prototype 1?
-- ¿Qué funcionalidades serán simuladas?
-
-### Arquitectura
-
-- ¿Cuáles son exactamente los componentes?
-- ¿Cuál es la responsabilidad de cada uno?
-- ¿Qué componente puede comunicarse con cuál?
-- ¿Qué información puede cruzar entre la zona de identidad y la zona de votación?
-
-### APIs
-
-- ¿Cuáles son los endpoints?
-- ¿Qué requests y responses utilizan?
-- ¿Qué autenticación utiliza cada endpoint?
-- ¿Cuáles son los dos tipos de conectores HTTP?
-- ¿Qué endpoint recibe la papeleta sin sesión?
-
-### Datos
-
-- ¿Cuál es el esquema de PostgreSQL?
-- ¿Cuál es el esquema de MongoDB?
-- ¿Qué información se almacena en Redis?
-- ¿Qué eventos se envían mediante Pub/Sub?
-
-### Seguridad
-
-- ¿Cómo funciona la firma ciega?
-- ¿Cómo se genera y verifica el token?
-- ¿Cómo se cifra el voto?
-- ¿Cómo se genera la prueba?
-- ¿Cómo se valida?
-- ¿Cómo se firman los recibos?
-- ¿Cómo se evita el doble voto?
-- ¿Cómo se evita vincular identidad y papeleta?
-
-### Infraestructura
-
-- ¿Cómo se ejecutan todos los componentes?
-- ¿Qué contenedores existen?
-- ¿Cómo se conectan?
-- ¿Cómo se configuran?
-- ¿Cómo se inicia el sistema desde cero?
-
-### Equipo
-
-- ¿Quién desarrolla cada componente?
-- ¿Quién integra?
-- ¿Quién valida la seguridad?
-- ¿Quién documenta?
-- ¿Cómo se integran las ramas y cambios?
+| Relación (conector) | Origen → Destino | Protocolo | Datos que viajan |
+|---|---|---|---|
+| C1 | `web` → `identity` | REST/JSON, HTTP/1.1 | Credenciales, sesión (JWT), urnas, solicitud de token. |
+| C2 | `web` → `voting` | REST/JSON, HTTP/1.1 | Voto cifrado + token anónimo. |
+| C3 | `identity` → `voting` | gRPC, HTTP/2 + mTLS | Publicar/abrir/cerrar urna, registrar hash de token. |
+| C4 | `identity` → `postgres` | SQL (driver) | Datos relacionales. |
+| C5 | `voting` → `mongo` | Mongo wire (driver) | Documentos de votos y tokens. |
 
 ---
 
-# 23. Artefactos que deberíamos producir antes del desarrollo
+## 3. Diseño del flujo de voto (decisiones que el equipo debe respetar)
 
-El equipo debería cerrar estos seis artefactos:
+### 3.1 Secuencia
 
-1. **Alcance funcional del Prototype 1**
-2. **Diagrama C&C definitivo**
-3. **Contratos de las APIs**
-4. **Modelo de datos PostgreSQL + MongoDB**
-5. **Diseño de seguridad y criptografía**
-6. **Diseño de despliegue con contenedores**
+```mermaid
+sequenceDiagram
+    autonumber
+    actor V as Votante
+    participant W as web (Next.js)
+    participant I as identity (Python)
+    participant G as voting (Go)
+    participant PG as PostgreSQL
+    participant MG as MongoDB
 
-Después de esto, el desarrollo puede dividirse por componentes sin que cada integrante tenga que tomar decisiones arquitectónicas contradictorias.
+    V->>W: Documento + contraseña
+    W->>I: POST /auth/login
+    I->>PG: Verifica usuario y rol
+    I-->>W: JWT de sesión
+    W->>I: GET /urnas/{id} (opciones + llave pública de la urna)
+    W->>I: POST /urnas/{id}/token
+    I->>PG: ¿Está en el padrón? ¿urna abierta? ¿ya pidió token?
+    I->>PG: Marca "token emitido" (SIN guardar el token)
+    I->>G: gRPC RegisterToken(urna_id, SHA256(token)) [mTLS]
+    G->>MG: insert issued_tokens
+    I-->>W: token anónimo (valor crudo, una sola vez)
+    V->>W: Selecciona opción
+    W->>W: Cifra el voto (AES-GCM + RSA-OAEP)
+    W->>G: POST /votes {urna_id, token, ciphertext, enc_key, iv}
+    G->>MG: ¿token emitido? insert used_tokens (índice único)
+    G->>MG: insert votes
+    G-->>W: 201 {receipt}
+```
+
+### 3.2 Reglas de diseño
+
+1. **Token anónimo:** 32 bytes aleatorios (base64url). `identity` solo envía a `voting` el **hash SHA-256**; `voting` recibe del navegador el valor crudo, lo hashea y lo compara. En PostgreSQL **no se guarda el token ni su hash**, solo el booleano `token_issued` por (usuario, urna).
+2. **Un voto por votante:** `used_tokens` tiene **índice único** sobre `token_hash`; un segundo intento falla con `409 Conflict`.
+3. **Cifrado híbrido en el navegador:** se genera una llave AES-GCM aleatoria, se cifra el voto con ella y la llave AES se cifra con la **llave pública RSA-OAEP de la urna** (generada por `identity` al crear la urna). La llave privada **nunca** se guarda en `web` ni en `voting` (en P1 queda en un archivo local del admin; el escrutinio es de P2).
+4. **MongoDB "solo insert":** el usuario de aplicación de `voting` tiene un rol con permisos `insert` y `find` sobre `votes`, `issued_tokens` y `used_tokens` (sin `update` ni `remove`). Solo la colección `urna_config` admite `update` (para abrir/cerrar).
+5. **Aislamiento de datos:** dos redes Docker de base de datos separadas (`net_pg`, `net_mongo`); ningún servicio comparte base de datos con otro.
+6. **gRPC con mTLS:** `identity` actúa como cliente y `voting` como servidor, ambos con certificado emitido por una CA propia del proyecto. Sin certificado válido, `voting` rechaza la conexión.
+7. **Orden de operaciones en `POST /votes`:** (a) urna abierta → (b) token emitido y no vencido → (c) insertar en `used_tokens` → (d) insertar en `votes`. Limitación conocida: si falla (d) tras (c), el token queda consumido (documentarlo; la solución real son transacciones con *replica set* de Mongo).
+
+> **Limitación honesta a mencionar en la presentación:** como `identity` genera el token, en teoría podría correlacionarlo con el usuario. P1 mitiga no persistiendo el token; la solución robusta (firmas ciegas) queda para P2.
 
 ---
 
-# 24. Resultado esperado
+## 4. Contratos (se congelan el día 1)
 
-Al finalizar esta etapa, cualquier integrante del equipo debería poder responder:
+Los contratos son lo primero que se escribe para que los 4 frentes trabajen en paralelo con *mocks*.
 
-> **¿Qué estamos construyendo?**
->
-> Un sistema de votación distribuido.
+### 4.1 `identity` — REST/JSON (puerto 8000)
 
-> **¿Qué vamos a demostrar en el Prototype 1?**
->
-> El happy path desde el login hasta el registro de una papeleta cifrada y la generación de un recibo.
+| Método | Ruta | Rol | Descripción |
+|---|---|---|---|
+| POST | `/auth/login` | público | `{document_id, password}` → `{access_token, role, user}` |
+| GET | `/me` | autenticado | Datos del usuario actual |
+| GET | `/urnas` | votante | Urnas en las que está en el padrón |
+| GET | `/urnas/{id}` | votante | Opciones, ventana de tiempo y **llave pública** de la urna |
+| POST | `/urnas/{id}/token` | votante | Emite el token anónimo (`409` si ya lo pidió; `403` si no está en padrón o urna cerrada) |
+| GET / POST | `/admin/users` | admin | Listar / crear usuarios y asignar rol |
+| POST | `/admin/urnas` | admin | Crear urna con opciones |
+| PUT | `/admin/urnas/{id}/padron` | admin | Asignar votantes a la urna |
+| PATCH | `/admin/urnas/{id}/status` | admin | `open` / `closed` (dispara gRPC a Go) |
+| GET | `/healthz` | público | Salud del servicio |
 
-> **¿Cómo está dividido?**
->
-> En componentes de presentación, identidad, recepción, persistencia, publicación y escrutinio.
+### 4.2 `voting` — REST/JSON (puerto 8081)
 
-> **¿Cómo evitamos vincular identidad y voto?**
->
-> Mediante la separación entre la zona de identidad y la zona de votación y el uso de un token obtenido mediante firma ciega.
+| Método | Ruta | Descripción |
+|---|---|---|
+| POST | `/votes` | `{urna_id, token, ciphertext, enc_key, iv}` → `201 {receipt}`; `401` token inválido; `409` token ya usado; `403` urna cerrada |
+| GET | `/votes/{receipt}` | Confirma que el recibo existe (`200` / `404`) |
+| GET | `/healthz` | Salud del servicio |
 
-> **¿Qué falta decidir?**
->
-> Los contratos HTTP, los esquemas definitivos de datos, los algoritmos criptográficos, la confirmación del voto, los conectores HTTP concretos, el despliegue y la distribución de responsabilidades.
+### 4.3 `voting` — gRPC (puerto 50051, solo red interna)
 
-Solo después de cerrar estas decisiones debería comenzar la implementación coordinada del prototipo.
+```proto
+syntax = "proto3";
+package voting.v1;
+option go_package = "votaciones/voting/gen/votingv1";
+
+service VotingAdmin {
+  rpc PublishUrna(PublishUrnaRequest)     returns (Ack);
+  rpc SetUrnaStatus(SetUrnaStatusRequest) returns (Ack);
+  rpc RegisterToken(RegisterTokenRequest) returns (Ack);
+  rpc GetVoteCount(GetVoteCountRequest)   returns (VoteCountResponse);
+}
+
+message PublishUrnaRequest {
+  string urna_id = 1;
+  repeated string option_ids = 2;
+  string public_key_pem = 3;
+  int64 opens_at = 4;   // epoch seconds
+  int64 closes_at = 5;
+}
+message SetUrnaStatusRequest { string urna_id = 1; string status = 2; } // "open" | "closed"
+message RegisterTokenRequest { string urna_id = 1; string token_hash = 2; int64 expires_at = 3; }
+message GetVoteCountRequest  { string urna_id = 1; }
+message VoteCountResponse    { int64 count = 1; }
+message Ack                  { bool ok = 1; string message = 2; }
+```
+
+### 4.4 Modelo de datos
+
+**PostgreSQL (`identity`)**
+
+```
+users(id, document_id UNIQUE, full_name, password_hash, role, created_at)
+urnas(id, name, description, opens_at, closes_at, status, public_key_pem, created_by)
+urna_options(id, urna_id → urnas, label, position)
+padron(urna_id → urnas, user_id → users, token_issued BOOL, issued_at, PRIMARY KEY(urna_id, user_id))
+```
+
+**MongoDB (`voting`)**
+
+```
+urna_config   { _id: urna_id, status, option_ids[], public_key_pem, opens_at, closes_at }   // admite update
+issued_tokens { token_hash, urna_id, expires_at }                                           // insert-only
+used_tokens   { token_hash (índice ÚNICO), urna_id, used_at }                               // insert-only
+votes         { receipt, urna_id, ciphertext, enc_key, iv, created_at }                     // insert-only
+```
+
+---
+
+## 5. Stack tecnológico propuesto
+
+| Componente | Tecnología sugerida |
+|---|---|
+| `web` | Next.js (App Router) + TypeScript, Web Crypto API, cliente API tipado generado desde OpenAPI |
+| `identity` | Python 3.12, FastAPI, SQLAlchemy + Alembic, `grpcio`, `argon2-cffi`, `pytest` |
+| `voting` | Go 1.22+, `net/http` + `chi`, `mongo-driver`, `grpc-go`, `testing` |
+| Datos | PostgreSQL 16, MongoDB 7 |
+| Contenedores | Docker + Docker Compose, Dockerfiles *multi-stage* |
+| Utilidades | `Makefile`, OpenSSL (certificados mTLS), `protoc` / `buf` |
+
+---
+
+## 6. Estructura del repositorio (monorepo)
+
+```
+votaciones/
+├── README.md
+├── Makefile
+├── docker-compose.yml
+├── .env.example
+├── proto/
+│   └── voting.proto
+├── contracts/
+│   ├── identity.openapi.yaml
+│   └── voting.openapi.yaml
+├── certs/
+│   └── gen-certs.sh            # CA + certs de identity (cliente) y voting (servidor)
+├── db/
+│   ├── postgres/init.sql
+│   └── mongo/init.js           # usuario/rol insert-only + índices
+├── web/                        # Next.js + TypeScript
+├── identity/                   # Python (FastAPI)
+├── voting/                     # Go
+├── scripts/
+│   └── smoke_test.sh           # prueba E2E por curl
+└── docs/
+    ├── cc-view.png
+    ├── logo.png
+    └── p1_X.md                 # artefacto final → p1_X.pdf
+```
+
+---
+
+## 7. Reparto de tareas (8 integrantes)
+
+Reemplazar `M1…M8` por los nombres reales. Cada persona tiene un **revisor cruzado** para los *pull requests*.
+
+| Rol | Integrante | Frente | Revisor cruzado |
+|---|---|---|---|
+| **M1** | _(nombre)_ | Líder técnico · arquitectura · integración · artefacto | M2 |
+| **M2** | _(nombre)_ | DevOps · contenedores · mTLS | M1 |
+| **M3** | _(nombre)_ | Frontend A · login y administración | M4 |
+| **M4** | _(nombre)_ | Frontend B · votación y criptografía | M3 |
+| **M5** | _(nombre)_ | Python A · identidad, roles, PostgreSQL | M6 |
+| **M6** | _(nombre)_ | Python B · urnas, token anónimo, cliente gRPC | M5 |
+| **M7** | _(nombre)_ | Go A · API HTTP de voto, MongoDB | M8 |
+| **M8** | _(nombre)_ | Go B · servidor gRPC, tokens, QA | M7 |
+
+### M1 — Líder técnico, arquitectura e integración
+
+| ID | Tarea | Entregable / criterio de aceptación |
+|---|---|---|
+| T1.1 | Crear repo, estructura de carpetas, ramas protegidas, plantilla de PR | Estructura de la sección 6 en `main` el día 1 |
+| T1.2 | Redactar `identity.openapi.yaml`, `voting.openapi.yaml` y `voting.proto` junto con M5, M6, M7, M8 | Contratos congelados (cambios solo vía PR con aprobación de M1) |
+| T1.3 | Diagrama C&C final + descripción de estilos, elementos y relaciones | Secciones 2.2 y 2.3 pulidas para el artefacto |
+| T1.4 | Pruebas de integración E2E (con M8): `smoke_test.sh` del flujo completo | Script que hace login → token → voto → recibo y falla si algo se rompe |
+| T1.5 | Armar `docs/p1_X.md` y exportar a `p1_X.pdf` (nombre, logo, descripción, C&C, comandos) | PDF con todos los puntos de la sección 10 |
+| T1.6 | Guion y ensayo de la presentación del martes 13 | Demo de ≤ 10 min ensayada (sección 12) |
+
+### M2 — DevOps, contenedores y seguridad de transporte
+
+| ID | Tarea | Entregable / criterio de aceptación |
+|---|---|---|
+| T2.1 | `Dockerfile` *multi-stage* para `web`, `identity` y `voting` | Imágenes que construyen sin errores y corren como usuario no root |
+| T2.2 | `docker-compose.yml` con 5 servicios, healthchecks, volúmenes y dependencias | `docker compose up --build` deja todo en estado *healthy* |
+| T2.3 | Redes aisladas: `net_pg` (identity+postgres), `net_mongo` (voting+mongo), `net_app` (web/identity/voting) | Verificar que `identity` **no** resuelve `mongo` y `voting` **no** resuelve `postgres` |
+| T2.4 | `certs/gen-certs.sh`: CA propia + certificados de servidor (`voting`) y cliente (`identity`) | `make certs` genera los archivos; gRPC sin cert de cliente es rechazado |
+| T2.5 | `.env.example`, `Makefile` (`up`, `down`, `certs`, `seed`, `test`, `logs`) | Un compañero levanta el sistema en limpio con 4 comandos |
+| T2.6 | Prueba en máquina limpia y sección "Prototype" del artefacto (comandos de descarga y ejecución) | Comandos verificados por alguien que no escribió el código |
+
+### M3 — Frontend A: login y administración
+
+| ID | Tarea | Entregable / criterio de aceptación |
+|---|---|---|
+| T3.1 | Proyecto Next.js + TypeScript, layout, estilos base, variables de entorno de URLs de API | `web` corre en `:3000` y en contenedor |
+| T3.2 | Cliente API tipado generado desde `identity.openapi.yaml` | Tipos compartidos con M4; sin `any` en llamadas a la API |
+| T3.3 | Pantalla de login y manejo de sesión (JWT) | Login correcto/incorrecto; sesión guardada; cierre de sesión |
+| T3.4 | Guardas de ruta por rol (`admin` vs `votante`) | Un votante no puede abrir `/admin/*` |
+| T3.5 | Pantallas de admin: usuarios, crear urna con opciones, asignar padrón, abrir/cerrar urna | Todo el ciclo de administración se hace desde la UI |
+| T3.6 | Pruebas de componentes críticos (login, guardas) | Pruebas pasando en CI/local |
+
+### M4 — Frontend B: votación y criptografía
+
+| ID | Tarea | Entregable / criterio de aceptación |
+|---|---|---|
+| T4.1 | Listado de urnas disponibles para el votante y detalle de urna | Muestra solo urnas del padrón del usuario |
+| T4.2 | Flujo "solicitar token" (`POST /urnas/{id}/token`) y manejo de errores (`409`, `403`) | Mensajes claros al usuario |
+| T4.3 | Módulo `crypto.ts`: cifrado híbrido AES-GCM + RSA-OAEP con Web Crypto | El texto plano del voto **nunca** sale del navegador (verificar en pestaña Red) |
+| T4.4 | Pantalla de votación y envío a `voting` (`POST /votes`) con el token | Voto enviado; se muestra el recibo |
+| T4.5 | Pantalla "verificar recibo" (`GET /votes/{receipt}`) | Confirma que el voto fue registrado |
+| T4.6 | Pruebas unitarias del módulo `crypto.ts` (cifrar y descifrar con par de llaves de prueba) | Pruebas pasando |
+
+### M5 — Python A: identidad, roles y PostgreSQL
+
+| ID | Tarea | Entregable / criterio de aceptación |
+|---|---|---|
+| T5.1 | Proyecto FastAPI, configuración por entorno, `/healthz` | Servicio corre en `:8000` y en contenedor |
+| T5.2 | Modelos SQLAlchemy de `users`, `urnas`, `urna_options`, `padron` + migraciones/`init.sql` | Esquema creado automáticamente al levantar `postgres` |
+| T5.3 | `POST /auth/login` con hash de contraseña (argon2) y emisión de JWT con rol | Login funcional; contraseñas nunca en texto plano |
+| T5.4 | Middleware/dependencias de autorización por rol (RBAC) y `GET /me` | `403` correcto para rutas de admin con rol votante |
+| T5.5 | CRUD de usuarios (`/admin/users`) y *seed* (1 admin + N votantes de prueba) | `make seed` deja datos listos para la demo |
+| T5.6 | Pruebas `pytest` de auth y RBAC | Cobertura de casos felices y de error |
+
+### M6 — Python B: urnas, token anónimo y cliente gRPC
+
+| ID | Tarea | Entregable / criterio de aceptación |
+|---|---|---|
+| T6.1 | `POST /admin/urnas` (crea urna + opciones + **par de llaves RSA** de la urna) y `PUT /admin/urnas/{id}/padron` | La urna queda en PostgreSQL con su llave pública |
+| T6.2 | `GET /urnas` y `GET /urnas/{id}` filtrados por padrón del usuario | Un votante fuera del padrón recibe `403`/`404` |
+| T6.3 | Generar código gRPC cliente desde `proto/voting.proto` y conexión **mTLS** a `voting` | Cliente conecta con certificados de `certs/` |
+| T6.4 | `PATCH /admin/urnas/{id}/status` → llama `PublishUrna` / `SetUrnaStatus` | Abrir una urna la deja operativa en Go |
+| T6.5 | `POST /urnas/{id}/token`: valida reglas, genera token, marca `token_issued`, llama `RegisterToken` con el **hash**, devuelve el token crudo una sola vez | Segundo intento → `409`; el token no queda guardado en PostgreSQL |
+| T6.6 | Pruebas con servidor gRPC *mock* | Pruebas pasando sin depender de `voting` real |
+
+### M7 — Go A: API HTTP de voto y MongoDB
+
+| ID | Tarea | Entregable / criterio de aceptación |
+|---|---|---|
+| T7.1 | Proyecto Go, router HTTP, configuración, CORS (origen de `web`), `/healthz` | Servicio corre en `:8081` y en contenedor |
+| T7.2 | `POST /votes`: validación de payload (tamaños, base64, campos obligatorios) | Payload inválido → `400` |
+| T7.3 | Repositorio MongoDB para `votes` (**solo insert**) y generación de `receipt` (hash del voto cifrado) | Ninguna operación `update`/`delete` en el código de votos |
+| T7.4 | Integrar el validador de token de M8 en el flujo de `POST /votes` (orden de la regla 7) | `401`, `409`, `403` y `201` según corresponda |
+| T7.5 | `GET /votes/{receipt}` | `200`/`404` correctos |
+| T7.6 | Limitación básica de tasa y límite de tamaño del *body* | Peticiones abusivas rechazadas |
+| T7.7 | Pruebas unitarias y de integración con Mongo de prueba | Pruebas pasando |
+
+### M8 — Go B: servidor gRPC, tokens y QA
+
+| ID | Tarea | Entregable / criterio de aceptación |
+|---|---|---|
+| T8.1 | Generar código gRPC servidor desde `proto/voting.proto` y levantar servidor en `:50051` con **mTLS** (verifica certificado de cliente) | Cliente sin certificado válido es rechazado |
+| T8.2 | Implementar `PublishUrna` y `SetUrnaStatus` sobre `urna_config` | El estado de la urna se refleja en `POST /votes` |
+| T8.3 | Implementar `RegisterToken` sobre `issued_tokens` | Hash registrado con vencimiento |
+| T8.4 | Paquete `internal/tokens` con interfaz `ValidateAndConsume(ctx, urnaID, token)` (acordar firma con M7 el día 1) | Usa `issued_tokens` + `used_tokens` con índice único |
+| T8.5 | Implementar `GetVoteCount` | Devuelve el conteo de votos recibidos por urna |
+| T8.6 | `db/mongo/init.js`: usuario de aplicación con rol **insert + find** (sin update/remove en `votes`, `issued_tokens`, `used_tokens`) e índices | Un intento de `update` sobre `votes` con el usuario de la app falla |
+| T8.7 | Apoyo a M1 en pruebas E2E y casos negativos (doble voto, urna cerrada, token falso) | Matriz de pruebas negativas ejecutada |
+
+---
+
+## 8. Cronograma (hoy es miércoles 7 de octubre — quedan 5 días)
+
+El plazo es corto, por eso el plan prioriza **contratos primero**, **integración temprana** y **congelamiento de código el domingo**.
+
+| Fecha | Hito | Qué se espera al final del día |
+|---|---|---|
+| **Mié 7 oct** | Kick-off y contratos | Repo creado (T1.1); OpenAPI + `.proto` congelados (T1.2); firma de `ValidateAndConsume` acordada (M7/M8); cada quien con su esqueleto corriendo local; M2 con Dockerfiles base. |
+| **Jue 8 oct** | Desarrollo en paralelo con *mocks* | `identity`: login + RBAC + urnas (T5.x, T6.1-6.2). `voting`: `POST /votes` + repositorio Mongo (T7.x). Frontend: login, cliente API, módulo crypto. `docker-compose` levanta 5 servicios (T2.2, T2.3). |
+| **Vie 9 oct** | **Primera integración E2E** | gRPC con mTLS operativo (T2.4, T6.3, T8.1); token anónimo de punta a punta (T6.5, T8.3, T8.4); pantalla de votación conectada. Primer `smoke_test.sh` en verde (aunque sea con huecos). |
+| **Sáb 10 oct** | Completar y endurecer | Pantallas de admin completas (T3.5); casos negativos (T8.7); pruebas unitarias; `make up` desde cero verificado por alguien ajeno al código (T2.6). Borrador del artefacto (T1.3, T1.5). |
+| **Dom 11 oct** | **Congelamiento de código (12:00 m.)** | Solo se aceptan correcciones de errores. Artefacto final `.md` → `.pdf`; ensayo de la demo (T1.6). |
+| **Lun 12 oct** | **Entrega** | Un solo integrante sube `p1_X.pdf` en MiCampus **temprano** (dejar margen ante fallas de la plataforma). |
+| **Mar 13 oct** | Presentación en clase | Demo en vivo + plan B (video corto grabado el domingo). |
+
+---
+
+## 9. Convenciones de trabajo
+
+- **Ramas:** `main` (protegida, siempre demostrable) y ramas `feat/<área>-<descripción>`; fusión solo por PR con **1 aprobación del revisor cruzado**.
+- **Commits:** estilo *Conventional Commits* (`feat:`, `fix:`, `docs:`, `chore:`).
+- **Cambios de contrato:** cualquier cambio en `contracts/` o `proto/` se avisa en el canal del equipo y requiere aprobación de M1.
+- **Definición de "terminado" por tarea:**
+  1. Funciona dentro de su contenedor (no solo en la máquina local).
+  2. Tiene al menos una prueba automatizada o un caso en `smoke_test.sh`.
+  3. Está documentado en el README de su carpeta (cómo correrlo y variables de entorno).
+  4. Pasó revisión cruzada.
+- **Sincronización:** reunión corta diaria (15 min) y una sesión de integración el viernes.
+- **Secretos:** nada de contraseñas ni llaves privadas en el repositorio; usar `.env` (ignorado por Git) y `.env.example`.
+
+---
+
+## 10. Contenido del artefacto final `p1_X.pdf`
+
+El enunciado pide que el artefacto se cree en `.md`, se exporte a `.pdf` y se nombre `p1_X.pdf` (X = nombre del equipo: 1a, 1b, 2a…).
+
+Lista de verificación:
+
+- [ ] **Team:** nombre del equipo (`1a`, `1b`, `2a`…) y nombres completos de los integrantes.
+- [ ] **Software System:** nombre, logo y descripción.
+- [ ] **C&C View:** diagrama de la sección 2 con leyenda de conectores.
+- [ ] **Descripción de estilos arquitectónicos** usados (sección 2.2).
+- [ ] **Descripción de elementos y relaciones** (sección 2.3).
+- [ ] **Prototype:** comandos para descargar y ejecutar (sección 11).
+- [ ] Exportado a `.pdf` y nombrado `p1_X.pdf`.
+- [ ] Subido a MiCampus UNAL por **un solo** integrante antes del lunes 12 de octubre.
+
+---
+
+## 11. Comandos de ejecución (borrador para el artefacto)
+
+```bash
+# 1. Descargar el proyecto
+git clone <URL_DEL_REPOSITORIO> votaciones
+cd votaciones
+
+# 2. Configurar variables de entorno
+cp .env.example .env
+
+# 3. Generar certificados para mTLS (CA, servidor Go, cliente Python)
+make certs
+
+# 4. Construir y levantar todos los contenedores
+docker compose up --build -d
+
+# 5. Cargar datos de prueba (1 admin + votantes)
+make seed
+
+# 6. (Opcional) Ejecutar la prueba de humo end-to-end
+make test
+```
+
+| Servicio | URL |
+|---|---|
+| Frontend | http://localhost:3000 |
+| API Identidad (Python) | http://localhost:8000 |
+| API Votación (Go) | http://localhost:8081 |
+
+Credenciales de prueba (definir en el *seed*): `admin / ********` y `votante1 / ********`.
+
+---
+
+## 12. Guion de demostración (≤ 10 minutos)
+
+1. **Arquitectura (2 min):** mostrar la vista C&C, los tres lenguajes, los dos tipos de conectores HTTP y las dos bases de datos aisladas.
+2. **Administración (2 min):** iniciar sesión como admin, crear una urna con 3 opciones, asignar padrón, abrirla.
+3. **Votación (3 min):** iniciar sesión como votante, solicitar token, votar; mostrar en la pestaña **Red** del navegador que el voto viaja cifrado; mostrar el recibo.
+4. **Seguridad (2 min):**
+   - Intentar votar dos veces → `409`.
+   - Mostrar un documento en MongoDB: contenido cifrado y sin identidad del votante.
+   - Mostrar que `identity` no alcanza a `mongo` y `voting` no alcanza a `postgres`.
+5. **Cierre (1 min):** limitaciones asumidas (sin escrutinio, sin firmas ciegas) y trabajo para P2.
+
+**Plan B:** video corto de la demo grabado el domingo, y un `docker compose` ya levantado antes de entrar a clase.
+
+---
+
+## 13. Riesgos y mitigaciones
+
+| Riesgo | Probabilidad | Mitigación |
+|---|---|---|
+| Poco tiempo (5 días) | Alta | Contratos el día 1; *mocks*; integración E2E el viernes; congelamiento el domingo a mediodía. |
+| Integración tardía entre frentes | Alta | `docker-compose` desde el día 2; M1 y M8 integran continuamente. |
+| mTLS mal configurado (CN/SAN de los certificados) | Media | M2 entrega `gen-certs.sh` el jueves; M6 y M8 prueban en pareja el viernes temprano. |
+| CORS entre `web` y las dos APIs | Media | Definir orígenes permitidos por variable de entorno desde el día 1. |
+| Web Crypto solo funciona en contexto seguro | Media | `localhost` cuenta como contexto seguro; si se despliega con otro host, usar HTTPS. |
+| Pérdida de voto si falla el insert tras consumir el token | Baja | Documentarlo como limitación; mejora en P2 con *replica set* y transacciones. |
+| Cambios de contrato a mitad de camino | Media | Cambios solo por PR aprobado por M1 y aviso al equipo. |
+| Falla de la plataforma el día de la entrega | Baja | Subir el PDF el lunes temprano y conservar copia local. |
