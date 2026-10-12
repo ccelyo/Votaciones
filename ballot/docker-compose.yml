@@ -1,0 +1,29 @@
+# Local development: MongoDB as a single-node replica set (transactions need one)
+# plus the ballot service. Generate the receipt key with:
+#   export BALLOT_RECEIPT_PRIVATE_KEY=$(openssl rand 64 | base64)
+services:
+  mongo:
+    image: mongo:8.0
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    ports: ["27017:27017"]
+    volumes: ["mongo-data:/data/db"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "try { rs.status().ok } catch (e) { rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'mongo:27017'}]}).ok }"]
+      interval: 5s
+      retries: 20
+
+  ballot:
+    build: .
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/?replicaSet=rs0&directConnection=true
+      MONGODB_DATABASE: votaciones
+      BALLOT_RECEIPT_PRIVATE_KEY: ${BALLOT_RECEIPT_PRIVATE_KEY:?set BALLOT_RECEIPT_PRIVATE_KEY}
+      BALLOT_GRPC_ADDR: 0.0.0.0:9091
+      BALLOT_ALLOWED_ORIGINS: http://localhost:3000
+    ports: ["8080:8080", "127.0.0.1:9091:9091"]
+
+volumes:
+  mongo-data:
