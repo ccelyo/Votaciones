@@ -1,5 +1,9 @@
-import Link from "next/link";
+"use client";
 
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
+import { getCurrentUser } from "@/lib/api";
 import type { Election } from "@/lib/types/election";
 
 type ElectionCardProps = {
@@ -7,6 +11,26 @@ type ElectionCardProps = {
 };
 
 export function ElectionCard({ election }: ElectionCardProps) {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkSession() {
+      const user = await getCurrentUser();
+      if (!cancelled) {
+        setIsAuthenticated(user !== null);
+      }
+    }
+
+    checkSession();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const votePath = `/elections/${election.id}/vote`;
+
   return (
     <article className="flex h-full flex-col rounded-2xl border border-border bg-surface p-6 shadow-sm">
       <div className="flex-1">
@@ -32,12 +56,25 @@ export function ElectionCard({ election }: ElectionCardProps) {
         </dl>
       </div>
 
-      <Link
-        href="/login"
-        className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-emerald-800 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800"
-      >
-        Inicia sesión para participar
-      </Link>
+      {isAuthenticated === null ? (
+        <span
+          className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-emerald-800 px-5 py-2 text-sm font-semibold text-white opacity-60"
+          aria-live="polite"
+        >
+          Verificando sesión...
+        </span>
+      ) : (
+        <Link
+          href={
+            isAuthenticated
+              ? votePath
+              : `/login?next=${encodeURIComponent(votePath)}`
+          }
+          className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-emerald-800 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800"
+        >
+          {isAuthenticated ? "Votar" : "Inicia sesión para participar"}
+        </Link>
+      )}
     </article>
   );
 }

@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-
-import { getCurrentUser } from "@/lib/api";
-import { Icon, RiArrowDownSLine } from "@/components/icons";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Icon, RiMenuLine } from "@/components/icons";
+import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Logo } from "@/components/layout/Logo";
+import { getCurrentUser, logout } from "@/lib/api";
 import type { User } from "@/lib/types/user";
 
 const ROUTES = {
@@ -18,18 +19,6 @@ type HeaderProps = {
   activePath?: (typeof ROUTES)[keyof typeof ROUTES];
   variant?: "marketing";
 };
-
-function getInitial(fullName: string): string {
-  return (fullName.trim()[0] ?? "?").toUpperCase();
-}
-
-function formatShortName(fullName: string): string {
-  const parts = fullName.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "";
-  if (parts.length === 1) return parts[0];
-  const lastInitial = parts[parts.length - 1][0]?.toUpperCase() ?? "";
-  return `${parts[0]} ${lastInitial}.`;
-}
 
 function AuthActionsSkeleton() {
   return (
@@ -46,7 +35,11 @@ function AuthActionsSkeleton() {
   );
 }
 
-function GuestAuthActions({ activePath }: { activePath?: HeaderProps["activePath"] }) {
+function GuestAuthActions({
+  activePath,
+}: {
+  activePath?: HeaderProps["activePath"];
+}) {
   return (
     <>
       <Link
@@ -67,58 +60,13 @@ function GuestAuthActions({ activePath }: { activePath?: HeaderProps["activePath
   );
 }
 
-function UserMenu({
-  user,
-  menuOpen,
-  menuRef,
-  onToggleMenu,
-}: {
-  user: User;
-  menuOpen: boolean;
-  menuRef: React.RefObject<HTMLDivElement | null>;
-  onToggleMenu: () => void;
-}) {
-  return (
-    <div className="relative shrink-0" ref={menuRef}>
-      <button
-        type="button"
-        onClick={onToggleMenu}
-        className="header-user-trigger"
-        aria-expanded={menuOpen}
-        aria-haspopup="menu"
-      >
-        <span className="header-user-avatar" aria-hidden="true">
-          {getInitial(user.full_name)}
-        </span>
-        <span className="hidden max-w-[7.5rem] truncate sm:inline">
-          {formatShortName(user.full_name)}
-        </span>
-        <Icon
-          icon={RiArrowDownSLine}
-          size={16}
-          className={`shrink-0 text-subtle transition-transform duration-200 ${
-            menuOpen ? "rotate-180" : ""
-          }`}
-        />
-      </button>
-
-      {menuOpen && (
-        <div role="menu" className="header-menu">
-          <div className="header-menu-user">
-            <p className="truncate text-sm font-semibold text-foreground">{user.full_name}</p>
-            <p className="mt-0.5 truncate text-xs text-subtle">{user.email}</p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function Header({ activePath }: HeaderProps) {
-  const menuRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
 
   // Consulta de sesión
   useEffect(() => {
@@ -139,17 +87,34 @@ export function Header({ activePath }: HeaderProps) {
     };
   }, []);
 
-  // Cerrar el menú al hacer clic fuera
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setMenuOpen(false);
-      }
+    if (!sidebarOpen) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setSidebarOpen(false);
     }
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [sidebarOpen]);
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+    setLogoutError(null);
+    try {
+      await logout();
+      setSidebarOpen(false);
+      setUser(null);
+      router.replace("/login");
+      router.refresh();
+    } catch (error) {
+      setLogoutError(
+        error instanceof Error ? error.message : "No se pudo cerrar sesión.",
+      );
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }
 
   return (
     <header className="z-20 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border bg-surface px-4 sm:px-6">
@@ -162,19 +127,50 @@ export function Header({ activePath }: HeaderProps) {
       </Link>
 
       <div className="flex items-center gap-3" aria-busy={isLoading}>
+        {process.env.NEXT_PUBLIC_API_MODE === "mock" ? (
+          <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900">
+            Demo
+          </span>
+        ) : null}
         {isLoading ? (
           <AuthActionsSkeleton />
         ) : user ? (
-          <UserMenu
-            user={user}
-            menuOpen={menuOpen}
-            menuRef={menuRef}
-            onToggleMenu={() => setMenuOpen((open) => !open)}
-          />
+          <button
+            type="button"
+            onClick={() => {
+              setLogoutError(null);
+              setSidebarOpen(true);
+            }}
+            className="inline-flex size-11 items-center justify-center rounded-full text-foreground transition-colors hover:bg-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800"
+            aria-label="Abrir menú de usuario"
+            aria-expanded={sidebarOpen}
+            aria-controls="user-sidebar"
+          >
+            <Icon icon={RiMenuLine} size={24} />
+          </button>
         ) : (
           <GuestAuthActions activePath={activePath} />
         )}
       </div>
+      {user ? (
+        <>
+          <AppSidebar
+            user={user}
+            isOpen={sidebarOpen}
+            isLoggingOut={isLoggingOut}
+            onClose={() => setSidebarOpen(false)}
+            onLogout={handleLogout}
+          />
+          {logoutError ? (
+            <div
+              role="alert"
+              className="fixed bottom-4 right-4 z-[60] max-w-sm rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900 shadow-lg"
+            >
+              {logoutError}
+            </div>
+          ) : null}
+        </>
+      ) : null}
     </header>
   );
 }
