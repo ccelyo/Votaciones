@@ -43,6 +43,11 @@ MANIFEST
 .env.local
 .env.*.local
 
+# Claves privadas de identidad generadas en desarrollo (NUNCA versionar)
+keys/
+*.pem
+*.db
+
 # ──────────────────────────────────────────────────────────────────────────────
 # IDEs and OS Files
 # ──────────────────────────────────────────────────────────────────────────────

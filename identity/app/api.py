@@ -1,0 +1,184 @@
+"""API HTTP del servicio de identidad (REST/JSON).
+
+Endpoints de mi frente (M6); ``/login`` y la confirmación de voto son de M5/M1:
+
+* ``POST /elections``                       admin: crea y registra la urna en ballot
+* ``POST /elections/{id}/close``            admin: cierra la urna (irreversible)
+* ``GET  /elections/{id}/status``           admin: estado y participación
+* ``GET  /elections/{id}/parameters``       público: parámetros firmados para el navegador
+* ``GET  /keys``                            público: claves públicas de identidad
+* ``POST /tokens/blind``                    votante autenticado: firma ciega del token
+"""
+
+from collections.abc import Iterator
+
+from fastapi import APIRouter, Depends, Request
+from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy.orm import Session
+
+from app import elections as election_service
+from app import tokens as token_service
+from app.auth import Principal, get_principal, require_admin
+from app.ballot_client import BallotGateway
+from app.encoding import b64url_decode, b64url_encode
+from app.keys import IdentityKeys
+
+router = APIRouter()
+
+
+# --- dependencias -----------------------------------------------------------
+
+
+def get_session(request: Request) -> Iterator[Session]:
+    with request.app.state.session_factory() as session:
+        yield session
+
+
+def get_ballot(request: Request) -> BallotGateway:
+    return request.app.state.ballot
+
+
+def get_keys(request: Request) -> IdentityKeys:
+    return request.app.state.keys
+
+
+# --- esquemas ---------------------------------------------------------------
+
+
+class _Strict(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class CreateElectionRequest(_Strict):
+    election_id: str | None = Field(default=None, max_length=128)
+    options: list[str] = Field(max_length=100)
+    encryption_public_key: str = Field(description="Clave pública de la elección, base64url")
+    opens_at: int = Field(description="Epoch en segundos UTC")
+    closes_at: int = Field(description="Epoch en segundos UTC")
+
+
+class BlindTokenRequest(_Strict):
+    election_id: str = Field(max_length=128)
+    blinded_token: str = Field(max_length=4096, description="Mensaje cegado, base64url")
+
+
+# --- votante ----------------------------------------------------------------
+
+
+@router.post("/tokens/blind")
+def blind_token(
+    body: BlindTokenRequest,
+    principal: Principal = Depends(get_principal),
+    session: Session = Depends(get_session),
+    keys: IdentityKeys = Depends(get_keys),
+) -> dict:
+    result = token_service.issue_blind_signature(
+        session,
+        keys,
+        user_id=principal.user_id,
+        election_id=body.election_id,
+        blinded_message=b64url_decode(body.blinded_token, "blinded_token"),
+    )
+    return {
+        "kid": result.kid,
+        "variant": result.variant,
+        "blind_signature": b64url_encode(result.blind_signature),
+    }
+
+
+# --- público ----------------------------------------------------------------
+
+
+@router.get("/elections/{election_id}/parameters")
+def election_parameters(election_id: str, session: Session = Depends(get_session)) -> dict:
+    election = election_service.get_election(session, election_id)
+    return {
+        "election_id": election.id,
+        "options": election.options,
+        "encryption_public_key": b64url_encode(election.encryption_public_key),
+        "opens_at": election.opens_at,
+        "closes_at": election.closes_at,
+        "token_key": {
+            "kid": election.token_kid,
+            "public_key_der": b64url_encode(election.token_public_key_der),
+            "variant": election.token_variant,
+        },
+        # El navegador debe verificar `signature` sobre estos bytes exactos.
+        "signed_parameters": b64url_encode(election.signed_parameters),
+        "signature": {
+            "key_id": election.parameter_signing_key_id,
+            "algorithm": election.parameter_signature_algorithm,
+            "value": b64url_encode(election.parameter_signature),
+        },
+    }
+
+
+@router.get("/keys")
+def public_keys(keys: IdentityKeys = Depends(get_keys)) -> dict:
+    return {
+        "token_signing": {
+            "kid": keys.token_kid,
+            "public_key_der": b64url_encode(keys.token_public_der),
+        },
+        "parameter_signing": {
+            "key_id": keys.parameter_key_id,
+            "algorithm": "Ed25519",
+            "public_key": b64url_encode(keys.parameter_public_raw),
+        },
+    }
+
+
+# --- administración ---------------------------------------------------------
+
+
+@router.post("/elections", status_code=201)
+def create_election(
+    body: CreateElectionRequest,
+    _: Principal = Depends(require_admin),
+    session: Session = Depends(get_session),
+    ballot: BallotGateway = Depends(get_ballot),
+    keys: IdentityKeys = Depends(get_keys),
+) -> dict:
+    election = election_service.create_election(
+        session,
+        ballot,
+        keys,
+        election_id=body.election_id,
+        options=body.options,
+        encryption_public_key=b64url_decode(body.encryption_public_key, "encryption_public_key"),
+        opens_at=body.opens_at,
+        closes_at=body.closes_at,
+    )
+    return {"election_id": election.id, "status": election.status}
+
+
+@router.post("/elections/{election_id}/close")
+def close_election(
+    election_id: str,
+    _: Principal = Depends(require_admin),
+    session: Session = Depends(get_session),
+    ballot: BallotGateway = Depends(get_ballot),
+) -> dict:
+    election = election_service.close_election(session, ballot, election_id)
+    return {"election_id": election.id, "status": election.status}
+
+
+@router.get("/elections/{election_id}/status")
+def status(
+    election_id: str,
+    _: Principal = Depends(require_admin),
+    session: Session = Depends(get_session),
+    ballot: BallotGateway = Depends(get_ballot),
+) -> dict:
+    result = election_service.election_status(session, ballot, election_id)
+    return {
+        "election_id": result.election_id,
+        "identity_status": result.identity_status,
+        "ballot_status": result.ballot_status,
+        "total_ballots": result.total_ballots,
+    }
+
+
+@router.get("/health")
+def health() -> dict:
+    return {"status": "ok"}

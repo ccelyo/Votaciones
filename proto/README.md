@@ -33,6 +33,10 @@ python -m grpc_tools.protoc -I proto \
   --python_out=identity/app/pb \
   --grpc_python_out=identity/app/pb \
   ballot.proto
+
+# El generador emite un import absoluto; dentro del paquete debe ser relativo.
+sed -i '' 's/^import ballot_pb2 as ballot__pb2/from . import ballot_pb2 as ballot__pb2/' \
+  identity/app/pb/ballot_pb2_grpc.py   # en Linux: sed -i sin ''
 ```
 
 ## Estado de acuerdos

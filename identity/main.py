@@ -1,5 +1,8 @@
+import uvicorn
+
+
 def main():
-    print("Hello from identity!")
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000)
 
 
 if __name__ == "__main__":
