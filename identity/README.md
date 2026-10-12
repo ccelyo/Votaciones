@@ -116,10 +116,11 @@ Todo va en **base64url sin relleno**, no base64 estándar (`btoa`).
 
 ## Pendiente de otros frentes
 
-- **M5**: reemplazar `app/auth.py::get_principal` por la sesión real (login + MFA + roles).
-  Hoy `IDENTITY_DEV_AUTH=true` acepta `X-Dev-User` (id numérico de `users`) y `X-Dev-Roles`; está
-  **apagado por defecto** y no debe usarse fuera de desarrollo.
-- **M5/M1**: la confirmación "usuario votó" (`has_voted`, `/vote-confirmation`) no está implementada.
+- **M5**: autenticación con login, MFA y sesiones persistentes implementada.
+  `IDENTITY_DEV_AUTH=true` conserva `X-Dev-User` y `X-Dev-Roles` únicamente para desarrollo y pruebas;
+  está **apagado por defecto**.
+- **M5/M1**: implementado `POST /vote-confirmation`, autenticado con sesión, para marcar
+  `has_voted=true` usando únicamente `election_id`, sin enviar datos de la papeleta ni del recibo.
 - **M2**: Dockerfile, carga de `schema.sql` al iniciar PostgreSQL y mTLS del canal gRPC
   (hoy `grpc.insecure_channel`, igual que el listener de `ballot`).
 - **M8**: ejecutar un token real firmado por este servicio contra el verificador Go.
