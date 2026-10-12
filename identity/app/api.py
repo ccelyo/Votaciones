@@ -33,6 +33,8 @@ import secrets
 from app.errors import Unauthenticated
 from app.sessions import create_mfa_challenge, complete_mfa_challenge
 
+from app import voter_roll as voter_roll_service
+
 router = APIRouter()
 
 
@@ -65,6 +67,14 @@ class LoginRequest(_Strict):
 class MFARequest(_Strict):
     challenge_id: str = Field(min_length=1, max_length=256)
     code: str = Field(min_length=6, max_length=6)
+
+class EnrollVoterRequest(_Strict):
+    user_id: int = Field(gt=0)
+    is_eligible: bool = True
+
+
+class UpdateEligibilityRequest(_Strict):
+    is_eligible: bool
 
 
 class CreateElectionRequest(_Strict):
@@ -250,6 +260,75 @@ def status(
         "identity_status": result.identity_status,
         "ballot_status": result.ballot_status,
         "total_ballots": result.total_ballots,
+    }
+
+# --- padrón electoral -------------------------------------------------------
+
+
+@router.post("/elections/{election_id}/voters", status_code=201)
+def enroll_voter(
+    election_id: str,
+    body: EnrollVoterRequest,
+    _: Principal = Depends(require_admin),
+    session: Session = Depends(get_session),
+) -> dict:
+    entry = voter_roll_service.enroll_voter(
+        session,
+        election_id=election_id,
+        user_id=body.user_id,
+        is_eligible=body.is_eligible,
+    )
+
+    return {
+        "user_id": entry.user_id,
+        "election_id": entry.election_id,
+        "is_eligible": entry.is_eligible,
+        "has_voted": entry.has_voted,
+    }
+
+
+@router.get("/elections/{election_id}/voters")
+def list_voters(
+    election_id: str,
+    _: Principal = Depends(require_admin),
+    session: Session = Depends(get_session),
+) -> list[dict]:
+    entries = voter_roll_service.get_voter_roll(
+        session,
+        election_id=election_id,
+    )
+
+    return [
+        {
+            "user_id": entry.user_id,
+            "election_id": entry.election_id,
+            "is_eligible": entry.is_eligible,
+            "has_voted": entry.has_voted,
+        }
+        for entry in entries
+    ]
+
+
+@router.patch("/elections/{election_id}/voters/{user_id}")
+def update_voter(
+    election_id: str,
+    user_id: int,
+    body: UpdateEligibilityRequest,
+    _: Principal = Depends(require_admin),
+    session: Session = Depends(get_session),
+) -> dict:
+    entry = voter_roll_service.update_voter_eligibility(
+        session,
+        election_id=election_id,
+        user_id=user_id,
+        is_eligible=body.is_eligible,
+    )
+
+    return {
+        "user_id": entry.user_id,
+        "election_id": entry.election_id,
+        "is_eligible": entry.is_eligible,
+        "has_voted": entry.has_voted,
     }
 
 
