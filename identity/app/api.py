@@ -28,6 +28,11 @@ from app.keys import IdentityKeys
 
 from app.login import authenticate_user
 
+import secrets
+
+from app.errors import Unauthenticated
+from app.sessions import create_mfa_challenge, complete_mfa_challenge
+
 router = APIRouter()
 
 
@@ -57,6 +62,10 @@ class LoginRequest(_Strict):
     username: str = Field(min_length=1, max_length=100)
     password: str = Field(min_length=1, max_length=128)    
 
+class MFARequest(_Strict):
+    challenge_id: str = Field(min_length=1, max_length=256)
+    code: str = Field(min_length=6, max_length=6)
+
 
 class CreateElectionRequest(_Strict):
     name: str = Field(max_length=150)
@@ -70,12 +79,14 @@ class BlindTokenRequest(_Strict):
     election_id: str = Field(max_length=128)
     blinded_token: str = Field(max_length=4096, description="Mensaje cegado, base64url")
 
+
 # --- autenticación ----------------------------------------------------------
 
 
 @router.post("/login")
 def login(
     body: LoginRequest,
+    request: Request,
     session: Session = Depends(get_session),
 ) -> dict:
     principal = authenticate_user(
@@ -84,12 +95,40 @@ def login(
         password=body.password,
     )
 
-    return {
-        "user_id": principal.user_id,
-        "roles": sorted(principal.roles),
-        "mfa_required": True,
-    }    
+    challenge_id = create_mfa_challenge(
+        session,
+        principal,
+        ttl_seconds=request.app.state.settings.mfa_challenge_ttl_seconds,
+    )
 
+    return {
+        "mfa_required": True,
+        "challenge_id": challenge_id,
+    }
+
+
+@router.post("/login/mfa")
+def verify_mfa(
+    body: MFARequest,
+    request: Request,
+    session: Session = Depends(get_session),
+) -> dict:
+    settings = request.app.state.settings
+
+    if not secrets.compare_digest(body.code, settings.mfa_code):
+        raise Unauthenticated("invalid MFA code")
+
+    token = complete_mfa_challenge(
+        session,
+        body.challenge_id,
+        session_ttl_seconds=settings.session_ttl_seconds,
+    )
+
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "expires_in": settings.session_ttl_seconds,
+    }
 
 # --- votante ----------------------------------------------------------------
 

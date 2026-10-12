@@ -125,3 +125,60 @@ class IssuedToken(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     election_id: Mapped[int] = mapped_column(ForeignKey("elections.id"))
     issued_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp())
+
+class MFAChallenge(Base):
+    """Desafío temporal requerido para completar el segundo factor."""
+
+    __tablename__ = "mfa_challenges"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    challenge_hash: Mapped[str] = mapped_column(
+        String(64),
+        unique=True,
+        nullable=False,
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+    )
+    used_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        server_default=func.current_timestamp(),
+    )
+
+
+class UserSession(Base):
+    """Sesión autenticada creada después de completar MFA."""
+
+    __tablename__ = "sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    token_hash: Mapped[str] = mapped_column(
+        String(64),
+        unique=True,
+        nullable=False,
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        server_default=func.current_timestamp(),
+    )

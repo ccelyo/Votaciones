@@ -45,6 +45,13 @@ class Settings(BaseSettings):
     # de login + MFA (M5).
     dev_auth: bool = False
 
+    # MFA simplificado para Prototype 1.
+    mfa_code: str = "123456"
+    mfa_challenge_ttl_seconds: int = 300
+
+    # Duración de la sesión autenticada.
+    session_ttl_seconds: int = 3600
+
     @field_validator("database_url")
     @classmethod
     def _normalize(cls, value: str) -> str:
