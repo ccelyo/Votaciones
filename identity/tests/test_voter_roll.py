@@ -1,4 +1,4 @@
-from app.models import Election, Role, User
+from app.models import Election, IssuedToken, Role, User
 from app.security import hash_password
 from tests.conftest import ADMIN
 
@@ -27,8 +27,25 @@ def create_user_and_election(session_factory):
         return user.id, str(election.id)
 
 
+def create_issued_token(
+    session_factory,
+    user_id: int,
+    election_id: str,
+):
+    with session_factory() as session:
+        session.add(
+            IssuedToken(
+                user_id=user_id,
+                election_id=int(election_id),
+            )
+        )
+        session.commit()
+
+
 def test_admin_can_enroll_voter(client, session_factory):
-    user_id, election_id = create_user_and_election(session_factory)
+    user_id, election_id = create_user_and_election(
+        session_factory
+    )
 
     response = client.post(
         f"/elections/{election_id}/voters",
@@ -50,7 +67,9 @@ def test_admin_can_enroll_voter(client, session_factory):
 
 
 def test_admin_can_list_voters(client, session_factory):
-    user_id, election_id = create_user_and_election(session_factory)
+    user_id, election_id = create_user_and_election(
+        session_factory
+    )
 
     client.post(
         f"/elections/{election_id}/voters",
@@ -72,7 +91,9 @@ def test_admin_can_list_voters(client, session_factory):
 
 
 def test_admin_can_disable_voter(client, session_factory):
-    user_id, election_id = create_user_and_election(session_factory)
+    user_id, election_id = create_user_and_election(
+        session_factory
+    )
 
     client.post(
         f"/elections/{election_id}/voters",
@@ -90,8 +111,13 @@ def test_admin_can_disable_voter(client, session_factory):
     assert response.json()["is_eligible"] is False
 
 
-def test_duplicate_voter_is_rejected(client, session_factory):
-    user_id, election_id = create_user_and_election(session_factory)
+def test_duplicate_voter_is_rejected(
+    client,
+    session_factory,
+):
+    user_id, election_id = create_user_and_election(
+        session_factory
+    )
 
     payload = {
         "user_id": user_id,
@@ -115,13 +141,25 @@ def test_duplicate_voter_is_rejected(client, session_factory):
 
     assert response.status_code == 400
 
-def test_voter_can_confirm_vote(client, session_factory):
-    user_id, election_id = create_user_and_election(session_factory)
+
+def test_voter_can_confirm_vote(
+    client,
+    session_factory,
+):
+    user_id, election_id = create_user_and_election(
+        session_factory
+    )
 
     client.post(
         f"/elections/{election_id}/voters",
         json={"user_id": user_id},
         headers=ADMIN,
+    )
+
+    create_issued_token(
+        session_factory,
+        user_id,
+        election_id,
     )
 
     voter_headers = {
@@ -140,13 +178,24 @@ def test_voter_can_confirm_vote(client, session_factory):
     assert response.json()["has_voted"] is True
 
 
-def test_vote_confirmation_is_idempotent(client, session_factory):
-    user_id, election_id = create_user_and_election(session_factory)
+def test_vote_confirmation_is_idempotent(
+    client,
+    session_factory,
+):
+    user_id, election_id = create_user_and_election(
+        session_factory
+    )
 
     client.post(
         f"/elections/{election_id}/voters",
         json={"user_id": user_id},
         headers=ADMIN,
+    )
+
+    create_issued_token(
+        session_factory,
+        user_id,
+        election_id,
     )
 
     voter_headers = {
@@ -171,8 +220,13 @@ def test_vote_confirmation_is_idempotent(client, session_factory):
     assert second.json()["has_voted"] is True
 
 
-def test_non_enrolled_user_cannot_confirm_vote(client, session_factory):
-    user_id, election_id = create_user_and_election(session_factory)
+def test_non_enrolled_user_cannot_confirm_vote(
+    client,
+    session_factory,
+):
+    user_id, election_id = create_user_and_election(
+        session_factory
+    )
 
     voter_headers = {
         "X-Dev-User": str(user_id),
@@ -187,13 +241,53 @@ def test_non_enrolled_user_cannot_confirm_vote(client, session_factory):
 
     assert response.status_code == 400
 
-def test_vote_confirmation_with_real_session(client, session_factory):
-    user_id, election_id = create_user_and_election(session_factory)
+
+def test_voter_cannot_confirm_without_issued_token(
+    client,
+    session_factory,
+):
+    user_id, election_id = create_user_and_election(
+        session_factory
+    )
 
     client.post(
         f"/elections/{election_id}/voters",
         json={"user_id": user_id},
         headers=ADMIN,
+    )
+
+    voter_headers = {
+        "X-Dev-User": str(user_id),
+        "X-Dev-Roles": "voter",
+    }
+
+    response = client.post(
+        "/vote-confirmation",
+        json={"election_id": election_id},
+        headers=voter_headers,
+    )
+
+    assert response.status_code == 400
+
+
+def test_vote_confirmation_with_real_session(
+    client,
+    session_factory,
+):
+    user_id, election_id = create_user_and_election(
+        session_factory
+    )
+
+    client.post(
+        f"/elections/{election_id}/voters",
+        json={"user_id": user_id},
+        headers=ADMIN,
+    )
+
+    create_issued_token(
+        session_factory,
+        user_id,
+        election_id,
     )
 
     login = client.post(

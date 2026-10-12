@@ -5,8 +5,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.elections import get_election
-from app.errors import ElectionNotFound, InvalidRequest
-from app.models import User, VoterRollEntry
+from app.errors import InvalidRequest
+from app.models import IssuedToken, User, VoterRollEntry
 
 
 @dataclass(frozen=True)
@@ -24,8 +24,6 @@ def enroll_voter(
     user_id: int,
     is_eligible: bool = True,
 ) -> VoterRollData:
-    """Agrega un usuario al padrón de una elección."""
-
     election = get_election(session, election_id)
 
     user = session.get(User, user_id)
@@ -49,7 +47,9 @@ def enroll_voter(
         session.commit()
     except IntegrityError as error:
         session.rollback()
-        raise InvalidRequest("user is already enrolled in this election") from error
+        raise InvalidRequest(
+            "user is already enrolled in this election"
+        ) from error
 
     return VoterRollData(
         user_id=entry.user_id,
@@ -64,8 +64,6 @@ def get_voter_roll(
     *,
     election_id: str,
 ) -> list[VoterRollData]:
-    """Devuelve los usuarios inscritos en una elección."""
-
     election = get_election(session, election_id)
 
     entries = session.scalars(
@@ -92,8 +90,6 @@ def update_voter_eligibility(
     user_id: int,
     is_eligible: bool,
 ) -> VoterRollData:
-    """Activa o desactiva la elegibilidad de un usuario."""
-
     election = get_election(session, election_id)
 
     entry = session.scalar(
@@ -104,7 +100,9 @@ def update_voter_eligibility(
     )
 
     if entry is None:
-        raise InvalidRequest("user is not enrolled in this election")
+        raise InvalidRequest(
+            "user is not enrolled in this election"
+        )
 
     entry.is_eligible = is_eligible
     session.commit()
@@ -115,6 +113,7 @@ def update_voter_eligibility(
         is_eligible=entry.is_eligible,
         has_voted=entry.has_voted,
     )
+
 
 def confirm_vote(
     session: Session,
@@ -132,12 +131,30 @@ def confirm_vote(
     )
 
     if entry is None:
-        raise InvalidRequest("user is not enrolled in this election")
+        raise InvalidRequest(
+            "user is not enrolled in this election"
+        )
 
     if not entry.is_eligible:
-        raise InvalidRequest("user is not eligible for this election")
+        raise InvalidRequest(
+            "user is not eligible for this election"
+        )
 
-    # La confirmación es idempotente: repetirla no causa problemas.
+    # Identity solo verifica que previamente emitió un token al usuario.
+    # No conoce qué token anónimo ni qué papeleta fue usada en Ballot.
+    issued_token = session.scalar(
+        select(IssuedToken).where(
+            IssuedToken.election_id == election.id,
+            IssuedToken.user_id == user_id,
+        )
+    )
+
+    if issued_token is None:
+        raise InvalidRequest(
+            "no token was issued for this user and election"
+        )
+
+    # La confirmación es idempotente.
     if not entry.has_voted:
         entry.has_voted = True
         session.commit()
