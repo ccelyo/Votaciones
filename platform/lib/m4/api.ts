@@ -83,3 +83,48 @@ export async function enviarPapeleta(solicitud: SolicitudPapeleta): Promise<Resp
   const datos = (await respuesta.json()) as { receipt: string; ballot_hash: string; replayed: boolean };
   return { recibo: datos.receipt, hashPapeleta: datos.ballot_hash, esReintento: datos.replayed === true };
 }
+
+export interface ResultadoOpcion {
+  opcion: string;
+  votos: number;
+}
+
+export interface ResultadosEleccion {
+  totalPapeletas: number;
+  papeletasInvalidas: number;
+  resultados: ResultadoOpcion[];
+}
+
+/**
+ * GET /v1/elections/{id}/results — conteo agregado, solo con la urna cerrada.
+ * Devuelve null si la elección sigue abierta. Tampoco lleva credenciales.
+ */
+export async function obtenerResultados(electionId: string): Promise<ResultadosEleccion | null> {
+  if (!BALLOT_API_URL) {
+    throw new Error("Configura NEXT_PUBLIC_BALLOT_API_URL para consultar los resultados.");
+  }
+  let respuesta: Response;
+  try {
+    respuesta = await fetch(`${BALLOT_API_URL}/v1/elections/${encodeURIComponent(electionId)}/results`, {
+      cache: "no-store",
+      credentials: "omit",
+      referrerPolicy: "no-referrer",
+    });
+  } catch {
+    throw new Error("No se pudo contactar el servicio de votación.");
+  }
+  if (respuesta.status === 409) return null;
+  if (!respuesta.ok) {
+    throw new Error(`No se pudieron cargar los resultados (${respuesta.status}).`);
+  }
+  const datos = (await respuesta.json()) as {
+    total_ballots: number;
+    invalid_ballots: number;
+    results: { option: string; votes: number }[];
+  };
+  return {
+    totalPapeletas: datos.total_ballots,
+    papeletasInvalidas: datos.invalid_ballots,
+    resultados: datos.results.map((r) => ({ opcion: r.option, votos: r.votes })),
+  };
+}

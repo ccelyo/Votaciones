@@ -30,6 +30,7 @@ const (
 // commitStore is satisfied by both the Mongo adapter and the in-memory fake.
 type commitStore interface {
 	ballotflow.CommitStore
+	ballotflow.VoteReader
 	election.ParticipationCounter
 }
 
@@ -103,6 +104,7 @@ func run(logger *slog.Logger) error {
 	var handler http.Handler = httpapi.NewHandler(httpapi.Config{
 		Acceptor:       acceptor,
 		Elections:      elections,
+		Votes:          ballots,
 		Ready:          ready,
 		AllowedOrigins: splitList(os.Getenv("BALLOT_ALLOWED_ORIGINS")),
 		Logger:         logger,

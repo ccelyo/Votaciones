@@ -7,7 +7,7 @@ import {
   tokenIdHex,
 } from "../token.ts";
 import { cegar, claveDesdeDerSpki, descegar, i2osp, os2ip } from "../blind.ts";
-import { CifradorSimulado } from "../encryptor.ts";
+import { CifradorTextoPlano } from "../encryptor.ts";
 import { interpretarRecibo, mensajeRecibo, serializarRecibo } from "../receipt.ts";
 
 describe("M4: mensaje canónico del token", () => {
@@ -114,11 +114,11 @@ describe("M4: cegado BigInt", () => {
   });
 });
 
-describe("M4: cifrador stub", () => {
-  it("devuelve los bytes que acepta el stub de Go", async () => {
-    const cifrador = new CifradorSimulado();
+describe("M4: cifrador en texto plano", () => {
+  it("guarda la opción en UTF-8 para que ballot pueda contarla", async () => {
+    const cifrador = new CifradorTextoPlano();
     const { ciphertext, proof } = await cifrador.cifrar("Opción A", "eleccion-1");
-    assert.equal(new TextDecoder().decode(ciphertext), "stub-encrypted-vote");
+    assert.equal(new TextDecoder().decode(ciphertext), "Opción A");
     assert.equal(new TextDecoder().decode(proof), "stub-benaloh-proof");
   });
 });

@@ -46,6 +46,7 @@ type ReadinessChecker func(ctx context.Context) error
 type Config struct {
 	Acceptor       BallotAcceptor
 	Elections      ElectionReader
+	Votes          ballotflow.VoteReader
 	Ready          ReadinessChecker
 	AllowedOrigins []string
 	Logger         *slog.Logger
@@ -68,6 +69,7 @@ func NewHandler(config Config) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /v1/ballots", a.submitBallot)
 	mux.HandleFunc("GET /v1/elections/{electionID}/parameters", a.electionParameters)
+	mux.HandleFunc("GET /v1/elections/{electionID}/results", a.electionResults)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
@@ -210,6 +212,67 @@ func (a *api) electionParameters(w http.ResponseWriter, r *http.Request) {
 		ParameterSigningKeyID:       config.SigningKeyID,
 		ParameterSignatureAlgorithm: config.SignatureAlgorithm,
 		ParameterSignature:          base64.RawURLEncoding.EncodeToString(config.ParameterSignature),
+	})
+}
+
+// OptionResultResponse is the number of ballots cast for one option.
+type OptionResultResponse struct {
+	Option string `json:"option"`
+	Votes  uint64 `json:"votes"`
+}
+
+// ElectionResultsResponse is the final, aggregate count of a closed election.
+type ElectionResultsResponse struct {
+	ElectionID     string                 `json:"election_id"`
+	TotalBallots   uint64                 `json:"total_ballots"`
+	InvalidBallots uint64                 `json:"invalid_ballots"`
+	Results        []OptionResultResponse `json:"results"`
+}
+
+// electionResults publishes the tally only once the election is closed, so no
+// partial results can influence voters while the ballot box is open.
+func (a *api) electionResults(w http.ResponseWriter, r *http.Request) {
+	if a.Votes == nil {
+		writeError(w, http.StatusNotFound, "not_found")
+		return
+	}
+	electionID := r.PathValue("electionID")
+	config, err := a.Elections.Parameters(r.Context(), electionID)
+	if errors.Is(err, election.ErrElectionNotFound) {
+		writeError(w, http.StatusNotFound, "election_not_found")
+		return
+	}
+	if err != nil {
+		a.Logger.Error("read election parameters failed", "error", err.Error())
+		writeError(w, http.StatusInternalServerError, "internal_error")
+		return
+	}
+	electionStatus, err := a.Elections.Status(r.Context(), electionID, a.Now().UTC())
+	if err != nil {
+		a.Logger.Error("read election status failed", "error", err.Error())
+		writeError(w, http.StatusInternalServerError, "internal_error")
+		return
+	}
+	if electionStatus != pb.ElectionStatus_ELECTION_STATUS_CLOSED {
+		writeError(w, http.StatusConflict, "election_not_closed")
+		return
+	}
+	votes, err := a.Votes.Votes(r.Context(), electionID)
+	if err != nil {
+		a.Logger.Error("read votes failed", "error", err.Error())
+		writeError(w, http.StatusInternalServerError, "internal_error")
+		return
+	}
+	tally := ballotflow.CountVotes(config.Options, votes)
+	results := make([]OptionResultResponse, len(tally.Options))
+	for i, count := range tally.Options {
+		results[i] = OptionResultResponse{Option: count.Option, Votes: count.Votes}
+	}
+	writeJSON(w, http.StatusOK, ElectionResultsResponse{
+		ElectionID:     config.ID,
+		TotalBallots:   tally.Total,
+		InvalidBallots: tally.Invalid,
+		Results:        results,
 	})
 }
 

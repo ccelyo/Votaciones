@@ -71,6 +71,37 @@ Respuesta (`201` voto nuevo, `200` reintento idéntico con el mismo recibo):
 | 422 | `invalid_proof` | Prueba de validez rechazada |
 | 503 | `timeout` | Plazo de 10 s excedido |
 
+## `GET /v1/elections/{election_id}/results`
+
+Conteo final agregado. Solo responde con la urna cerrada, para que no haya
+resultados parciales mientras se vota. Lee únicamente `encrypted_vote`, nunca
+el `_id` (token) ni `seq`, así que el conteo no se puede asociar a un recibo.
+
+En el Prototipo 1 `encrypted_vote` contiene la opción elegida en UTF-8 (sin
+cifrar; ver `internal/ballot/tally.go`). La papeleta sigue sin datos del
+votante. Las papeletas cuyo contenido no es exactamente una opción (por
+ejemplo, las emitidas con el antiguo `stub-encrypted-vote`) cuentan como
+inválidas.
+
+```json
+{
+  "election_id": "gobernacion-antioquia-2027",
+  "total_ballots": 4,
+  "invalid_ballots": 1,
+  "results": [
+    { "option": "candidato-1", "votes": 2 },
+    { "option": "candidato-2", "votes": 1 },
+    { "option": "voto-en-blanco", "votes": 0 }
+  ]
+}
+```
+
+| Código | `error` |
+| --- | --- |
+| 200 | — |
+| 404 | `election_not_found` |
+| 409 | `election_not_closed` |
+
 ## `GET /healthz`, `GET /readyz`
 
 Liveness y readiness (`readyz` hace ping a MongoDB).
@@ -87,7 +118,7 @@ Base `MONGODB_DATABASE` (por defecto `votaciones`). Requiere **replica set**
 | `_id` | string | SHA-256 hex del token: un token, una papeleta |
 | `election_id` | string | |
 | `seq` | int64 | Posición en la cadena; índice único `(election_id, seq)` |
-| `encrypted_vote` | binary | |
+| `encrypted_vote` | binary | P1: la opción en UTF-8 |
 | `proof` | binary | |
 | `previous_hash` | binary(32) | 32 ceros para la primera |
 | `ballot_hash` | binary(32) | Índice único `(election_id, ballot_hash)` |
