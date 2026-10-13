@@ -15,7 +15,7 @@ Demo sin backend: usa la elección `eleccion-demo`.
 |---|---|---|
 | `token.ts` | Mensaje canónico, sobre base64url JSON, `TokenID = hex(SHA-256(sobre))` | `ballot/internal/token/token.go` |
 | `blind.ts` | Armazón puro-TS `preparar/cegar/descegar` con BigInt + `SPKI DER → (n,e)` | `circl/blindrsa` (PSS exacto pendiente M6) |
-| `encryptor.ts` | Interfaz `Cifrador` + `CifradorSimulado` (`stub-encrypted-vote` / `stub-benaloh-proof`) | `happy_path_test.go:19-26` |
+| `encryptor.ts` | Interfaz `Cifrador` + `CifradorTextoPlano` (opción en UTF-8 / `stub-benaloh-proof`) | `ballot/internal/ballot/tally.go` |
 | `receipt.ts` | Sobre de recibo + `verificarRecibo` (WebCrypto Ed25519) | `token/receipt.go` |
 | `api.ts` | Tipos propuestos `GET parámetros` / `POST papeletas`; `enviarPapeleta` usa `credentials:"omit"` | `01-Prototype.md §9, §15` (pendiente M1/M6/M7) |
 | `tokenStore.ts` | Token solo en memoria (nunca `localStorage`/cookies/URL) | Separación identidad↔papeleta |

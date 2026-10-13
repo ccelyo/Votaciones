@@ -224,6 +224,22 @@ func (s *MemoryCommitStore) CountBallots(ctx context.Context, electionID string)
 	return s.Count(electionID), nil
 }
 
+// Votes implements VoteReader.
+func (s *MemoryCommitStore) Votes(ctx context.Context, electionID string) ([][]byte, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var votes [][]byte
+	for _, record := range s.records {
+		if record.ElectionID == electionID {
+			votes = append(votes, append([]byte(nil), record.EncryptedVote...))
+		}
+	}
+	return votes, nil
+}
+
 func sameSubmission(record BallotRecord, submission BallotSubmission) bool {
 	return record.ElectionID == submission.ElectionID && bytes.Equal(record.EncryptedVote, submission.EncryptedVote) &&
 		bytes.Equal(record.Proof, submission.Proof)

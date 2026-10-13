@@ -7,7 +7,7 @@ import {
   useState,
   useTransition,
 } from "react";
-
+import { ElectionResults } from "@/components/admin/ElectionResults";
 import {
   Icon,
   type RemixiconComponentType,
@@ -328,6 +328,8 @@ export function ElectionManager({ electionId }: { electionId: number }) {
                 </table>
               </div>
             </section>
+
+            {isClosed ? <ElectionResults electionId={electionId} /> : null}
 
             {!isClosed ? (
               <section

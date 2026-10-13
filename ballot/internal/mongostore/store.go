@@ -241,7 +241,29 @@ func (s *Store) CountBallots(ctx context.Context, electionID string) (uint64, er
 	return uint64(count), nil
 }
 
-func (d ballotDocument) record() ballotflow.BallotRecord {
+// Votes implements ballot.VoteReader, projecting only the vote contents.
+func (s *Store) Votes(ctx context.Context, electionID string) ([][]byte, error) {
+	cursor, err := s.ballots.Find(ctx,
+		bson.D{{Key: "election_id", Value: electionID}},
+		options.Find().SetProjection(bson.D{{Key: "_id", Value: 0}, {Key: "encrypted_vote", Value: 1}}),
+	)
+	if err != nil {
+		return nil, err
+	}
+	var documents []struct {
+		EncryptedVote []byte `bson:"encrypted_vote"`
+	}
+	if err := cursor.All(ctx, &documents); err != nil {
+		return nil, err
+	}
+	votes := make([][]byte, len(documents))
+	for i, document := range documents {
+		votes[i] = document.EncryptedVote
+	}
+	return votes, nil
+}
+
+func (d ballotDocument) record()ballotflow.BallotRecord {
 	return ballotflow.BallotRecord{
 		ElectionID:    d.ElectionID,
 		TokenID:       d.TokenID,

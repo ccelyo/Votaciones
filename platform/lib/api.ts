@@ -5,7 +5,7 @@ import {
   finalizarPss,
   prepararToken,
 } from "@/lib/m4/blind";
-import { CifradorSimulado } from "@/lib/m4/encryptor";
+import { CifradorTextoPlano } from "@/lib/m4/encryptor";
 import { aBase64Url, deBase64Url, serializarSobre } from "@/lib/m4/token";
 import {
   borrarTokenAnonimo,
@@ -273,7 +273,7 @@ export async function castVote(
     guardarTokenAnonimo(electionRef, signedToken);
   }
 
-  const { ciphertext, proof } = await new CifradorSimulado().cifrar(
+  const { ciphertext, proof } = await new CifradorTextoPlano().cifrar(
     option,
     electionRef,
   );
