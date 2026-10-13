@@ -1,6 +1,6 @@
 from app.models import Election, IssuedToken, Role, User
 from app.security import hash_password
-from tests.conftest import ADMIN
+from tests.conftest import ADMIN, voter
 
 
 def create_user_and_election(session_factory):
@@ -325,3 +325,54 @@ def test_vote_confirmation_with_real_session(
     assert response.status_code == 200
     assert response.json()["election_id"] == election_id
     assert response.json()["has_voted"] is True
+
+def test_voter_sees_own_eligibility(client, session_factory):
+    user_id, election_id = create_user_and_election(session_factory)
+
+    before = client.get(f"/elections/{election_id}/eligibility", headers=voter(user_id))
+    assert before.status_code == 200
+    assert before.json() == {
+        "election_id": election_id,
+        "is_eligible": False,
+        "has_voted": False,
+        "token_issued": False,
+    }
+
+    client.post(
+        f"/elections/{election_id}/voters",
+        json={"user_id": user_id},
+        headers=ADMIN,
+    )
+    create_issued_token(session_factory, user_id, election_id)
+
+    after = client.get(f"/elections/{election_id}/eligibility", headers=voter(user_id))
+    assert after.json()["is_eligible"] is True
+    assert after.json()["token_issued"] is True
+
+
+def test_admin_lists_users_without_password_hashes(client, session_factory):
+    user_id, _ = create_user_and_election(session_factory)
+
+    response = client.get("/users", headers=ADMIN)
+
+    assert response.status_code == 200
+    assert {"id": user_id, "username": "votante1", "role": "voter"} in response.json()
+    assert all("password_hash" not in user for user in response.json())
+
+
+def test_voter_cannot_list_users(client, session_factory):
+    user_id, _ = create_user_and_election(session_factory)
+
+    response = client.get("/users", headers=voter(user_id))
+
+    assert response.status_code == 403
+
+
+def test_admin_lists_all_elections(client, session_factory):
+    _, election_id = create_user_and_election(session_factory)
+
+    response = client.get("/elections", headers=ADMIN)
+
+    assert response.status_code == 200
+    assert [e["id"] for e in response.json()] == [int(election_id)]
+    assert response.json()[0]["status"] == "open"
