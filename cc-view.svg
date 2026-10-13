@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1344 768" role="img" aria-labelledby="title description">
+  <title id="title">Vista de componentes y conectores de espivota</title>
+  <desc id="description">El navegador Next.js se comunica con los servicios de identidad en Python y votación en Go. Cada servicio accede a su propia base de datos, PostgreSQL o MongoDB.</desc>
+  <defs>
+    <style>
+      text { font-family: Arial, Helvetica, sans-serif; text-anchor: middle; }
+      .title { font-size: 28px; font-weight: 700; }
+      .subtitle { font-size: 23px; }
+      .label { fill: #d1d1d1; font-size: 22px; font-weight: 600; }
+      .detail { font-size: 21px; }
+      .connector { fill: #d0d0d0; font-size: 21px; }
+      .component { stroke-width: 3; }
+      .component-icon { stroke-width: 3; }
+    </style>
+  </defs>
+
+  <rect width="1344" height="768" fill="#151515"/>
+
+  <g fill="none" stroke-width="5">
+    <path d="M 594 190 L 383 366" stroke="#00a651"/>
+    <path d="M 778 190 L 987 366" stroke="#00a651"/>
+    <path d="M 357 477 L 357 603" stroke="#e3aa32"/>
+    <path d="M 1014 477 L 1014 603" stroke="#e3aa32"/>
+    <path d="M 583 424 L 785 424" stroke="#638dff"/>
+  </g>
+
+  <g>
+    <rect x="466" y="80" width="438" height="104" fill="#234f9b" stroke="#76a5f5" class="component"/>
+    <g fill="#234f9b" stroke="#c9dcff" class="component-icon">
+      <rect x="872" y="94" width="34" height="16"/>
+      <rect x="872" y="117" width="34" height="16"/>
+    </g>
+    <text x="685" y="125" class="title" fill="#e1ecff">Next.js (TypeScript)</text>
+    <text x="685" y="159" class="subtitle" fill="#c2d7ff">Cifra el voto en el navegador</text>
+  </g>
+
+  <g>
+    <rect x="136" y="373" width="440" height="103" fill="#40358e" stroke="#8c80da" class="component"/>
+    <g fill="#40358e" stroke="#c5bfff" class="component-icon">
+      <rect x="544" y="388" width="34" height="16"/>
+      <rect x="544" y="411" width="34" height="16"/>
+    </g>
+    <text x="356" y="416" class="title" fill="#dedaff">Python: identidad y admin</text>
+    <text x="356" y="451" class="detail" fill="#bcb4ef">Usuarios, urnas, roles</text>
+  </g>
+
+  <g>
+    <rect x="795" y="373" width="440" height="103" fill="#40358e" stroke="#8c80da" class="component"/>
+    <g fill="#40358e" stroke="#c5bfff" class="component-icon">
+      <rect x="1203" y="388" width="34" height="16"/>
+      <rect x="1203" y="411" width="34" height="16"/>
+    </g>
+    <text x="1015" y="416" class="title" fill="#dedaff">Go: votación</text>
+    <text x="1015" y="451" class="detail" fill="#bcb4ef">Valida token, guarda voto</text>
+  </g>
+
+  <g>
+    <rect x="155" y="611" width="403" height="103" fill="#075747" stroke="#38a98c" class="component"/>
+    <g fill="#075747" stroke="#a5e9d7" class="component-icon">
+      <rect x="526" y="626" width="34" height="16"/>
+      <rect x="526" y="649" width="34" height="16"/>
+    </g>
+    <text x="356" y="655" class="title" fill="#c5f3e8">PostgreSQL</text>
+    <text x="356" y="689" class="detail" fill="#91dcc6">Padrón, roles, urnas</text>
+  </g>
+
+  <g>
+    <rect x="813" y="611" width="403" height="103" fill="#075747" stroke="#38a98c" class="component"/>
+    <g fill="#075747" stroke="#a5e9d7" class="component-icon">
+      <rect x="1184" y="626" width="34" height="16"/>
+      <rect x="1184" y="649" width="34" height="16"/>
+    </g>
+    <text x="1014" y="655" class="title" fill="#c5f3e8">MongoDB</text>
+    <text x="1014" y="689" class="detail" fill="#91dcc6">Votos cifrados, solo insert</text>
+  </g>
+
+  <text x="391" y="277" class="connector">Login, token anónimo</text>
+  <text x="1022" y="277" class="connector">Voto cifrado + token</text>
+  <text x="684" y="404" class="label">gRPC + HTTP/2</text>
+  <text x="684" y="661" class="label">Bases aisladas</text>
+</svg>
