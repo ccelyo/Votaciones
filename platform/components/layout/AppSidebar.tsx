@@ -12,6 +12,7 @@ import {
   RiHomeLine,
   RiLogoutBoxRLine,
 } from "@/components/icons";
+import { UserAvatar } from "@/components/layout/UserAvatar";
 import type { User } from "@/lib/types/user";
 
 type SidebarProps = {
@@ -38,11 +39,6 @@ const NAVIGATION_ITEMS: NavigationItem[] = [
     adminOnly: true,
   },
 ];
-
-export function getInitial(user: User): string {
-  const displayName = user.full_name || user.username || user.email || "";
-  return (displayName.trim()[0] ?? "?").toUpperCase();
-}
 
 export function AppSidebar({
   user,
@@ -83,9 +79,11 @@ export function AppSidebar({
               <Icon icon={RiCloseLine} size={22} />
             </button>
           </div>
-          <span className="flex size-12 items-center justify-center rounded-xl bg-white text-lg font-bold text-royal-700">
-            {getInitial(user)}
-          </span>
+          <UserAvatar
+            user={user}
+            size={56}
+            className="rounded-xl ring-2 ring-white/70"
+          />
           <p className="font-display mt-3 truncate text-lg font-bold">
             {displayName}
           </p>

@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AppSidebar, getInitial } from "@/components/layout/AppSidebar";
+import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Logo } from "@/components/layout/Logo";
+import { UserAvatar } from "@/components/layout/UserAvatar";
 import { getCurrentUser, logout } from "@/lib/api";
 import type { User } from "@/lib/types/user";
 
@@ -101,9 +102,7 @@ export function Header() {
               aria-expanded={sidebarOpen}
               aria-controls="user-sidebar"
             >
-              <span className="flex size-8 items-center justify-center rounded-lg bg-royal-700 text-sm font-bold text-white">
-                {getInitial(user)}
-              </span>
+              <UserAvatar user={user} size={32} className="rounded-lg" />
               <span className="hidden max-w-40 truncate text-sm font-bold text-navy-900 sm:block">
                 {user.full_name || user.username}
               </span>
