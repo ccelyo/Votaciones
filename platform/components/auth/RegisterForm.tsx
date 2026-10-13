@@ -6,7 +6,7 @@ import { useState, useTransition } from "react";
 
 import { register } from "@/lib/api";
 
-const INPUT_CLASS = "auth-input auth-input-compact";
+const INPUT_CLASS = "field";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -49,13 +49,13 @@ export function RegisterForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error ? (
-        <div role="alert" className="ds-alert ds-alert-error">
+        <div role="alert" className="alert alert-error">
           {error}
         </div>
       ) : null}
 
       <div>
-        <label htmlFor="name" className="ds-label">
+        <label htmlFor="name" className="field-label">
           Nombre completo
         </label>
         <input
@@ -72,7 +72,7 @@ export function RegisterForm() {
       </div>
 
       <div>
-        <label htmlFor="email" className="ds-label">
+        <label htmlFor="email" className="field-label">
           Correo
         </label>
         <input
@@ -89,7 +89,7 @@ export function RegisterForm() {
       </div>
 
       <div>
-        <label htmlFor="password" className="ds-label">
+        <label htmlFor="password" className="field-label">
           Contraseña
         </label>
         <input
@@ -107,7 +107,7 @@ export function RegisterForm() {
       </div>
 
       <div>
-        <label htmlFor="confirmPassword" className="ds-label">
+        <label htmlFor="confirmPassword" className="field-label">
           Confirmar contraseña
         </label>
         <input
@@ -126,13 +126,19 @@ export function RegisterForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="ds-btn ds-btn-primary w-full"
+        className="btn btn-primary w-full"
       >
         {isPending ? "Creando cuenta..." : "Crear cuenta"}
       </button>
 
-      <p className="text-center text-sm">
-        ¿Ya tienes cuenta? <Link href="/login">Inicia sesión</Link>
+      <p className="text-center text-sm text-muted">
+        ¿Ya tienes cuenta?{" "}
+        <Link
+          href="/login"
+          className="font-bold text-royal-700 hover:underline"
+        >
+          Inicia sesión
+        </Link>
       </p>
     </form>
   );

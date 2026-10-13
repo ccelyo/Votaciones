@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { prepararToken } from "@/lib/m4/blind";
 import { CifradorSimulado } from "@/lib/m4/encryptor";
 import { clavesReciboDemo, parametrosDemo, reciboDemo } from "@/lib/m4/mocks";
 import { serializarSobre } from "@/lib/m4/token";
 import { guardarTokenAnonimo, obtenerTokenAnonimo } from "@/lib/m4/tokenStore";
-import { prepararToken } from "@/lib/m4/blind";
 
 function firmaSimulada256(): Uint8Array {
   // P1: firma simulada de 256 B. M6 la reemplaza por la firma ciega real.
@@ -16,9 +16,13 @@ function firmaSimulada256(): Uint8Array {
 
 export default function FormularioVoto({ electionId }: { electionId: string }) {
   const esDemo = electionId === "eleccion-demo";
-  const opciones = esDemo ? parametrosDemo().opciones : ["Opción 1", "Opción 2"];
+  const opciones = esDemo
+    ? parametrosDemo().opciones
+    : ["Opción 1", "Opción 2"];
   const [opcion, setOpcion] = useState<string>("");
-  const [fase, setFase] = useState<"elige" | "lista" | "enviando" | "hecho" | "error">("elige");
+  const [fase, setFase] = useState<
+    "elige" | "lista" | "enviando" | "hecho" | "error"
+  >("elige");
   const [mensaje, setMensaje] = useState<string>("");
   const [recibo, setRecibo] = useState<string>("");
   const [esReintento, setEsReintento] = useState<boolean>(false);
@@ -80,23 +84,29 @@ export default function FormularioVoto({ electionId }: { electionId: string }) {
       );
     } catch {
       setFase("error");
-      setMensaje("No se pudo enviar el voto. Revisa tu conexión e intenta de nuevo.");
+      setMensaje(
+        "No se pudo enviar el voto. Revisa tu conexión e intenta de nuevo.",
+      );
     }
   }
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="rounded-xl border border-black/10 p-5 dark:border-white/15">
-        <h2 className="text-lg font-semibold">1. Elige tu opción</h2>
-        <p className="mt-1 text-sm opacity-70">
+      <section className="card p-6">
+        <h2 className="font-display text-lg font-bold text-navy-900">
+          1. Elige tu opción
+        </h2>
+        <p className="mt-1 text-sm text-muted">
           Tu selección solo existe en este navegador hasta que se cifra.
         </p>
         <div className="mt-4 flex flex-col gap-2">
           {opciones.map((nombre) => (
             <label
               key={nombre}
-              className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 ${
-                opcion === nombre ? "border-black bg-black/[.04] dark:border-white dark:bg-white/10" : "border-black/10 dark:border-white/15"
+              className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-3 font-bold text-navy-900 transition-colors ${
+                opcion === nombre
+                  ? "border-royal-600 bg-royal-50"
+                  : "border-line hover:border-royal-500/40"
               }`}
             >
               <input
@@ -105,7 +115,7 @@ export default function FormularioVoto({ electionId }: { electionId: string }) {
                 value={nombre}
                 checked={opcion === nombre}
                 onChange={() => setOpcion(nombre)}
-                className="h-4 w-4"
+                className="size-4 accent-royal-700"
               />
               <span>{nombre}</span>
             </label>
@@ -113,51 +123,59 @@ export default function FormularioVoto({ electionId }: { electionId: string }) {
         </div>
       </section>
 
-      <section className="rounded-xl border border-black/10 p-5 dark:border-white/15">
-        <h2 className="text-lg font-semibold">2. Obtén tu token anónimo</h2>
-        <p className="mt-1 text-sm opacity-70">
-          Se genera con firma ciega: la identidad sabe que recibiste un token, pero no puede unirlo con tu
-          papeleta.
+      <section className="card p-6">
+        <h2 className="font-display text-lg font-bold text-navy-900">
+          2. Obtén tu token anónimo
+        </h2>
+        <p className="mt-1 text-sm text-muted">
+          Se genera con firma ciega: la identidad sabe que recibiste un token,
+          pero no puede unirlo con tu papeleta.
         </p>
         <button
           type="button"
           onClick={obtenerToken}
-          className="mt-3 h-11 rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a]"
+          className="btn btn-secondary mt-4"
         >
           Obtener token anónimo
         </button>
       </section>
 
-      <section className="rounded-xl border border-black/10 p-5 dark:border-white/15">
-        <h2 className="text-lg font-semibold">3. Cifra y envía</h2>
-        <p className="mt-1 text-sm opacity-70">
-          El voto se cifra aquí y se envía sin sesión ni cookies, para no vincular tu identidad con la
-          papeleta.
+      <section className="card p-6">
+        <h2 className="font-display text-lg font-bold text-navy-900">
+          3. Cifra y envía
+        </h2>
+        <p className="mt-1 text-sm text-muted">
+          El voto se cifra aquí y se envía sin sesión ni cookies, para no
+          vincular tu identidad con la papeleta.
         </p>
         <button
           type="button"
           onClick={votar}
           disabled={fase === "enviando" || fase === "elige"}
-          className="mt-3 h-12 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] disabled:opacity-50 dark:hover:bg-[#ccc]"
+          className="btn btn-primary mt-4"
         >
           {fase === "enviando" ? "Enviando…" : "Cifrar y enviar voto"}
         </button>
         {mensaje ? (
-          <p role="status" className="mt-3 text-sm">
+          <p role="status" className="alert alert-info mt-4">
             {mensaje}
           </p>
         ) : null}
       </section>
 
       {fase === "hecho" && recibo ? (
-        <section className="rounded-xl border border-green-700/30 bg-green-500/10 p-5">
-          <h2 className="text-lg font-semibold">Recibo firmado</h2>
-          {esReintento ? <p className="text-sm">Reintento idéntico: mismo recibo que antes.</p> : null}
-          <code className="mt-2 block break-all rounded bg-black/[.06] p-3 font-mono text-xs dark:bg-white/[.08]">
+        <section className="alert alert-success p-6">
+          <h2 className="font-display text-lg font-bold">Recibo firmado</h2>
+          {esReintento ? (
+            <p className="text-sm">
+              Reintento idéntico: mismo recibo que antes.
+            </p>
+          ) : null}
+          <code className="mt-3 block break-all rounded-xl bg-white/80 p-3 font-mono text-xs">
             {recibo}
           </code>
           <a
-            className="mt-3 inline-block underline"
+            className="mt-3 inline-block font-bold underline"
             href={`/elecciones/${encodeURIComponent(electionId)}/recibo?recibo=${encodeURIComponent(recibo)}`}
           >
             Ver y verificar el recibo

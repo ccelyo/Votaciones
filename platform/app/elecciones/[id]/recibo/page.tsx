@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PageShell } from "@/components/layout/PageShell";
 import ReciboDetalle from "@/components/m4/ReciboDetalle";
 
 export default async function ReciboPage({
@@ -13,32 +14,38 @@ export default async function ReciboPage({
   const { recibo } = await searchParams;
 
   return (
-    <div className="flex flex-col flex-1 items-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex w-full max-w-3xl flex-1 flex-col gap-6 bg-white px-6 py-10 dark:bg-black sm:px-10">
-        <nav className="text-sm">
-          <Link href="/" className="underline">
+    <PageShell>
+      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6 sm:py-12">
+        <nav className="flex gap-2 text-sm text-muted">
+          <Link href="/" className="font-bold text-royal-700 hover:underline">
             Inicio
           </Link>
           <span> · </span>
-          <Link href={`/elecciones/${encodeURIComponent(electionId)}/votar`} className="underline">
+          <Link
+            href={`/elecciones/${encodeURIComponent(electionId)}/votar`}
+            className="font-bold text-royal-700 hover:underline"
+          >
             Volver a votar
           </Link>
         </nav>
         <header>
-          <h1 className="text-2xl font-semibold">Recibo de la elección {electionId}</h1>
-          <p className="mt-2 text-sm opacity-70">
-            Verifica que tu papeleta quedó registrada. Si el recibo es válido, consérvalo.
+          <h1 className="font-display text-3xl font-bold text-navy-900">
+            Recibo de la elección {electionId}
+          </h1>
+          <p className="mt-2 text-muted">
+            Verifica que tu papeleta quedó registrada. Si el recibo es válido,
+            consérvalo.
           </p>
         </header>
         {!recibo ? (
-          <p className="rounded-xl border border-black/10 p-5 text-sm dark:border-white/15">
-            Falta el recibo. Vuelve a la votación, envía tu voto y usa el enlace «Ver y verificar el
-            recibo».
+          <p className="alert alert-info">
+            Falta el recibo. Vuelve a la votación, envía tu voto y usa el enlace
+            «Ver y verificar el recibo».
           </p>
         ) : (
           <ReciboDetalle electionId={electionId} sobre={recibo} />
         )}
       </main>
-    </div>
+    </PageShell>
   );
 }

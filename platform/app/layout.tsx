@@ -1,22 +1,32 @@
 import type { Metadata } from "next";
-import { Lato, PT_Serif } from "next/font/google";
+import {
+  Atkinson_Hyperlegible_Next,
+  Bricolage_Grotesque,
+  JetBrains_Mono,
+} from "next/font/google";
 import "./globals.css";
 
-const ptSerif = PT_Serif({
-  variable: "--font-pt-serif",
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
   subsets: ["latin"],
-  weight: ["400", "700"],
 });
 
-const lato = Lato({
-  variable: "--font-lato",
+const atkinson = Atkinson_Hyperlegible_Next({
+  variable: "--font-atkinson",
   subsets: ["latin"],
-  weight: ["400", "700"],
+});
+
+const jetbrains = JetBrains_Mono({
+  variable: "--font-jetbrains",
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Votación",
-  description: "Sistema de votación",
+  title: {
+    default: "Espivota",
+    template: "%s · Espivota",
+  },
+  description: "Plataforma de votación electrónica secreta y verificable.",
 };
 
 export default function RootLayout({
@@ -27,11 +37,9 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${ptSerif.variable} ${lato.variable} h-full antialiased`}
+      className={`${bricolage.variable} ${atkinson.variable} ${jetbrains.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
-        {children}
-      </body>
+      <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
 }
