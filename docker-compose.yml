@@ -1,0 +1,89 @@
+# Entorno local completo de Espivota: frontend + identity + ballot + bases de datos.
+#
+#   docker compose up --build
+#
+#   Frontend  http://localhost:3000   (otro puerto: WEB_PORT=3100 docker compose up --build)
+#   Identity  http://localhost:8000   (IDENTITY_PORT)
+#   Ballot    http://localhost:8080   (BALLOT_PORT)
+#
+# Usuarios de prueba (identity/seed_dev_users.sql): admin1..admin4 y votante1..votante10,
+# contraseña "prueba123", código MFA "123456".
+#
+# Empezar de cero (borra usuarios, elecciones, votos y claves):
+#   docker compose down -v
+#
+# SOLO DESARROLLO: las contraseñas y la clave de recibos de abajo son públicas.
+# Para usar otra clave de recibos: BALLOT_RECEIPT_PRIVATE_KEY=... docker compose up
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: votaciones
+      POSTGRES_USER: votaciones
+      POSTGRES_PASSWORD: votaciones
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # Solo se ejecutan la primera vez, con el volumen vacío.
+      - ./identity/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./identity/seed_dev_users.sql:/docker-entrypoint-initdb.d/02-seed_dev_users.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U votaciones -d votaciones"]
+      interval: 3s
+      retries: 30
+
+  mongo:
+    image: mongo:8.0
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    volumes: ["mongo-data:/data/db"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "try { rs.status().ok } catch (e) { rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'mongo:27017'}]}).ok }"]
+      interval: 5s
+      retries: 30
+
+  ballot:
+    build: ./ballot
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/?replicaSet=rs0&directConnection=true
+      MONGODB_DATABASE: votaciones
+      BALLOT_RECEIPT_PRIVATE_KEY: ${BALLOT_RECEIPT_PRIVATE_KEY:-NDmGYtqqwr1bI7YmEEWO+G18wItrcVOi4Ac/WAhGQbYLvTScxo+fKLPt8u1yAOf6ng9rs5uLswbN3fDoL056+Q==}
+      BALLOT_GRPC_ADDR: 0.0.0.0:9091
+      BALLOT_ALLOWED_ORIGINS: http://localhost:${WEB_PORT:-3000},http://127.0.0.1:${WEB_PORT:-3000}
+    ports: ["${BALLOT_PORT:-8080}:8080"]
+
+  identity:
+    build: ./identity
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ballot:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://votaciones:votaciones@postgres:5432/votaciones
+      IDENTITY_BALLOT_GRPC_ADDR: ballot:9091
+      IDENTITY_BALLOT_GRPC_TLS: "false"
+      IDENTITY_ALLOWED_ORIGINS: http://localhost:${WEB_PORT:-3000},http://127.0.0.1:${WEB_PORT:-3000}
+      IDENTITY_MFA_CODE: "123456"
+    volumes: ["identity-keys:/app/keys"]
+    ports: ["${IDENTITY_PORT:-8000}:8000"]
+
+  platform:
+    build:
+      context: ./platform
+      args:
+        # El navegador llama a las APIs desde el host, no desde la red de Docker.
+        NEXT_PUBLIC_API_URL: http://localhost:${IDENTITY_PORT:-8000}
+        NEXT_PUBLIC_BALLOT_API_URL: http://localhost:${BALLOT_PORT:-8080}
+        NEXT_PUBLIC_API_MODE: api
+    depends_on:
+      identity:
+        condition: service_healthy
+    ports: ["${WEB_PORT:-3000}:3000"]
+
+volumes:
+  postgres-data:
+  mongo-data:
+  identity-keys:
