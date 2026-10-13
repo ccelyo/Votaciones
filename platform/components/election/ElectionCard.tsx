@@ -2,10 +2,11 @@ import Link from "next/link";
 
 import {
   Icon,
-  RiArrowRightLine,
-  RiCalendarEventLine,
+  RiArrowRightSLine,
+  RiFileList3Line,
   RiTimeLine,
 } from "@/components/icons";
+import { IconTile } from "@/components/ui/IconTile";
 import { formatClosesIn, formatDate } from "@/lib/format";
 import type { Election } from "@/lib/types/election";
 
@@ -24,51 +25,48 @@ export function ElectionCard({
   const closesIn = formatClosesIn(election.ends_at);
 
   return (
-    <article
-      className="reveal group relative flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-royal-500/50 hover:shadow-[var(--shadow-lift)]"
+    <li
+      className="reveal group flex flex-col gap-4 px-5 py-5 transition-colors hover:bg-canvas/60 sm:flex-row sm:items-center sm:gap-5"
       style={{ "--i": index } as React.CSSProperties}
     >
-      <span
-        className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-royal-700 via-royal-500 to-royal-700"
-        aria-hidden
-      />
-      <div className="flex items-center justify-between gap-2">
-        <span className="badge bg-success-soft text-success">
-          <span className="live-dot" aria-hidden />
-          Abierta
-        </span>
-        {closesIn ? (
-          <span className="inline-flex items-center gap-1 text-xs font-bold text-muted">
-            <Icon icon={RiTimeLine} size={14} />
-            {closesIn}
+      <IconTile icon={RiFileList3Line} />
+      <div className="min-w-0 flex-1">
+        <h3 className="text-lg font-bold leading-snug text-ink">
+          {election.name}
+        </h3>
+        <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
+          <span className="inline-flex items-center gap-1.5 font-semibold text-success">
+            <span className="size-1.5 rounded-full bg-success" aria-hidden />
+            Abierta
           </span>
-        ) : null}
+          <span aria-hidden className="text-line">
+            |
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Icon icon={RiTimeLine} size={14} />
+            {closesIn ?? "—"}
+          </span>
+          <span aria-hidden className="text-line">
+            |
+          </span>
+          <span>Cierre: {formatDate(election.ends_at)}</span>
+        </p>
       </div>
-
-      <h3 className="font-display mt-4 flex-1 text-xl font-bold leading-snug text-navy-900">
-        {election.name}
-      </h3>
-
-      <p className="mt-4 flex items-center gap-2 text-sm text-muted">
-        <Icon icon={RiCalendarEventLine} size={16} className="text-subtle" />
-        Hasta el {formatDate(election.ends_at)}
-      </p>
-
       <Link
         href={
           isAuthenticated
             ? votePath
             : `/login?next=${encodeURIComponent(votePath)}`
         }
-        className="btn btn-primary mt-5 w-full"
+        className="btn btn-primary shrink-0"
       >
-        {isAuthenticated ? "Votar" : "Inicia sesión para votar"}
+        {isAuthenticated ? "Ir a votar" : "Iniciar sesión para votar"}
         <Icon
-          icon={RiArrowRightLine}
-          size={18}
+          icon={RiArrowRightSLine}
+          size={20}
           className="transition-transform group-hover:translate-x-0.5"
         />
       </Link>
-    </article>
+    </li>
   );
 }

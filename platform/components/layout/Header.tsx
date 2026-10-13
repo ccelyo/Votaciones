@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Logo } from "@/components/layout/Logo";
@@ -11,6 +11,7 @@ import type { User } from "@/lib/types/user";
 
 export function Header() {
   const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userLoadError, setUserLoadError] = useState<string | null>(null);
@@ -74,20 +75,56 @@ export function Header() {
     }
   }
 
+  const navItems = [
+    { href: "/", label: "Elecciones" },
+    ...(user?.role === "admin"
+      ? [{ href: "/admin", label: "Administración" }]
+      : []),
+  ];
+
   return (
-    <header className="sticky top-0 z-30 border-b border-line/80 bg-white/85 backdrop-blur-md">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link href="/" aria-label="Espivota — Inicio" className="rounded-lg">
-          <Logo />
-        </Link>
+    <header className="sticky top-0 z-30 bg-white shadow-[0_1px_0_var(--color-line)]">
+      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-6 px-4 sm:px-6">
+        <div className="flex min-w-0 items-center gap-8">
+          <Link href="/" aria-label="Espivota — Inicio" className="rounded">
+            <Logo />
+          </Link>
+          {user ? (
+            <nav aria-label="Navegación principal" className="hidden md:block">
+              <ul className="flex items-center gap-1">
+                {navItems.map((item) => {
+                  const active =
+                    item.href === "/"
+                      ? pathname === "/" || pathname.startsWith("/elections")
+                      : pathname.startsWith(item.href);
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        aria-current={active ? "page" : undefined}
+                        className={`relative flex h-16 items-center px-3 text-sm font-semibold transition-colors ${
+                          active
+                            ? "text-royal-700 after:absolute after:inset-x-3 after:bottom-0 after:h-[3px] after:bg-royal-700"
+                            : "text-muted hover:text-royal-700"
+                        }`}
+                      >
+                        {item.label}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
+          ) : null}
+        </div>
 
         <div className="flex items-center gap-3" aria-busy={isLoading}>
           {isMockApi ? (
-            <span className="badge bg-amber-100 text-amber-900">Demo</span>
+            <span className="badge bg-warning-soft text-warning">Demo</span>
           ) : null}
           {isLoading ? (
             <span
-              className="h-10 w-28 animate-pulse rounded-xl bg-line/70"
+              className="h-9 w-28 animate-pulse rounded bg-line/70"
               aria-hidden="true"
             />
           ) : user ? (
@@ -97,25 +134,25 @@ export function Header() {
                 setLogoutError(null);
                 setSidebarOpen(true);
               }}
-              className="flex items-center gap-2.5 rounded-xl py-1.5 pl-1.5 pr-3 transition-colors hover:bg-royal-50"
+              className="flex items-center gap-2.5 rounded-md border border-line py-1 pl-1 pr-3 transition-colors hover:border-royal-600"
               aria-label="Abrir menú de usuario"
               aria-expanded={sidebarOpen}
               aria-controls="user-sidebar"
             >
-              <UserAvatar user={user} size={32} className="rounded-lg" />
-              <span className="hidden max-w-40 truncate text-sm font-bold text-navy-900 sm:block">
+              <UserAvatar user={user} size={30} className="rounded" />
+              <span className="hidden max-w-40 truncate text-sm font-semibold text-ink sm:block">
                 {user.full_name || user.username}
               </span>
             </button>
           ) : (
             <>
-              <Link href="/login" className="btn btn-primary min-h-10 py-2">
+              <Link href="/login" className="btn btn-primary btn-sm">
                 Iniciar sesión
               </Link>
               {isMockApi ? (
                 <Link
                   href="/register"
-                  className="btn btn-ghost hidden min-h-10 py-2 sm:inline-flex"
+                  className="btn btn-ghost btn-sm hidden sm:inline-flex"
                 >
                   Registrarse
                 </Link>

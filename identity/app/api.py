@@ -209,6 +209,23 @@ def blind_token(
     }
 
 
+@router.get("/elections/{election_id}/eligibility")
+def eligibility(
+    election_id: str,
+    principal: Principal = Depends(get_principal),
+    session: Session = Depends(get_session),
+) -> dict:
+    result = voter_roll_service.voter_status(
+        session, election_id=election_id, user_id=principal.user_id
+    )
+    return {
+        "election_id": result.election_id,
+        "is_eligible": result.is_eligible,
+        "has_voted": result.has_voted,
+        "token_issued": result.token_issued,
+    }
+
+
 @router.get("/elections/{election_id}/parameters")
 def election_parameters(
     election_id: str,
@@ -307,6 +324,30 @@ def create_election(
     return {"election_id": election_service.election_ref(election), "status": election.status}
 
 
+def _iso(value: datetime | None) -> str | None:
+    return value.replace(tzinfo=UTC).isoformat() if value else None
+
+
+@router.get("/elections")
+def list_elections(
+    _: Principal = Depends(require_admin),
+    session: Session = Depends(get_session),
+) -> list[dict]:
+    """Todas las elecciones (cualquier estado), las más recientes primero."""
+    elections = session.scalars(select(Election).order_by(Election.id.desc())).all()
+    return [
+        {
+            "id": election.id,
+            "name": election.name,
+            "status": election.status,
+            "starts_at": _iso(election.starts_at),
+            "ends_at": _iso(election.ends_at),
+            "created_at": _iso(election.created_at),
+        }
+        for election in elections
+    ]
+
+
 @router.post("/elections/{election_id}/close")
 def close_election(
     election_id: str,
@@ -332,6 +373,24 @@ def status(
         "ballot_status": result.ballot_status,
         "total_ballots": result.total_ballots,
     }
+
+@router.get("/users")
+def list_users(
+    _: Principal = Depends(require_admin),
+    session: Session = Depends(get_session),
+) -> list[dict]:
+    """Usuarios activos, para inscribirlos en el padrón desde la UI de admin."""
+    rows = session.execute(
+        select(User.id, User.username, Role.name)
+        .join(Role, Role.id == User.role_id)
+        .where(User.is_active.is_(True))
+        .order_by(User.id)
+    ).all()
+    return [
+        {"id": user_id, "username": username, "role": role}
+        for user_id, username, role in rows
+    ]
+
 
 # --- padrón electoral -------------------------------------------------------
 

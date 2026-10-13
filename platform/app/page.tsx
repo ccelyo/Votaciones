@@ -1,63 +1,70 @@
 import { ElectionList } from "@/components/election/ElectionList";
 import {
-  Icon,
-  RiLockLine,
+  RiCheckDoubleLine,
   RiReceiptLine,
   RiShieldCheckLine,
 } from "@/components/icons";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { PageShell } from "@/components/layout/PageShell";
+import { IconTile } from "@/components/ui/IconTile";
 
-const GUARANTEES = [
-  { icon: RiLockLine, label: "Voto cifrado en tu navegador" },
-  { icon: RiShieldCheckLine, label: "Token anónimo con firma ciega" },
-  { icon: RiReceiptLine, label: "Recibo para verificar tu papeleta" },
+const STEPS = [
+  {
+    icon: RiShieldCheckLine,
+    title: "Inicia sesión",
+    text: "Con tu usuario, contraseña y código de verificación.",
+  },
+  {
+    icon: RiCheckDoubleLine,
+    title: "Elige y confirma",
+    text: "Revisa tu selección antes de enviarla. El voto no se puede cambiar.",
+  },
+  {
+    icon: RiReceiptLine,
+    title: "Guarda tu comprobante",
+    text: "Prueba que tu papeleta quedó registrada, sin revelar tu voto.",
+  },
 ];
 
 export default function HomePage() {
   return (
     <PageShell>
-      <section className="band">
-        <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-14 sm:px-6 sm:pt-20">
-          <p
-            className="reveal text-xs font-bold uppercase tracking-[0.18em] text-white/70"
-            style={{ "--i": 0 } as React.CSSProperties}
+      <PageHeader
+        eyebrow="Plataforma oficial de votación"
+        title="Elecciones"
+        description="Consulta las elecciones abiertas y emite tu voto de forma secreta y verificable."
+      />
+      <main className="mx-auto grid w-full max-w-6xl flex-1 gap-8 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_19rem]">
+        <ElectionList />
+        <aside aria-labelledby="how-to-vote">
+          <h2
+            id="how-to-vote"
+            className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.14em] text-muted"
           >
-            Plataforma de votación
-          </p>
-          <h1
-            className="reveal font-display mt-4 max-w-2xl text-4xl font-extrabold leading-[1.05] sm:text-6xl"
-            style={{ "--i": 1 } as React.CSSProperties}
-          >
-            Tu voto es secreto.
-            <br />
-            <span className="text-royal-100">Y puedes comprobarlo.</span>
-          </h1>
-          <p
-            className="reveal mt-5 max-w-xl text-base leading-relaxed text-white/80 sm:text-lg"
-            style={{ "--i": 2 } as React.CSSProperties}
-          >
-            Elige, confirma y guarda tu recibo. Nadie, ni siquiera quien
-            administra la elección, puede unir tu identidad con tu voto.
-          </p>
-          <ul
-            className="reveal mt-8 flex flex-wrap gap-2.5"
-            style={{ "--i": 3 } as React.CSSProperties}
-          >
-            {GUARANTEES.map((item) => (
+            <span className="h-px w-8 bg-royal-700" aria-hidden />
+            ¿Cómo votar?
+          </h2>
+          <ol className="mt-4 divide-y divide-line border-y border-line">
+            {STEPS.map((step, index) => (
               <li
-                key={item.label}
-                className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-sm font-bold backdrop-blur-sm"
+                key={step.title}
+                className="reveal flex items-start gap-4 py-4"
+                style={{ "--i": index + 1 } as React.CSSProperties}
               >
-                <Icon icon={item.icon} size={16} />
-                {item.label}
+                <IconTile icon={step.icon} />
+                <div className="text-sm">
+                  <p className="font-semibold text-ink">
+                    <span className="mr-1.5 text-subtle">{index + 1}.</span>
+                    {step.title}
+                  </p>
+                  <p className="mt-0.5 leading-relaxed text-muted">
+                    {step.text}
+                  </p>
+                </div>
               </li>
             ))}
-          </ul>
-        </div>
-      </section>
-
-      <main className="relative z-10 mx-auto -mt-12 w-full max-w-6xl flex-1 px-4 pb-16 sm:px-6">
-        <ElectionList />
+          </ol>
+        </aside>
       </main>
     </PageShell>
   );

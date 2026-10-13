@@ -9,6 +9,7 @@ import {
   type RemixiconComponentType,
   RiAddCircleLine,
   RiCloseLine,
+  RiDashboardLine,
   RiHomeLine,
   RiLogoutBoxRLine,
 } from "@/components/icons";
@@ -32,6 +33,12 @@ type NavigationItem = {
 
 const NAVIGATION_ITEMS: NavigationItem[] = [
   { href: "/", label: "Elecciones", icon: RiHomeLine },
+  {
+    href: "/admin",
+    label: "Panel de administración",
+    icon: RiDashboardLine,
+    adminOnly: true,
+  },
   {
     href: "/admin/elections/new",
     label: "Crear elección",
@@ -68,26 +75,22 @@ export function AppSidebar({
         aria-label="Menú de usuario"
         className="absolute inset-y-0 right-0 flex w-[min(20rem,88vw)] animate-[slide-in_0.25s_ease-out] flex-col bg-white shadow-2xl"
       >
-        <div className="band px-5 pb-6 pt-5">
+        <div className="security-paper border-b border-line px-5 pb-5 pt-4">
           <div className="flex justify-end">
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex size-9 items-center justify-center rounded-lg text-white/80 transition-colors hover:bg-white/15 hover:text-white"
+              className="inline-flex size-9 items-center justify-center rounded-lg text-muted transition-colors hover:bg-canvas hover:text-ink"
               aria-label="Cerrar menú"
             >
               <Icon icon={RiCloseLine} size={22} />
             </button>
           </div>
-          <UserAvatar
-            user={user}
-            size={56}
-            className="rounded-xl ring-2 ring-white/70"
-          />
-          <p className="font-display mt-3 truncate text-lg font-bold">
+          <UserAvatar user={user} size={56} className="rounded-md" />
+          <p className="mt-3 truncate text-lg font-bold text-ink">
             {displayName}
           </p>
-          <p className="text-sm text-white/75">
+          <p className="text-sm text-muted">
             {user.role === "admin" ? "Administrador" : "Votante"}
           </p>
         </div>
@@ -104,7 +107,7 @@ export function AppSidebar({
                     href={item.href}
                     onClick={onClose}
                     aria-current={active ? "page" : undefined}
-                    className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold transition-colors ${
+                    className={`flex items-center gap-3 rounded-md px-3 py-3 text-sm font-semibold transition-colors ${
                       active
                         ? "bg-royal-50 text-royal-700"
                         : "text-muted hover:bg-canvas hover:text-navy-900"
@@ -124,7 +127,7 @@ export function AppSidebar({
             type="button"
             onClick={onLogout}
             disabled={isLoggingOut}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-bold text-danger transition-colors hover:bg-danger-soft disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-semibold text-danger transition-colors hover:bg-danger-soft disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Icon icon={RiLogoutBoxRLine} size={20} />
             {isLoggingOut ? "Cerrando sesión..." : "Cerrar sesión"}

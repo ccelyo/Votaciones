@@ -14,14 +14,19 @@ import {
 } from "@/lib/m4/tokenStore";
 import * as mockApi from "@/lib/mock-api";
 import type {
+  AdminElection,
   CreatedElection,
   Election,
   ElectionCreatePayload,
   ElectionEstatus,
+  ElectionSummary,
   ElectionVote,
+  Eligibility,
+  VoterRollEntry,
 } from "@/lib/types/election";
 import type {
   CurrentUser,
+  DirectoryUser,
   LoginChallenge,
   LoginPayload,
   MessageResponse,
@@ -366,4 +371,70 @@ export async function getCurrentUser(): Promise<User | null> {
     }
     throw error;
   }
+}
+
+// ---- Padrón y administración -----------------------------------------------
+
+export function getEligibility(electionId: number): Promise<Eligibility> {
+  if (USE_MOCK_API) return mockApi.getEligibility(electionId);
+  return apiFetch<Eligibility>(
+    `/elections/${encodeURIComponent(electionId)}/eligibility`,
+  );
+}
+
+export function listAllElections(): Promise<AdminElection[]> {
+  if (USE_MOCK_API) return mockApi.listAllElections();
+  return apiFetch<AdminElection[]>("/elections");
+}
+
+export function getElectionSummary(
+  electionId: number,
+): Promise<ElectionSummary> {
+  if (USE_MOCK_API) return mockApi.getElectionSummary(electionId);
+  return apiFetch<ElectionSummary>(
+    `/elections/${encodeURIComponent(electionId)}/status`,
+  );
+}
+
+export async function closeElection(electionId: number): Promise<void> {
+  if (USE_MOCK_API) return mockApi.closeElection(electionId);
+  await apiFetch(`/elections/${encodeURIComponent(electionId)}/close`, {
+    method: "POST",
+  });
+}
+
+export function listUsers(): Promise<DirectoryUser[]> {
+  if (USE_MOCK_API) return mockApi.listUsers();
+  return apiFetch<DirectoryUser[]>("/users");
+}
+
+export function getVoterRoll(electionId: number): Promise<VoterRollEntry[]> {
+  if (USE_MOCK_API) return mockApi.getVoterRoll(electionId);
+  return apiFetch<VoterRollEntry[]>(
+    `/elections/${encodeURIComponent(electionId)}/voters`,
+  );
+}
+
+export async function enrollVoter(
+  electionId: number,
+  userId: number,
+): Promise<void> {
+  if (USE_MOCK_API) return mockApi.enrollVoter(electionId, userId);
+  await apiFetch(`/elections/${encodeURIComponent(electionId)}/voters`, {
+    method: "POST",
+    json: { user_id: userId, is_eligible: true },
+  });
+}
+
+export async function setVoterEligibility(
+  electionId: number,
+  userId: number,
+  isEligible: boolean,
+): Promise<void> {
+  if (USE_MOCK_API)
+    return mockApi.setVoterEligibility(electionId, userId, isEligible);
+  await apiFetch(
+    `/elections/${encodeURIComponent(electionId)}/voters/${userId}`,
+    { method: "PATCH", json: { is_eligible: isEligible } },
+  );
 }
