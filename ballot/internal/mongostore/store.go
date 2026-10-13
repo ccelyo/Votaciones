@@ -58,12 +58,14 @@ func Connect(ctx context.Context, uri, database string) (*Store, error) {
 	if uri == "" || database == "" {
 		return nil, errors.New("mongo URI and database are required")
 	}
+	// The 10s default goes before ApplyURI so serverSelectionTimeoutMS in the URI
+	// can extend it (e.g. Cloud Run, where egress may take a few seconds at startup).
 	clientOptions := options.Client().
+		SetServerSelectionTimeout(10 * time.Second).
 		ApplyURI(uri).
 		SetAppName("votaciones-ballot").
 		SetWriteConcern(writeconcern.Majority()).
-		SetReadConcern(readconcern.Majority()).
-		SetServerSelectionTimeout(10 * time.Second)
+		SetReadConcern(readconcern.Majority())
 	client, err := mongo.Connect(clientOptions)
 	if err != nil {
 		return nil, fmt.Errorf("connect mongo: %w", err)

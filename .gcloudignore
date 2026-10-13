@@ -1,0 +1,8 @@
+# Subidas manuales con `gcloud builds submit` (los triggers clonan el repo completo).
+.git
+platform/
+*.html
+**/__pycache__/
+**/.venv/
+**/keys/
+**/.env

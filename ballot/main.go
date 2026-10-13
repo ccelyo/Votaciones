@@ -71,7 +71,7 @@ func run(logger *slog.Logger) error {
 	var ballots commitStore
 	var ready httpapi.ReadinessChecker
 	if uri := strings.TrimSpace(os.Getenv("MONGODB_URI")); uri != "" {
-		connectCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+		connectCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
 		mongo, err := mongostore.Connect(connectCtx, uri, envOr("MONGODB_DATABASE", defaultMongoDB))
 		if err == nil {
 			err = mongo.EnsureIndexes(connectCtx)
@@ -99,15 +99,29 @@ func run(logger *slog.Logger) error {
 		elections,
 		receiptKey,
 	)
+	grpcServer := server.NewGRPCServer(server.NewAdminService(elections, nil, ballots))
+	var handler http.Handler = httpapi.NewHandler(httpapi.Config{
+		Acceptor:       acceptor,
+		Elections:      elections,
+		Ready:          ready,
+		AllowedOrigins: splitList(os.Getenv("BALLOT_ALLOWED_ORIGINS")),
+		Logger:         logger,
+	})
+	// Cloud Run exposes a single port, so the admin gRPC API can share it with
+	// HTTP over cleartext HTTP/2. The admin API has no authentication yet, so it
+	// becomes as reachable as the public HTTP API.
+	grpcOnHTTP := strings.EqualFold(strings.TrimSpace(os.Getenv("BALLOT_SERVE_GRPC_ON_HTTP")), "true")
+	var protocols *http.Protocols
+	if grpcOnHTTP {
+		handler = grpcOrHTTP(grpcServer, handler)
+		protocols = new(http.Protocols)
+		protocols.SetHTTP1(true)
+		protocols.SetUnencryptedHTTP2(true)
+	}
 	httpServer := &http.Server{
-		Addr: httpAddress,
-		Handler: httpapi.NewHandler(httpapi.Config{
-			Acceptor:       acceptor,
-			Elections:      elections,
-			Ready:          ready,
-			AllowedOrigins: splitList(os.Getenv("BALLOT_ALLOWED_ORIGINS")),
-			Logger:         logger,
-		}),
+		Addr:              httpAddress,
+		Handler:           handler,
+		Protocols:         protocols,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      15 * time.Second,
@@ -115,16 +129,18 @@ func run(logger *slog.Logger) error {
 		MaxHeaderBytes:    16 << 10,
 	}
 
-	grpcListener, err := net.Listen("tcp", grpcAddress)
-	if err != nil {
-		return err
-	}
-	grpcServer := server.NewGRPCServer(server.NewAdminService(elections, nil, ballots))
-
 	serveErrors := make(chan error, 2)
-	go func() { serveErrors <- grpcServer.Serve(grpcListener) }()
+	if grpcOnHTTP {
+		logger.Info("ballot service started", "grpc_address", httpAddress, "http_address", httpAddress)
+	} else {
+		grpcListener, err := net.Listen("tcp", grpcAddress)
+		if err != nil {
+			return err
+		}
+		go func() { serveErrors <- grpcServer.Serve(grpcListener) }()
+		logger.Info("ballot service started", "grpc_address", grpcListener.Addr().String(), "http_address", httpAddress)
+	}
 	go func() { serveErrors <- httpServer.ListenAndServe() }()
-	logger.Info("ballot service started", "grpc_address", grpcListener.Addr().String(), "http_address", httpAddress)
 
 	var serveErr error
 	select {
@@ -140,6 +156,18 @@ func run(logger *slog.Logger) error {
 	_ = httpServer.Shutdown(shutdownCtx)
 	server.StopGracefully(grpcServer, 10*time.Second)
 	return serveErr
+}
+
+// grpcOrHTTP routes gRPC requests (HTTP/2 with a gRPC content type) to the
+// admin gRPC server and everything else to the public HTTP API.
+func grpcOrHTTP(grpcServer *grpc.Server, httpHandler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.ProtoMajor == 2 && strings.HasPrefix(r.Header.Get("Content-Type"), "application/grpc") {
+			grpcServer.ServeHTTP(w, r)
+			return
+		}
+		httpHandler.ServeHTTP(w, r)
+	})
 }
 
 // httpListenAddress honors Cloud Run's PORT before BALLOT_HTTP_ADDR.

@@ -1,0 +1,29 @@
+# CI/CD de identity (Python). Lo dispara el trigger de GitHub en cambios bajo identity/.
+# Construye la imagen y actualiza el servicio de Cloud Run "identity". La
+# configuración (VPC, Cloud SQL, secretos, volumen de claves) vive en el servicio;
+# aquí solo se cambia la imagen.
+substitutions:
+  _REGION: us-central1
+  _IMAGE: us-central1-docker.pkg.dev/${PROJECT_ID}/votaciones/identity
+
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    dir: identity
+    env: ["DOCKER_BUILDKIT=1"]
+    args: ["build", "-t", "${_IMAGE}:${BUILD_ID}", "-t", "${_IMAGE}:latest", "."]
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args: ["push", "--all-tags", "${_IMAGE}"]
+
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args: ["run", "deploy", "identity", "--image", "${_IMAGE}:${BUILD_ID}", "--region", "${_REGION}", "--quiet"]
+
+images: ["${_IMAGE}:${BUILD_ID}", "${_IMAGE}:latest"]
+options:
+  logging: CLOUD_LOGGING_ONLY
+  substitutionOption: ALLOW_LOOSE
+  dynamicSubstitutions: true

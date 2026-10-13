@@ -43,6 +43,8 @@ class Settings(BaseSettings):
     # En Prototype 1 todavía se usa sin mTLS.
     ballot_grpc_addr: str = "127.0.0.1:9091"
     ballot_grpc_timeout_seconds: float = 5.0
+    # Cloud Run: ballot escucha en <servicio>.run.app:443 y exige TLS.
+    ballot_grpc_tls: bool = False
 
     # Directorio donde identidad almacena sus claves privadas.
     # En producción deberían provenir de un gestor de secretos.

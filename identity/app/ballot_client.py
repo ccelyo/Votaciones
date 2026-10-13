@@ -1,8 +1,10 @@
 """Cliente gRPC de identidad hacia `ballot` (``BallotAdminService``).
 
-Contrato: ``proto/ballot.proto``. El Prototype 1 usa un canal sin cifrar hacia un
-listener interno; mTLS queda pendiente (M2). Ningún método expone papeletas,
-votos ni resultados: solo parámetros públicos, estado y participación.
+Contrato: ``proto/ballot.proto``. En local el Prototype 1 usa un canal sin cifrar
+hacia un listener interno; en Cloud Run el canal va por TLS hacia ``ballot`` (gRPC
+y HTTP comparten puerto) y sale por la VPC. mTLS queda pendiente (M2). Ningún
+método expone papeletas, votos ni resultados: solo parámetros públicos, estado y
+participación.
 """
 
 from dataclasses import dataclass
@@ -77,8 +79,11 @@ def _translate(error: grpc.RpcError) -> Exception:
 
 
 class GrpcBallotClient:
-    def __init__(self, address: str, timeout_seconds: float = 5.0):
-        self._channel = grpc.insecure_channel(address)
+    def __init__(self, address: str, timeout_seconds: float = 5.0, *, use_tls: bool = False):
+        if use_tls:
+            self._channel = grpc.secure_channel(address, grpc.ssl_channel_credentials())
+        else:
+            self._channel = grpc.insecure_channel(address)
         self._stub = ballot_pb2_grpc.BallotAdminServiceStub(self._channel)
         self._timeout = timeout_seconds
 
