@@ -1,12 +1,9 @@
 // Cliente de firma ciega RSABSSA-SHA384-PSS-Randomized (M4, Prototype 1).
 //
-// Alcance honesto P1: implementa el armazón puro-TS (Prepare/Blind/Finalize)
-// con aritmética BigInt y factor de cegado r^e. La codificación EMSA-PSS
-// exacta de circl/blindrsa y los vectores de interop con Go quedan pendientes
-// de acuerdo M6 (ver proto/README.md). Por eso el firmante simulado de P1
-// firma el entero cegado en crudo; el verificador simulado verifica en crudo.
-// La interfaz ya aísla ese detalle: cuando M6 fije la variante, solo cambia
-// el codificador PSS inyectado, no la UI ni el flujo.
+// `cegar`/`descegar` operan sobre el entero en crudo (usados por los tests).
+// El flujo real usa `cegarPss`/`finalizarPss` (al final del archivo), que
+// aplican EMSA-PSS con SHA-384 como RFC 9474 y verifican la firma final con
+// WebCrypto antes de construir el token que valida circl/blindrsa en Go.
 //
 // NO usa dependencias nuevas: solo BigInt + WebCrypto.
 
@@ -192,4 +189,104 @@ export function descegar(firmaCegada: Uint8Array, estado: EstadoCegado): Uint8Ar
   const sCiego = os2ip(firmaCegada);
   const s = (sCiego * estado.rInverso) % estado.n;
   return i2osp(s, k);
+}
+
+// ---- RFC 9474 completo: EMSA-PSS (SHA-384) + verificación WebCrypto ----
+
+const HASH_LEN = 48; // SHA-384
+
+/** Longitud de sal según la variante RSABSSA-SHA384 (PSS = 48, PSSZERO = 0). */
+export function longitudSal(variante: string): number {
+  if (variante === "RSABSSA-SHA384-PSS-Randomized") return HASH_LEN;
+  if (variante === "RSABSSA-SHA384-PSSZERO-Randomized") return 0;
+  throw new Error(`variante de firma ciega no soportada: ${variante}`);
+}
+
+function bitsModulo(n: bigint): number {
+  return n.toString(2).length;
+}
+
+async function sha384(datos: Uint8Array): Promise<Uint8Array> {
+  return new Uint8Array(await crypto.subtle.digest("SHA-384", datos.slice().buffer as ArrayBuffer));
+}
+
+async function mgf1(semilla: Uint8Array, longitud: number): Promise<Uint8Array> {
+  const salida = new Uint8Array(longitud);
+  let pos = 0;
+  for (let contador = 0; pos < longitud; contador++) {
+    const entrada = new Uint8Array(semilla.length + 4);
+    entrada.set(semilla, 0);
+    entrada.set(i2osp(BigInt(contador), 4), semilla.length);
+    const bloque = await sha384(entrada);
+    const n = Math.min(bloque.length, longitud - pos);
+    salida.set(bloque.subarray(0, n), pos);
+    pos += n;
+  }
+  return salida;
+}
+
+/** EMSA-PSS-ENCODE (RFC 8017 §9.1.1) con SHA-384 y MGF1-SHA-384. */
+export async function codificarPss(mensaje: Uint8Array, emBits: number, sLen: number): Promise<Uint8Array> {
+  const emLen = Math.ceil(emBits / 8);
+  if (emLen < HASH_LEN + sLen + 2) throw new Error("clave demasiado pequeña para PSS");
+  const mHash = await sha384(mensaje);
+  const sal = new Uint8Array(sLen);
+  crypto.getRandomValues(sal);
+  const mPrima = new Uint8Array(8 + HASH_LEN + sLen);
+  mPrima.set(mHash, 8);
+  mPrima.set(sal, 8 + HASH_LEN);
+  const h = await sha384(mPrima);
+  const db = new Uint8Array(emLen - HASH_LEN - 1);
+  db[db.length - sLen - 1] = 0x01;
+  db.set(sal, db.length - sLen);
+  const mascara = await mgf1(h, db.length);
+  for (let i = 0; i < db.length; i++) db[i] ^= mascara[i];
+  db[0] &= 0xff >> (8 * emLen - emBits);
+  const em = new Uint8Array(emLen);
+  em.set(db, 0);
+  em.set(h, db.length);
+  em[emLen - 1] = 0xbc;
+  return em;
+}
+
+/** RFC 9474 §4.1 Blind: cegado = EMSA-PSS(prepared) * r^e mod n. */
+export async function cegarPss(
+  prepared: Uint8Array,
+  clave: ClavePublicaRSA,
+  variante: string,
+): Promise<{ cegado: Uint8Array; estado: EstadoCegado }> {
+  const codificado = await codificarPss(prepared, bitsModulo(clave.n) - 1, longitudSal(variante));
+  const m = os2ip(codificado);
+  if (mcd(m, clave.n) !== BigInt(1)) throw new Error("mensaje codificado inválido para la clave");
+  const r = enteroAleatorioMenorQue(clave.n);
+  const cegadoEntero = (m * potenciaModular(r, clave.e, clave.n)) % clave.n;
+  return {
+    cegado: i2osp(cegadoEntero, longitudModulo(clave.n)),
+    estado: { r, rInverso: inversoModular(r, clave.n), n: clave.n, prepared },
+  };
+}
+
+/** RFC 9474 §4.3 Finalize: descega y verifica RSASSA-PSS con WebCrypto. */
+export async function finalizarPss(
+  firmaCegada: Uint8Array,
+  estado: EstadoCegado,
+  claveDer: Uint8Array,
+  variante: string,
+): Promise<Uint8Array> {
+  const firma = descegar(firmaCegada, estado);
+  const clave = await crypto.subtle.importKey(
+    "spki",
+    claveDer.slice().buffer as ArrayBuffer,
+    { name: "RSA-PSS", hash: "SHA-384" },
+    false,
+    ["verify"],
+  );
+  const valida = await crypto.subtle.verify(
+    { name: "RSA-PSS", saltLength: longitudSal(variante) },
+    clave,
+    firma.slice().buffer as ArrayBuffer,
+    estado.prepared.slice().buffer as ArrayBuffer,
+  );
+  if (!valida) throw new Error("la firma ciega devuelta por identidad no es válida");
+  return firma;
 }

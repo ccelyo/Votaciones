@@ -165,6 +165,17 @@ export function ElectionVoteForm({ electionId }: ElectionVoteFormProps) {
               <p className="mt-2 text-sm">
                 Opción seleccionada: <strong>{existingVote.option}</strong>
               </p>
+              {existingVote.receipt ? (
+                <>
+                  <p className="mt-4 text-sm">
+                    Guarda este recibo: prueba que tu papeleta quedó registrada
+                    sin revelar tu voto.
+                  </p>
+                  <code className="mt-2 block break-all rounded-lg bg-white/70 p-3 font-mono text-xs">
+                    {existingVote.receipt}
+                  </code>
+                </>
+              ) : null}
             </section>
           ) : (
             <form
@@ -198,15 +209,9 @@ export function ElectionVoteForm({ electionId }: ElectionVoteFormProps) {
                   </label>
                 ))}
               </fieldset>
-              {!isMockApiEnabled() ? (
-                <p className="mt-5 text-sm text-amber-900">
-                  El envío real del voto todavía no está conectado al backend;
-                  puedes probar este flujo activando el modo mock.
-                </p>
-              ) : null}
               <button
                 type="submit"
-                disabled={isPending || !isMockApiEnabled()}
+                disabled={isPending}
                 className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-emerald-800 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isPending ? "Registrando voto..." : "Confirmar voto"}

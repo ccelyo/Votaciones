@@ -1,6 +1,9 @@
-// Contratos HTTP que consume M4 (propuesta pendiente de M1/M6/M7).
-// No se congelan aquí por decisión del equipo: M4 propone tipos + mocks
-// y M1/M6/M7 los confirman. Ver 01-Prototype.md §15.
+// Cliente HTTP del servicio `ballot` (M4). Contrato: ballot/internal/httpapi/server.go.
+// Los parámetros de la elección y la firma ciega los sirve identidad (lib/api.ts).
+
+import { aBase64Url } from "./token";
+
+const BALLOT_API_URL = (process.env.NEXT_PUBLIC_BALLOT_API_URL ?? "").replace(/\/+$/, "");
 
 export interface ParametrosEleccion {
   electionId: string;
@@ -14,13 +17,14 @@ export interface ParametrosEleccion {
 
 export interface SolicitudPapeleta {
   electionId: string;
-  votoCifradoB64: string;
-  pruebaB64: string;
+  votoCifrado: Uint8Array;
+  prueba: Uint8Array;
   tokenFirmado: string; // sobre base64url de lib/m4/token.ts
 }
 
 export interface RespuestaPapeleta {
   recibo: string; // sobre base64url de lib/m4/receipt.ts
+  hashPapeleta: string; // base64url
   esReintento: boolean; // true si el servidor devolvió SpendReplay idéntico
 }
 
@@ -32,56 +36,50 @@ export class ErrorPapeleta extends Error {
   }
 }
 
-function aB64(bytes: Uint8Array): string {
-  let bin = "";
-  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-  return btoa(bin);
-}
-
 /**
- * GET /elections/{id}/parameters — CON sesión (la posee M3).
- * El navegador verifica la firma de parámetros antes de cifrar.
- */
-export async function obtenerParametrosEleccion(electionId: string): Promise<ParametrosEleccion> {
-  const respuesta = await fetch(`/api/elecciones/${encodeURIComponent(electionId)}/parametros`, {
-    credentials: "include",
-  });
-  if (!respuesta.ok) throw new Error("no se pudieron cargar los parámetros de la elección");
-  return (await respuesta.json()) as ParametrosEleccion;
-}
-
-/**
- * POST /ballots — SIN sesión, SIN cookies, SIN identificadores.
+ * POST /v1/ballots — SIN sesión, SIN cookies, SIN identificadores.
  * Restricción de anonimato (01-Prototype.md §9): credentials "omit" y
- * ninguna cabecera de identidad. M7 define el endpoint final; P1 usa mocks.
+ * ninguna cabecera de identidad.
  */
 export async function enviarPapeleta(solicitud: SolicitudPapeleta): Promise<RespuestaPapeleta> {
-  const respuesta = await fetch("/api/papeletas", {
-    method: "POST",
-    credentials: "omit", // crítico: no vincular login con papeleta
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      election_id: solicitud.electionId,
-      encrypted_vote: solicitud.votoCifradoB64,
-      proof: solicitud.pruebaB64,
-      signed_token: solicitud.tokenFirmado,
-    }),
-  });
-  if (respuesta.status === 409) {
-    throw new ErrorPapeleta("doble-voto", "Este token ya se usó con otra papeleta.");
+  if (!BALLOT_API_URL) {
+    throw new ErrorPapeleta("red", "Configura NEXT_PUBLIC_BALLOT_API_URL para enviar votos.");
   }
-  if (respuesta.status === 410) {
-    throw new ErrorPapeleta("eleccion-cerrada", "La elección ya está cerrada.");
+  let respuesta: Response;
+  try {
+    respuesta = await fetch(`${BALLOT_API_URL}/v1/ballots`, {
+      method: "POST",
+      cache: "no-store",
+      credentials: "omit", // crítico: no vincular login con papeleta
+      referrerPolicy: "no-referrer",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        election_id: solicitud.electionId,
+        token: solicitud.tokenFirmado,
+        encrypted_vote: aBase64Url(solicitud.votoCifrado),
+        proof: aBase64Url(solicitud.prueba),
+      }),
+    });
+  } catch {
+    throw new ErrorPapeleta("red", "No se pudo contactar el servicio de votación. Intenta de nuevo.");
   }
-  if (respuesta.status === 401 || respuesta.status === 403) {
-    throw new ErrorPapeleta("token-invalido", "El token anónimo no es válido.");
+  if (!respuesta.ok) {
+    const cuerpo = (await respuesta.json().catch(() => null)) as { error?: string } | null;
+    switch (cuerpo?.error) {
+      case "token_already_spent":
+        throw new ErrorPapeleta("doble-voto", "Este token ya se usó con otra papeleta.");
+      case "election_not_open":
+        throw new ErrorPapeleta("eleccion-cerrada", "La elección no está abierta.");
+      case "invalid_token":
+      case "invalid_token_signature":
+      case "token_election_mismatch":
+        throw new ErrorPapeleta("token-invalido", "El token anónimo no es válido.");
+      case "invalid_proof":
+        throw new ErrorPapeleta("prueba-invalida", "La prueba de validez fue rechazada.");
+      default:
+        throw new ErrorPapeleta("red", `No se pudo enviar el voto (${respuesta.status}). Intenta de nuevo.`);
+    }
   }
-  if (respuesta.status === 422) {
-    throw new ErrorPapeleta("prueba-invalida", "La prueba de validez fue rechazada.");
-  }
-  if (!respuesta.ok) throw new ErrorPapeleta("red", "No se pudo enviar el voto. Intenta de nuevo.");
-  const datos = (await respuesta.json()) as { receipt: string; replay?: boolean };
-  return { recibo: datos.receipt, esReintento: datos.replay === true };
+  const datos = (await respuesta.json()) as { receipt: string; ballot_hash: string; replayed: boolean };
+  return { recibo: datos.receipt, hashPapeleta: datos.ballot_hash, esReintento: datos.replayed === true };
 }
-
-export { aB64 };
