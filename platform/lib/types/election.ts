@@ -27,4 +27,5 @@ export interface ElectionVote {
   user_id: number;
   option: string;
   created_at: string;
+  receipt?: string;
 }

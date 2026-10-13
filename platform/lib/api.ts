@@ -1,3 +1,17 @@
+import { enviarPapeleta } from "@/lib/m4/api";
+import {
+  cegarPss,
+  claveDesdeDerSpki,
+  finalizarPss,
+  prepararToken,
+} from "@/lib/m4/blind";
+import { CifradorSimulado } from "@/lib/m4/encryptor";
+import { aBase64Url, deBase64Url, serializarSobre } from "@/lib/m4/token";
+import {
+  borrarTokenAnonimo,
+  guardarTokenAnonimo,
+  obtenerTokenAnonimo,
+} from "@/lib/m4/tokenStore";
 import * as mockApi from "@/lib/mock-api";
 import type {
   CreatedElection,
@@ -16,7 +30,7 @@ import type {
   User,
 } from "@/lib/types/user";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
 const USE_MOCK_API = process.env.NEXT_PUBLIC_API_MODE === "mock";
 const SESSION_STORAGE_KEY = "votaciones.auth.session";
 
@@ -31,6 +45,17 @@ type ElectionParametersResponse = {
   options: string[];
   opens_at: number;
   closes_at: number;
+  token_key: {
+    kid: string;
+    public_key_der: string;
+    variant: string;
+  };
+};
+
+type BlindTokenResponse = {
+  kid: string;
+  variant: string;
+  blind_signature: string;
 };
 
 type ApiOptions = RequestInit & {
@@ -216,16 +241,106 @@ export function getVoteForCurrentUser(
   return Promise.resolve(null);
 }
 
-export function castVote(
+export async function castVote(
   electionId: number,
   option: string,
 ): Promise<ElectionVote> {
   if (USE_MOCK_API) return mockApi.castVote(electionId, option);
-  return Promise.reject(
-    new Error(
-      "La emisión real del voto aún no está integrada en el backend. Activa el modo mock para probar este flujo.",
-    ),
+
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Debes iniciar sesión para votar.");
+  const parameters = await apiFetch<ElectionParametersResponse>(
+    `/elections/${encodeURIComponent(electionId)}/parameters`,
   );
+  if (!parameters.options.includes(option)) {
+    throw new Error("Selecciona una opción válida.");
+  }
+  const electionRef = parameters.election_id;
+
+  // Identidad emite un solo token por votante: si un envío anterior falló,
+  // se reutiliza el token guardado en memoria en lugar de pedir otro.
+  let signedToken = obtenerTokenAnonimo(electionRef);
+  if (!signedToken) {
+    signedToken = await requestAnonymousToken(
+      electionRef,
+      parameters.token_key,
+    );
+    guardarTokenAnonimo(electionRef, signedToken);
+  }
+
+  const { ciphertext, proof } = await new CifradorSimulado().cifrar(
+    option,
+    electionRef,
+  );
+  const result = await enviarPapeleta({
+    electionId: electionRef,
+    votoCifrado: ciphertext,
+    prueba: proof,
+    tokenFirmado: signedToken,
+  });
+  borrarTokenAnonimo();
+
+  // Marca has_voted en el padrón; el voto ya quedó registrado aunque falle.
+  await apiFetch("/vote-confirmation", {
+    method: "POST",
+    json: { election_id: electionRef },
+  }).catch(() => undefined);
+
+  return {
+    election_id: electionId,
+    user_id: user.id,
+    option,
+    created_at: new Date().toISOString(),
+    receipt: result.recibo,
+  };
+}
+
+async function requestAnonymousToken(
+  electionRef: string,
+  tokenKey: ElectionParametersResponse["token_key"],
+): Promise<string> {
+  const publicKeyDer = deBase64Url(tokenKey.public_key_der);
+  const { prepared, nonce } = prepararToken(electionRef);
+  const { cegado, estado } = await cegarPss(
+    prepared,
+    claveDesdeDerSpki(publicKeyDer),
+    tokenKey.variant,
+  );
+
+  let response: BlindTokenResponse;
+  try {
+    response = await apiFetch<BlindTokenResponse>("/tokens/blind", {
+      method: "POST",
+      json: { election_id: electionRef, blinded_token: aBase64Url(cegado) },
+    });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 409) {
+      throw new Error(
+        /already issued/i.test(error.message)
+          ? "Ya se emitió tu token para esta elección; tu voto ya fue registrado o el envío anterior no se completó."
+          : "La elección no está abierta.",
+      );
+    }
+    if (error instanceof ApiError && error.status === 403) {
+      throw new Error("No estás habilitado en el padrón de esta elección.");
+    }
+    throw error;
+  }
+
+  const signature = await finalizarPss(
+    deBase64Url(response.blind_signature),
+    estado,
+    publicKeyDer,
+    response.variant,
+  );
+  return serializarSobre({
+    version: 1,
+    kid: response.kid,
+    electionId: electionRef,
+    nonce,
+    preparedMessage: prepared,
+    signature,
+  });
 }
 
 export function createElection(
