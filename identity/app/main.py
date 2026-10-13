@@ -68,14 +68,11 @@ def create_app(
         lifespan=lifespan,
     )
 
-    # Permite que el frontend del prototipo acceda a Identity
-    # cuando ambos servicios se ejecutan en puertos distintos.
+    # Permite que el frontend acceda a Identity desde otro origen
+    # (IDENTITY_ALLOWED_ORIGINS).
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
-        ],
+        allow_origins=settings.allowed_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

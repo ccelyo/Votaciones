@@ -1,6 +1,7 @@
 # Local development: MongoDB as a single-node replica set (transactions need one)
-# plus the ballot service. Generate the receipt key with:
-#   export BALLOT_RECEIPT_PRIVATE_KEY=$(openssl rand 64 | base64)
+# plus the ballot service. Generate the receipt key (Ed25519 seed || public key,
+# not 64 random bytes) with:
+#   export BALLOT_RECEIPT_PRIVATE_KEY=$(python -c "import base64;from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey as K;k=K.generate();print(base64.b64encode(k.private_bytes_raw()+k.public_key().public_bytes_raw()).decode())")
 services:
   mongo:
     image: mongo:8.0

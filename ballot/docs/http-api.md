@@ -117,7 +117,7 @@ la hora de emisión del token en identidad; el orden lo da `seq`.
 
 | Variable | Default | |
 | --- | --- | --- |
-| `BALLOT_RECEIPT_PRIVATE_KEY` | — (obligatoria) | Ed25519 de 64 bytes en base64 |
+| `BALLOT_RECEIPT_PRIVATE_KEY` | — (obligatoria) | Ed25519 de 64 bytes (semilla ‖ clave pública) en base64 |
 | `MONGODB_URI` | vacío → memoria | Sin ella elecciones y papeletas se pierden al reiniciar |
 | `MONGODB_DATABASE` | `votaciones` | |
 | `PORT` / `BALLOT_HTTP_ADDR` | `:8080` | `PORT` lo fija Cloud Run |
@@ -126,8 +126,11 @@ la hora de emisión del token en identidad; el orden lo da `seq`.
 
 ## Local
 
+Ver `.env.example` para una plantilla con todas las variables.
+
 ```bash
-export BALLOT_RECEIPT_PRIVATE_KEY=$(openssl rand 64 | base64)
+# Semilla de 32 bytes seguida de su clave pública; 64 bytes aleatorios no sirven.
+export BALLOT_RECEIPT_PRIVATE_KEY=$(python -c "import base64;from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey as K;k=K.generate();print(base64.b64encode(k.private_bytes_raw()+k.public_key().public_bytes_raw()).decode())")
 docker compose up --build
 # Integración contra Mongo real:
 MONGODB_TEST_URI="mongodb://localhost:27017/?replicaSet=rs0&directConnection=true" go test ./internal/mongostore/

@@ -136,7 +136,7 @@ Todo va en **base64url sin relleno**, no base64 estándar (`btoa`).
 
 ## Pendiente de otros frentes
 
-- **M2**: Dockerfile, carga de `schema.sql` al iniciar PostgreSQL y mTLS del canal gRPC
+- **M2**: carga de `schema.sql` al iniciar PostgreSQL y mTLS del canal gRPC
   (hoy `grpc.insecure_channel`, igual que el listener de `ballot`).
 - **M8**: ejecutar un token real firmado por este servicio contra el verificador Go.
 
@@ -149,6 +149,7 @@ Todo va en **base64url sin relleno**, no base64 estándar (`btoa`).
 | `IDENTITY_BALLOT_GRPC_ADDR` | `127.0.0.1:9091` | Listener gRPC interno de `ballot` |
 | `IDENTITY_BALLOT_GRPC_TIMEOUT_SECONDS` | `5` | Deadline por llamada |
 | `IDENTITY_KEYS_DIR` | `./keys` | Claves privadas; se crean con `0600` si faltan. Están en `.gitignore` |
+| `IDENTITY_ALLOWED_ORIGINS` | `http://localhost:3000,http://127.0.0.1:3000` | Orígenes CORS del frontend, separados por coma |
 | `IDENTITY_DEV_AUTH` | `false` | Autenticación simulada (solo desarrollo) |
 | `IDENTITY_MFA_CODE` | `123456` | Código MFA de demostración para Prototype 1 |
 | `IDENTITY_MFA_CHALLENGE_TTL_SECONDS` | `300` | Vigencia del challenge MFA en segundos |
@@ -166,6 +167,19 @@ uv run pytest -q
 
 `IDENTITY_DEV_AUTH=true` queda disponible únicamente para desarrollo y pruebas.
 El flujo normal usa login, MFA y sesión Bearer.
+
+## Docker
+
+`.env.example` documenta todas las variables de despliegue.
+
+```bash
+cd identity
+docker build -t votaciones-identity .
+docker run --env-file .env -p 8000:8000 -v identity-keys:/app/keys votaciones-identity
+```
+
+La imagen escucha en el puerto 8000 y guarda las claves en `/app/keys`, que debe ser un
+volumen persistente. `schema.sql` se carga aparte sobre PostgreSQL.
 
 ## Regenerar los stubs gRPC
 

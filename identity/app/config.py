@@ -2,9 +2,10 @@
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Annotated
 
 from pydantic import AliasChoices, Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 def normalize_database_url(url: str) -> str:
@@ -47,6 +48,12 @@ class Settings(BaseSettings):
     # En producción deberían provenir de un gestor de secretos.
     keys_dir: Path = Path("./keys")
 
+    # Orígenes CORS del frontend, separados por coma en IDENTITY_ALLOWED_ORIGINS.
+    allowed_origins: Annotated[list[str], NoDecode] = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+
     # Autenticación simulada SOLO para desarrollo y pruebas.
     # Permite X-Dev-User y X-Dev-Roles cuando se activa explícitamente.
     # La autenticación normal usa login + MFA + sesión Bearer.
@@ -61,6 +68,13 @@ class Settings(BaseSettings):
 
     # Duración de la sesión autenticada, en segundos.
     session_ttl_seconds: int = 3600
+
+    @field_validator("allowed_origins", mode="before")
+    @classmethod
+    def _split_origins(cls, value):
+        if isinstance(value, str):
+            return [item.strip() for item in value.split(",") if item.strip()]
+        return value
 
     @field_validator("database_url")
     @classmethod
