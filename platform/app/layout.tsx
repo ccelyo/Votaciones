@@ -1,18 +1,9 @@
 import type { Metadata } from "next";
-import {
-  Atkinson_Hyperlegible_Next,
-  Bricolage_Grotesque,
-  JetBrains_Mono,
-} from "next/font/google";
+import { JetBrains_Mono, Public_Sans } from "next/font/google";
 import "./globals.css";
 
-const bricolage = Bricolage_Grotesque({
-  variable: "--font-bricolage",
-  subsets: ["latin"],
-});
-
-const atkinson = Atkinson_Hyperlegible_Next({
-  variable: "--font-atkinson",
+const publicSans = Public_Sans({
+  variable: "--font-public-sans",
   subsets: ["latin"],
 });
 
@@ -37,7 +28,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${bricolage.variable} ${atkinson.variable} ${jetbrains.variable} h-full antialiased`}
+      className={`${publicSans.variable} ${jetbrains.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">{children}</body>
     </html>

@@ -1,11 +1,16 @@
 import type {
+  AdminElection,
   CreatedElection,
   Election,
   ElectionCreatePayload,
   ElectionEstatus,
+  ElectionSummary,
   ElectionVote,
+  Eligibility,
+  VoterRollEntry,
 } from "@/lib/types/election";
 import type {
+  DirectoryUser,
   LoginPayload,
   MessageResponse,
   RegisterPayload,
@@ -224,4 +229,118 @@ export async function castVote(
 
 export async function getCurrentUser(): Promise<User | null> {
   return readStored<User | null>(STORAGE_KEYS.currentUser, null);
+}
+
+// ---- Administración (modo demo) --------------------------------------------
+
+const ROLL_KEY = "votaciones.mock.roll";
+
+function readRoll(): VoterRollEntry[] {
+  return readStored<VoterRollEntry[]>(ROLL_KEY, []);
+}
+
+export async function listAllElections(): Promise<AdminElection[]> {
+  const now = Date.now();
+  return getElectionsFromStorage().map((election) => ({
+    id: election.id,
+    name: election.name,
+    status: new Date(election.ends_at).getTime() > now ? "open" : "closed",
+    starts_at: election.starts_at,
+    ends_at: election.ends_at,
+    created_at: election.created_at,
+  }));
+}
+
+export async function getElectionSummary(
+  electionId: number,
+): Promise<ElectionSummary> {
+  const votes = readStored<ElectionVote[]>(STORAGE_KEYS.votes, []);
+  const [election] = (await listAllElections()).filter(
+    (item) => item.id === electionId,
+  );
+  return {
+    election_id: String(electionId),
+    identity_status: election?.status ?? "closed",
+    ballot_status: election?.status ?? "closed",
+    total_ballots: votes.filter((vote) => vote.election_id === electionId)
+      .length,
+  };
+}
+
+export async function closeElection(electionId: number): Promise<void> {
+  const elections = getElectionsFromStorage().map((election) =>
+    election.id === electionId
+      ? { ...election, ends_at: new Date().toISOString() }
+      : election,
+  );
+  localStorage.setItem(STORAGE_KEYS.elections, JSON.stringify(elections));
+}
+
+export async function listUsers(): Promise<DirectoryUser[]> {
+  return [...FIXTURE_USERS, ...getRegisteredUsers()].map((user) => ({
+    id: user.id,
+    username: user.username ?? user.email ?? `usuario-${user.id}`,
+    role: user.role,
+  }));
+}
+
+export async function getVoterRoll(
+  electionId: number,
+): Promise<VoterRollEntry[]> {
+  const votes = readStored<ElectionVote[]>(STORAGE_KEYS.votes, []);
+  return readRoll()
+    .filter((entry) => entry.election_id === String(electionId))
+    .map((entry) => ({
+      ...entry,
+      has_voted: votes.some(
+        (vote) =>
+          vote.election_id === electionId && vote.user_id === entry.user_id,
+      ),
+    }));
+}
+
+export async function enrollVoter(
+  electionId: number,
+  userId: number,
+): Promise<void> {
+  const roll = readRoll();
+  if (
+    roll.some(
+      (entry) =>
+        entry.election_id === String(electionId) && entry.user_id === userId,
+    )
+  ) {
+    throw new Error("El usuario ya está inscrito en esta elección.");
+  }
+  roll.push({
+    user_id: userId,
+    election_id: String(electionId),
+    is_eligible: true,
+    has_voted: false,
+  });
+  localStorage.setItem(ROLL_KEY, JSON.stringify(roll));
+}
+
+export async function setVoterEligibility(
+  electionId: number,
+  userId: number,
+  isEligible: boolean,
+): Promise<void> {
+  const roll = readRoll().map((entry) =>
+    entry.election_id === String(electionId) && entry.user_id === userId
+      ? { ...entry, is_eligible: isEligible }
+      : entry,
+  );
+  localStorage.setItem(ROLL_KEY, JSON.stringify(roll));
+}
+
+export async function getEligibility(electionId: number): Promise<Eligibility> {
+  // En el modo demo cualquier usuario con sesión puede votar.
+  const vote = await getVoteForCurrentUser(electionId);
+  return {
+    election_id: String(electionId),
+    is_eligible: true,
+    has_voted: vote !== null,
+    token_issued: vote !== null,
+  };
 }

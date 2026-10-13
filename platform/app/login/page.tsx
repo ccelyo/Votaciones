@@ -17,10 +17,7 @@ export default function LoginPage() {
         process.env.NEXT_PUBLIC_API_MODE === "mock" ? (
           <>
             ¿No tienes cuenta?{" "}
-            <Link
-              href="/register"
-              className="font-bold text-royal-700 hover:underline"
-            >
+            <Link href="/register" className="link">
               Regístrate
             </Link>
           </>
