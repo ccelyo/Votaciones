@@ -5,24 +5,30 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useState, useTransition } from "react";
 
 import {
+  Icon,
+  RiArrowLeftLine,
+  RiCheckboxCircleFill,
+  RiCheckLine,
+  RiFileCopyLine,
+  RiLockLine,
+  RiShieldCheckLine,
+  RiTimeLine,
+} from "@/components/icons";
+import {
   castVote,
   getCurrentUser,
   getElectionForVoting,
   getVoteForCurrentUser,
   isMockApiEnabled,
 } from "@/lib/api";
+import { formatDate } from "@/lib/format";
 import type { Election, ElectionVote } from "@/lib/types/election";
 
 type ElectionVoteFormProps = {
   electionId: string;
 };
 
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat("es", {
-    dateStyle: "long",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
+const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 export function ElectionVoteForm({ electionId }: ElectionVoteFormProps) {
   const router = useRouter();
@@ -112,114 +118,223 @@ export function ElectionVoteForm({ electionId }: ElectionVoteFormProps) {
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+    <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
       <Link
         href="/"
-        className="text-sm font-semibold text-emerald-800 hover:underline"
+        className="btn btn-ghost -ml-3 min-h-9 px-3 py-1.5 text-sm"
       >
-        ← Volver al inicio
+        <Icon icon={RiArrowLeftLine} size={18} />
+        Elecciones
       </Link>
 
       {isLoading ? (
-        <p className="mt-8 text-sm text-muted" aria-live="polite">
-          Cargando elección...
-        </p>
+        <div className="mt-6 space-y-4" aria-live="polite">
+          <div className="h-10 w-2/3 animate-pulse rounded-xl bg-line/70" />
+          <div className="h-64 animate-pulse rounded-2xl bg-line/50" />
+          <span className="sr-only">Cargando elección...</span>
+        </div>
       ) : error && !election ? (
-        <div
-          className="mt-8 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"
-          role="alert"
-        >
+        <div className="alert alert-error mt-6" role="alert">
           {error}
         </div>
       ) : election ? (
         <>
-          <header className="mb-8 mt-6">
+          <header className="reveal mt-4">
             {isMockApiEnabled() ? (
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-800">
-                Modo de prueba — el voto se guarda solo en este navegador
+              <p className="badge mb-3 bg-amber-100 text-amber-900">
+                Modo de prueba: el voto se guarda solo en este navegador
               </p>
             ) : null}
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+            <p className="eyebrow">Elección</p>
+            <h1 className="font-display mt-1 text-3xl font-bold text-navy-900 sm:text-4xl">
               {election.name}
             </h1>
-            <p className="mt-3 text-sm text-muted">
-              Disponible hasta {formatDate(election.ends_at)}.
+            <p className="mt-3 inline-flex items-center gap-1.5 text-sm text-muted">
+              <Icon icon={RiTimeLine} size={16} />
+              Disponible hasta el {formatDate(election.ends_at)}
             </p>
           </header>
 
-          {error ? (
-            <div
-              role="alert"
-              className="mb-5 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900"
-            >
-              {error}
-            </div>
-          ) : null}
-
           {existingVote ? (
-            <section
-              aria-live="polite"
-              className="rounded-2xl border border-emerald-300 bg-emerald-50 p-6 text-emerald-950"
-            >
-              <h2 className="font-semibold">Tu voto ya fue registrado</h2>
-              <p className="mt-2 text-sm">
-                Opción seleccionada: <strong>{existingVote.option}</strong>
-              </p>
-              {existingVote.receipt ? (
-                <>
-                  <p className="mt-4 text-sm">
-                    Guarda este recibo: prueba que tu papeleta quedó registrada
-                    sin revelar tu voto.
-                  </p>
-                  <code className="mt-2 block break-all rounded-lg bg-white/70 p-3 font-mono text-xs">
-                    {existingVote.receipt}
-                  </code>
-                </>
-              ) : null}
-            </section>
+            <VoteConfirmation vote={existingVote} />
           ) : (
             <form
               onSubmit={handleSubmit}
-              className="rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8"
+              className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]"
             >
-              <fieldset className="space-y-3">
-                <legend className="mb-4 text-base font-semibold text-foreground">
-                  Selecciona una opción
-                </legend>
-                {election.options?.map((option) => (
-                  <label
-                    key={option}
-                    className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition-colors ${
-                      selectedOption === option
-                        ? "border-emerald-700 bg-emerald-50"
-                        : "border-border hover:bg-background"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="election-option"
-                      value={option}
-                      checked={selectedOption === option}
-                      onChange={() => setSelectedOption(option)}
-                      className="size-4 accent-emerald-800"
-                    />
-                    <span className="text-sm font-medium text-foreground">
-                      {option}
-                    </span>
-                  </label>
-                ))}
-              </fieldset>
-              <button
-                type="submit"
-                disabled={isPending}
-                className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-emerald-800 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+              <fieldset
+                className="reveal space-y-3"
+                style={{ "--i": 1 } as React.CSSProperties}
               >
-                {isPending ? "Registrando voto..." : "Confirmar voto"}
-              </button>
+                <legend className="mb-3 text-sm font-bold text-navy-900">
+                  Elige una opción
+                </legend>
+                {election.options?.map((option, index) => {
+                  const selected = selectedOption === option;
+                  return (
+                    <label
+                      key={option}
+                      className={`flex cursor-pointer items-center gap-4 rounded-2xl border-2 bg-white p-4 transition-all sm:p-5 ${
+                        selected
+                          ? "border-royal-600 shadow-[var(--shadow-lift)]"
+                          : "border-line hover:border-royal-500/40"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="election-option"
+                        value={option}
+                        checked={selected}
+                        onChange={() => setSelectedOption(option)}
+                        className="peer sr-only"
+                      />
+                      <span
+                        className={`font-display flex size-11 shrink-0 items-center justify-center rounded-xl text-lg font-bold transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-royal-600 peer-focus-visible:ring-offset-2 ${
+                          selected
+                            ? "bg-royal-700 text-white"
+                            : "bg-royal-50 text-royal-700"
+                        }`}
+                        aria-hidden
+                      >
+                        {LETTERS[index] ?? index + 1}
+                      </span>
+                      <span className="flex-1 text-base font-bold text-navy-900 sm:text-lg">
+                        {option}
+                      </span>
+                      <span
+                        className={`flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+                          selected
+                            ? "border-royal-600 bg-royal-600 text-white"
+                            : "border-line"
+                        }`}
+                        aria-hidden
+                      >
+                        {selected ? (
+                          <Icon icon={RiCheckLine} size={14} />
+                        ) : null}
+                      </span>
+                    </label>
+                  );
+                })}
+              </fieldset>
+
+              <aside
+                className="reveal lg:sticky lg:top-24 lg:self-start"
+                style={{ "--i": 2 } as React.CSSProperties}
+              >
+                <div className="card p-5">
+                  <p className="text-xs font-bold uppercase tracking-wider text-subtle">
+                    Tu selección
+                  </p>
+                  <p
+                    className={`font-display mt-2 min-h-8 text-xl font-bold ${
+                      selectedOption ? "text-navy-900" : "text-subtle"
+                    }`}
+                    aria-live="polite"
+                  >
+                    {selectedOption || "Ninguna aún"}
+                  </p>
+
+                  {error ? (
+                    <div role="alert" className="alert alert-error mt-4">
+                      {error}
+                    </div>
+                  ) : null}
+
+                  <button
+                    type="submit"
+                    disabled={isPending || !selectedOption}
+                    className="btn btn-primary mt-5 w-full"
+                  >
+                    {isPending ? "Enviando voto..." : "Confirmar voto"}
+                  </button>
+                  <p className="mt-3 text-center text-xs text-subtle">
+                    Una vez enviado, el voto no se puede cambiar.
+                  </p>
+
+                  <ul className="mt-5 space-y-3 border-t border-line pt-5 text-sm text-muted">
+                    <li className="flex gap-2.5">
+                      <Icon
+                        icon={RiLockLine}
+                        size={18}
+                        className="mt-0.5 shrink-0 text-royal-600"
+                      />
+                      Tu voto se cifra en este dispositivo.
+                    </li>
+                    <li className="flex gap-2.5">
+                      <Icon
+                        icon={RiShieldCheckLine}
+                        size={18}
+                        className="mt-0.5 shrink-0 text-royal-600"
+                      />
+                      Se envía sin tu identidad, con un token anónimo.
+                    </li>
+                  </ul>
+                </div>
+              </aside>
             </form>
           )}
         </>
       ) : null}
     </main>
+  );
+}
+
+function VoteConfirmation({ vote }: { vote: ElectionVote }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copyReceipt() {
+    if (!vote.receipt) return;
+    try {
+      await navigator.clipboard.writeText(vote.receipt);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <section aria-live="polite" className="reveal card mt-8 overflow-hidden">
+      <div className="band flex items-center gap-4 px-6 py-6 sm:px-8">
+        <Icon icon={RiCheckboxCircleFill} size={44} className="shrink-0" />
+        <div>
+          <h2 className="font-display text-2xl font-bold">
+            Tu voto fue registrado
+          </h2>
+          <p className="text-white/80">
+            Opción elegida:{" "}
+            <strong className="text-white">{vote.option}</strong>
+          </p>
+        </div>
+      </div>
+
+      {vote.receipt ? (
+        <div className="p-6 sm:p-8">
+          <h3 className="font-bold text-navy-900">Tu recibo</h3>
+          <p className="mt-1 text-sm text-muted">
+            Guárdalo: prueba que tu papeleta quedó registrada, sin revelar por
+            quién votaste.
+          </p>
+          <code className="mt-4 block max-h-40 overflow-auto break-all rounded-xl bg-canvas p-4 font-mono text-xs leading-relaxed text-navy-800 ring-1 ring-line">
+            {vote.receipt}
+          </code>
+          <button
+            type="button"
+            onClick={copyReceipt}
+            className="btn btn-secondary mt-4"
+          >
+            <Icon icon={copied ? RiCheckLine : RiFileCopyLine} size={18} />
+            {copied ? "Copiado" : "Copiar recibo"}
+          </button>
+        </div>
+      ) : (
+        <div className="p-6 sm:p-8">
+          <Link href="/" className="btn btn-secondary">
+            Volver a las elecciones
+          </Link>
+        </div>
+      )}
+    </section>
   );
 }

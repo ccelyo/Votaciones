@@ -1,8 +1,12 @@
 import { ElectionVoteForm } from "@/components/election/ElectionVoteForm";
-import { Header } from "@/components/layout/Header";
+import { PageShell } from "@/components/layout/PageShell";
 
 type ElectionVotePageProps = {
   params: Promise<{ electionId: string }>;
+};
+
+export const metadata = {
+  title: "Votar",
 };
 
 export default async function ElectionVotePage({
@@ -11,9 +15,8 @@ export default async function ElectionVotePage({
   const { electionId } = await params;
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <PageShell>
       <ElectionVoteForm electionId={electionId} />
-    </div>
+    </PageShell>
   );
 }

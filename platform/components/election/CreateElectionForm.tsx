@@ -2,14 +2,19 @@
 
 import { type FormEvent, useRef, useState, useTransition } from "react";
 
+import {
+  Icon,
+  RiAddLine,
+  RiCheckboxCircleFill,
+  RiDeleteBinLine,
+} from "@/components/icons";
 import { createElection } from "@/lib/api";
 import type {
   CreatedElection,
   ElectionCreatePayload,
 } from "@/lib/types/election";
 
-const INPUT_CLASS =
-  "w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20";
+const INPUT_CLASS = "field";
 
 function toEpochSeconds(value: string): number {
   return Math.floor(new Date(value).getTime() / 1000);
@@ -113,28 +118,27 @@ export function CreateElectionForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="divide-y divide-line">
       {error ? (
-        <div
-          role="alert"
-          className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900"
-        >
+        <div role="alert" className="alert alert-error mb-6">
           {error}
         </div>
       ) : null}
 
       {createdElection ? (
-        <output className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
-          Elección creada correctamente (ID: {createdElection.election_id},{" "}
-          estado: {createdElection.status}).
+        <output className="alert alert-success mb-6 flex items-center gap-2">
+          <Icon icon={RiCheckboxCircleFill} size={20} className="shrink-0" />
+          Elección creada (ID {createdElection.election_id}, estado{" "}
+          {createdElection.status}).
         </output>
       ) : null}
 
-      <div>
-        <label
-          htmlFor="election-name"
-          className="mb-2 block text-sm font-medium"
-        >
+      <FormSection
+        step={1}
+        title="Información"
+        description="Cómo verán la elección los votantes."
+      >
+        <label htmlFor="election-name" className="field-label">
           Nombre de la elección
         </label>
         <input
@@ -147,66 +151,75 @@ export function CreateElectionForm() {
           onChange={(event) => setName(event.target.value)}
           className={INPUT_CLASS}
           autoComplete="off"
+          placeholder="Ej. Representante estudiantil 2026"
         />
-      </div>
+      </FormSection>
 
-      <fieldset className="space-y-3">
-        <legend className="mb-2 text-sm font-medium">
-          Opciones de votación
-        </legend>
-        {options.map((option, index) => (
-          <div key={option.id} className="flex items-center gap-3">
-            <label htmlFor={`election-option-${index}`} className="sr-only">
-              Opción {index + 1}
-            </label>
-            <input
-              id={`election-option-${index}`}
-              type="text"
-              required
-              maxLength={128}
-              value={option.value}
-              onChange={(event) => updateOption(option.id, event.target.value)}
-              className={INPUT_CLASS}
-              placeholder={`Opción ${index + 1}`}
-            />
-            {options.length > 2 ? (
-              <button
-                type="button"
-                onClick={() =>
-                  setOptions((current) =>
-                    current.filter(
-                      (currentOption) => currentOption.id !== option.id,
-                    ),
-                  )
+      <FormSection
+        step={2}
+        title="Opciones"
+        description="Entre 2 y 100 opciones, sin repetir."
+      >
+        <fieldset className="space-y-3">
+          <legend className="sr-only">Opciones de votación</legend>
+          {options.map((option, index) => (
+            <div key={option.id} className="flex items-center gap-3">
+              <label htmlFor={`election-option-${index}`} className="sr-only">
+                Opción {index + 1}
+              </label>
+              <input
+                id={`election-option-${index}`}
+                type="text"
+                required
+                maxLength={128}
+                value={option.value}
+                onChange={(event) =>
+                  updateOption(option.id, event.target.value)
                 }
-                className="shrink-0 text-sm font-medium text-red-700 hover:text-red-900"
-                aria-label={`Eliminar opción ${index + 1}`}
-              >
-                Eliminar
-              </button>
-            ) : null}
-          </div>
-        ))}
-        <button
-          type="button"
-          disabled={options.length >= 100}
-          onClick={() =>
-            setOptions((current) => [
-              ...current,
-              { id: nextOptionId.current++, value: "" },
-            ])
-          }
-          className="text-sm font-semibold text-emerald-800 hover:text-emerald-950 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          + Agregar opción
-        </button>
-      </fieldset>
+                className={INPUT_CLASS}
+                placeholder={`Opción ${index + 1}`}
+              />
+              {options.length > 2 ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOptions((current) =>
+                      current.filter(
+                        (currentOption) => currentOption.id !== option.id,
+                      ),
+                    )
+                  }
+                  className="btn btn-ghost shrink-0 px-3 hover:!bg-danger-soft hover:!text-danger"
+                  aria-label={`Eliminar opción ${index + 1}`}
+                >
+                  <Icon icon={RiDeleteBinLine} size={18} />
+                </button>
+              ) : null}
+            </div>
+          ))}
+          <button
+            type="button"
+            disabled={options.length >= 100}
+            onClick={() =>
+              setOptions((current) => [
+                ...current,
+                { id: nextOptionId.current++, value: "" },
+              ])
+            }
+            className="btn btn-secondary w-full border-dashed"
+          >
+            <Icon icon={RiAddLine} size={18} />
+            Agregar opción
+          </button>
+        </fieldset>
+      </FormSection>
 
-      <div>
-        <label
-          htmlFor="encryption-public-key"
-          className="mb-2 block text-sm font-medium"
-        >
+      <FormSection
+        step={3}
+        title="Seguridad"
+        description="Clave con la que se cifran los votos."
+      >
+        <label htmlFor="encryption-public-key" className="field-label">
           Clave pública de cifrado (base64url)
         </label>
         <textarea
@@ -219,57 +232,85 @@ export function CreateElectionForm() {
           className={`${INPUT_CLASS} resize-y font-mono`}
           aria-describedby="encryption-public-key-help"
         />
-        <p
-          id="encryption-public-key-help"
-          className="mt-2 text-xs leading-5 text-muted"
-        >
+        <p id="encryption-public-key-help" className="field-hint">
           Ingresa la clave pública en base64url sin relleno. La clave privada no
           debe compartirse ni enviarse.
         </p>
-      </div>
+      </FormSection>
 
-      <div className="grid gap-5 sm:grid-cols-2">
-        <div>
-          <label htmlFor="opens-at" className="mb-2 block text-sm font-medium">
-            Fecha y hora de apertura
-          </label>
-          <input
-            id="opens-at"
-            name="opens_at"
-            type="datetime-local"
-            required
-            value={opensAt}
-            onChange={(event) => setOpensAt(event.target.value)}
-            className={INPUT_CLASS}
-          />
-        </div>
-        <div>
-          <label htmlFor="closes-at" className="mb-2 block text-sm font-medium">
-            Fecha y hora de cierre
-          </label>
-          <input
-            id="closes-at"
-            name="closes_at"
-            type="datetime-local"
-            required
-            value={closesAt}
-            onChange={(event) => setClosesAt(event.target.value)}
-            className={INPUT_CLASS}
-          />
-        </div>
-      </div>
-      <p className="-mt-4 text-xs text-muted">
-        Las fechas se envían como epoch UTC; las horas corresponden a la zona
-        horaria local de este navegador.
-      </p>
-
-      <button
-        type="submit"
-        disabled={isPending}
-        className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-emerald-800 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+      <FormSection
+        step={4}
+        title="Periodo"
+        description="Hora local de este navegador; se envía en UTC."
       >
-        {isPending ? "Creando elección..." : "Crear elección"}
-      </button>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div>
+            <label htmlFor="opens-at" className="field-label">
+              Fecha y hora de apertura
+            </label>
+            <input
+              id="opens-at"
+              name="opens_at"
+              type="datetime-local"
+              required
+              value={opensAt}
+              onChange={(event) => setOpensAt(event.target.value)}
+              className={INPUT_CLASS}
+            />
+          </div>
+          <div>
+            <label htmlFor="closes-at" className="field-label">
+              Fecha y hora de cierre
+            </label>
+            <input
+              id="closes-at"
+              name="closes_at"
+              type="datetime-local"
+              required
+              value={closesAt}
+              onChange={(event) => setClosesAt(event.target.value)}
+              className={INPUT_CLASS}
+            />
+          </div>
+        </div>
+      </FormSection>
+
+      <div className="pt-6">
+        <button
+          type="submit"
+          disabled={isPending}
+          className="btn btn-primary w-full sm:w-auto sm:px-8"
+        >
+          {isPending ? "Creando elección..." : "Crear elección"}
+        </button>
+      </div>
     </form>
+  );
+}
+
+function FormSection({
+  step,
+  title,
+  description,
+  children,
+}: {
+  step: number;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="grid gap-4 py-7 first:pt-0 md:grid-cols-[13rem_minmax(0,1fr)] md:gap-8">
+      <div className="flex gap-3">
+        <span className="font-display flex size-8 shrink-0 items-center justify-center rounded-lg bg-royal-50 text-sm font-bold text-royal-700">
+          {step}
+        </span>
+        <div>
+          <h2 className="font-bold text-navy-900">{title}</h2>
+          <p className="mt-0.5 text-sm text-muted">{description}</p>
+        </div>
+      </div>
+      <div>{children}</div>
+    </section>
   );
 }

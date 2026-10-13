@@ -1,80 +1,74 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
-import { getCurrentUser } from "@/lib/api";
+import {
+  Icon,
+  RiArrowRightLine,
+  RiCalendarEventLine,
+  RiTimeLine,
+} from "@/components/icons";
+import { formatClosesIn, formatDate } from "@/lib/format";
 import type { Election } from "@/lib/types/election";
 
 type ElectionCardProps = {
   election: Election;
+  index: number;
+  isAuthenticated: boolean;
 };
 
-export function ElectionCard({ election }: ElectionCardProps) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function checkSession() {
-      const user = await getCurrentUser();
-      if (!cancelled) {
-        setIsAuthenticated(user !== null);
-      }
-    }
-
-    checkSession();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
+export function ElectionCard({
+  election,
+  index,
+  isAuthenticated,
+}: ElectionCardProps) {
   const votePath = `/elections/${election.id}/vote`;
+  const closesIn = formatClosesIn(election.ends_at);
 
   return (
-    <article className="flex h-full flex-col rounded-2xl border border-border bg-surface p-6 shadow-sm">
-      <div className="flex-1">
-        <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+    <article
+      className="reveal group relative flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-royal-500/50 hover:shadow-[var(--shadow-lift)]"
+      style={{ "--i": index } as React.CSSProperties}
+    >
+      <span
+        className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-royal-700 via-royal-500 to-royal-700"
+        aria-hidden
+      />
+      <div className="flex items-center justify-between gap-2">
+        <span className="badge bg-success-soft text-success">
+          <span className="live-dot" aria-hidden />
           Abierta
         </span>
-        <h2 className="mt-4 text-lg font-semibold text-foreground">
-          {election.name}
-        </h2>
-        <dl className="mt-4 space-y-2 text-sm text-muted">
-          <div className="flex gap-2">
-            <dt className="font-medium text-foreground">Inicia:</dt>
-            <dd>
-              <time dateTime={election.starts_at}>{election.starts_at}</time>
-            </dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="font-medium text-foreground">Finaliza:</dt>
-            <dd>
-              <time dateTime={election.ends_at}>{election.ends_at}</time>
-            </dd>
-          </div>
-        </dl>
+        {closesIn ? (
+          <span className="inline-flex items-center gap-1 text-xs font-bold text-muted">
+            <Icon icon={RiTimeLine} size={14} />
+            {closesIn}
+          </span>
+        ) : null}
       </div>
 
-      {isAuthenticated === null ? (
-        <span
-          className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-emerald-800 px-5 py-2 text-sm font-semibold text-white opacity-60"
-          aria-live="polite"
-        >
-          Verificando sesión...
-        </span>
-      ) : (
-        <Link
-          href={
-            isAuthenticated
-              ? votePath
-              : `/login?next=${encodeURIComponent(votePath)}`
-          }
-          className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-emerald-800 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800"
-        >
-          {isAuthenticated ? "Votar" : "Inicia sesión para participar"}
-        </Link>
-      )}
+      <h3 className="font-display mt-4 flex-1 text-xl font-bold leading-snug text-navy-900">
+        {election.name}
+      </h3>
+
+      <p className="mt-4 flex items-center gap-2 text-sm text-muted">
+        <Icon icon={RiCalendarEventLine} size={16} className="text-subtle" />
+        Hasta el {formatDate(election.ends_at)}
+      </p>
+
+      <Link
+        href={
+          isAuthenticated
+            ? votePath
+            : `/login?next=${encodeURIComponent(votePath)}`
+        }
+        className="btn btn-primary mt-5 w-full"
+      >
+        {isAuthenticated ? "Votar" : "Inicia sesión para votar"}
+        <Icon
+          icon={RiArrowRightLine}
+          size={18}
+          className="transition-transform group-hover:translate-x-0.5"
+        />
+      </Link>
     </article>
   );
 }

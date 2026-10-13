@@ -3,68 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Icon, RiMenuLine } from "@/components/icons";
-import { AppSidebar } from "@/components/layout/AppSidebar";
+import { AppSidebar, getInitial } from "@/components/layout/AppSidebar";
 import { Logo } from "@/components/layout/Logo";
 import { getCurrentUser, logout } from "@/lib/api";
 import type { User } from "@/lib/types/user";
 
-const ROUTES = {
-  home: "/",
-  login: "/login",
-  register: "/register",
-} as const;
-
-type HeaderProps = {
-  activePath?: (typeof ROUTES)[keyof typeof ROUTES];
-  variant?: "marketing";
-};
-
-function AuthActionsSkeleton() {
-  return (
-    <>
-      <span
-        className="hidden h-10 w-[8.75rem] shrink-0 rounded-full bg-border/70 motion-reduce:animate-none sm:block"
-        aria-hidden="true"
-      />
-      <span
-        className="h-10 w-[6.75rem] shrink-0 rounded-full bg-border/70 motion-reduce:animate-none"
-        aria-hidden="true"
-      />
-    </>
-  );
-}
-
-function GuestAuthActions({
-  activePath,
-}: {
-  activePath?: HeaderProps["activePath"];
-}) {
-  const isMockApi = process.env.NEXT_PUBLIC_API_MODE === "mock";
-
-  return (
-    <>
-      <Link
-        href={ROUTES.login}
-        aria-current={activePath === ROUTES.login ? "page" : undefined}
-        className="ds-btn ds-btn-ghost ds-btn-pill shrink-0 px-4 py-2 text-sm"
-      >
-        Iniciar sesión
-      </Link>
-      {isMockApi ? (
-        <Link
-          href={ROUTES.register}
-          aria-current={activePath === ROUTES.register ? "page" : undefined}
-          className="ds-btn ds-btn-primary ds-btn-pill shrink-0 px-4 py-2 text-sm"
-        >
-          Registrarse
-        </Link>
-      ) : null}
-    </>
-  );
-}
-
-export function Header({ activePath }: HeaderProps) {
+export function Header() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,8 +16,8 @@ export function Header({ activePath }: HeaderProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
+  const isMockApi = process.env.NEXT_PUBLIC_API_MODE === "mock";
 
-  // Consulta de sesión
   useEffect(() => {
     let cancelled = false;
 
@@ -90,14 +34,11 @@ export function Header({ activePath }: HeaderProps) {
           );
         }
       } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
+        if (!cancelled) setIsLoading(false);
       }
     }
 
     loadUser();
-
     return () => {
       cancelled = true;
     };
@@ -133,67 +74,74 @@ export function Header({ activePath }: HeaderProps) {
   }
 
   return (
-    <header className="z-20 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border bg-surface px-4 sm:px-6">
-      <Link
-        href={ROUTES.home}
-        aria-label="Votaciones — Inicio"
-        className="inline-flex shrink-0 items-center"
-      >
-        <Logo />
-      </Link>
+    <header className="sticky top-0 z-30 border-b border-line/80 bg-white/85 backdrop-blur-md">
+      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <Link href="/" aria-label="Espivota — Inicio" className="rounded-lg">
+          <Logo />
+        </Link>
 
-      <div className="flex items-center gap-3" aria-busy={isLoading}>
-        {process.env.NEXT_PUBLIC_API_MODE === "mock" ? (
-          <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900">
-            Demo
-          </span>
-        ) : null}
-        {isLoading ? (
-          <AuthActionsSkeleton />
-        ) : user ? (
-          <button
-            type="button"
-            onClick={() => {
-              setLogoutError(null);
-              setSidebarOpen(true);
-            }}
-            className="inline-flex size-11 items-center justify-center rounded-full text-foreground transition-colors hover:bg-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800"
-            aria-label="Abrir menú de usuario"
-            aria-expanded={sidebarOpen}
-            aria-controls="user-sidebar"
-          >
-            <Icon icon={RiMenuLine} size={24} />
-          </button>
-        ) : (
-          <GuestAuthActions activePath={activePath} />
-        )}
+        <div className="flex items-center gap-3" aria-busy={isLoading}>
+          {isMockApi ? (
+            <span className="badge bg-amber-100 text-amber-900">Demo</span>
+          ) : null}
+          {isLoading ? (
+            <span
+              className="h-10 w-28 animate-pulse rounded-xl bg-line/70"
+              aria-hidden="true"
+            />
+          ) : user ? (
+            <button
+              type="button"
+              onClick={() => {
+                setLogoutError(null);
+                setSidebarOpen(true);
+              }}
+              className="flex items-center gap-2.5 rounded-xl py-1.5 pl-1.5 pr-3 transition-colors hover:bg-royal-50"
+              aria-label="Abrir menú de usuario"
+              aria-expanded={sidebarOpen}
+              aria-controls="user-sidebar"
+            >
+              <span className="flex size-8 items-center justify-center rounded-lg bg-royal-700 text-sm font-bold text-white">
+                {getInitial(user)}
+              </span>
+              <span className="hidden max-w-40 truncate text-sm font-bold text-navy-900 sm:block">
+                {user.full_name || user.username}
+              </span>
+            </button>
+          ) : (
+            <>
+              <Link href="/login" className="btn btn-primary min-h-10 py-2">
+                Iniciar sesión
+              </Link>
+              {isMockApi ? (
+                <Link
+                  href="/register"
+                  className="btn btn-ghost hidden min-h-10 py-2 sm:inline-flex"
+                >
+                  Registrarse
+                </Link>
+              ) : null}
+            </>
+          )}
+        </div>
       </div>
-      {userLoadError ? (
+
+      {userLoadError || logoutError ? (
         <div
           role="alert"
-          className="fixed bottom-4 right-4 z-[60] max-w-sm rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-lg"
+          className="alert alert-error fixed bottom-4 right-4 z-[60] max-w-sm shadow-lg"
         >
-          {userLoadError}
+          {logoutError ?? userLoadError}
         </div>
       ) : null}
       {user ? (
-        <>
-          <AppSidebar
-            user={user}
-            isOpen={sidebarOpen}
-            isLoggingOut={isLoggingOut}
-            onClose={() => setSidebarOpen(false)}
-            onLogout={handleLogout}
-          />
-          {logoutError ? (
-            <div
-              role="alert"
-              className="fixed bottom-4 right-4 z-[60] max-w-sm rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900 shadow-lg"
-            >
-              {logoutError}
-            </div>
-          ) : null}
-        </>
+        <AppSidebar
+          user={user}
+          isOpen={sidebarOpen}
+          isLoggingOut={isLoggingOut}
+          onClose={() => setSidebarOpen(false)}
+          onLogout={handleLogout}
+        />
       ) : null}
     </header>
   );

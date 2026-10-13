@@ -65,7 +65,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
     return (
       <main
         role="alert"
-        className="mx-auto flex min-h-[50vh] max-w-7xl items-center justify-center px-4 text-sm text-red-700"
+        className="mx-auto flex min-h-[50vh] max-w-7xl items-center justify-center px-4 text-sm text-danger"
       >
         No se pudieron verificar los permisos: {error}
       </main>

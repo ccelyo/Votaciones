@@ -3,9 +3,10 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { Icon, RiCheckLine } from "@/components/icons";
 import { completeMfaLogin, login } from "@/lib/api";
 
-const INPUT_CLASS = "auth-input auth-input-compact";
+const INPUT_CLASS = "field";
 
 export function LoginForm() {
   const router = useRouter();
@@ -71,10 +72,39 @@ export function LoginForm() {
   return (
     <form
       onSubmit={challengeId ? handleMfaSubmit : handleSubmit}
-      className="space-y-4"
+      className="space-y-5"
     >
+      <ol
+        className="flex items-center gap-2 text-xs font-bold"
+        aria-label="Pasos"
+      >
+        <li
+          className={`flex items-center gap-2 ${challengeId ? "text-success" : "text-royal-700"}`}
+          aria-current={challengeId ? undefined : "step"}
+        >
+          <span
+            className={`flex size-6 items-center justify-center rounded-full text-white ${challengeId ? "bg-success" : "bg-royal-700"}`}
+          >
+            {challengeId ? <Icon icon={RiCheckLine} size={14} /> : "1"}
+          </span>
+          Credenciales
+        </li>
+        <li className="h-px flex-1 bg-line" aria-hidden />
+        <li
+          className={`flex items-center gap-2 ${challengeId ? "text-royal-700" : "text-subtle"}`}
+          aria-current={challengeId ? "step" : undefined}
+        >
+          <span
+            className={`flex size-6 items-center justify-center rounded-full ${challengeId ? "bg-royal-700 text-white" : "bg-canvas text-subtle ring-1 ring-line"}`}
+          >
+            2
+          </span>
+          Verificación
+        </li>
+      </ol>
+
       {error ? (
-        <div role="alert" className="ds-alert ds-alert-error">
+        <div role="alert" className="alert alert-error">
           {error}
         </div>
       ) : null}
@@ -85,7 +115,7 @@ export function LoginForm() {
             Ingresa el código de verificación de 6 dígitos.
           </p>
           <div>
-            <label htmlFor="mfa-code" className="ds-label">
+            <label htmlFor="mfa-code" className="field-label">
               Código MFA
             </label>
             <input
@@ -102,14 +132,14 @@ export function LoginForm() {
               onChange={(event) =>
                 setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 6))
               }
-              className={INPUT_CLASS}
-              placeholder="123456"
+              className={`${INPUT_CLASS} text-center font-mono text-2xl tracking-[0.5em]`}
+              placeholder="••••••"
             />
           </div>
           <button
             type="submit"
             disabled={isPending}
-            className="ds-btn ds-btn-primary w-full"
+            className="btn btn-primary w-full"
           >
             {isPending ? "Verificando..." : "Verificar código"}
           </button>
@@ -120,7 +150,7 @@ export function LoginForm() {
               setMfaCode("");
               setError(null);
             }}
-            className="w-full text-sm text-muted hover:text-foreground"
+            className="btn btn-ghost w-full"
           >
             Volver al inicio de sesión
           </button>
@@ -128,7 +158,7 @@ export function LoginForm() {
       ) : (
         <>
           <div>
-            <label htmlFor="username" className="ds-label">
+            <label htmlFor="username" className="field-label">
               Usuario
             </label>
             <input
@@ -145,7 +175,7 @@ export function LoginForm() {
           </div>
 
           <div>
-            <label htmlFor="password" className="ds-label">
+            <label htmlFor="password" className="field-label">
               Contraseña
             </label>
             <input
@@ -165,7 +195,7 @@ export function LoginForm() {
           <button
             type="submit"
             disabled={isPending}
-            className="ds-btn ds-btn-primary w-full"
+            className="btn btn-primary w-full"
           >
             {isPending ? "Ingresando..." : "Ingresar"}
           </button>
