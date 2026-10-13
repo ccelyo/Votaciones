@@ -49,6 +49,7 @@ def create_app(
             owned_ballot = GrpcBallotClient(
                 settings.ballot_grpc_addr,
                 settings.ballot_grpc_timeout_seconds,
+                use_tls=settings.ballot_grpc_tls,
             )
             app.state.ballot = owned_ballot
 
