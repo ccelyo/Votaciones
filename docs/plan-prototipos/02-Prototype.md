@@ -95,14 +95,18 @@ un punto de entrada común y proporcionar la interfaz web.
   ID                      Actividad               Entregable
   ----------------------- ----------------------- -----------------------
   CR-01                   Definir las rutas HTTP  Catálogo de endpoints.
-                          para Auth, Election,    
-                          Identity, Blind         
-                          Signature, Ballot,      
-                          Tally, Analytics y      
-                          Notifications.          
+                          para Auth, Election,
+                          Identity, Ballot,
+                          Tally, Analytics y
+                          Notifications. Blind
+                          Signature no se expone:
+                          solo es accesible desde
+                          Identity.
 
   CR-02                   Implementar el API      Servicio ejecutable del
-                          Gateway en TypeScript.  Gateway.
+                          Gateway en TypeScript,  Gateway.
+                          con CORS y límites de
+                          tasa.
 
   CR-03                   Configurar el           Configuración de rutas.
                           enrutamiento hacia los  
@@ -111,28 +115,35 @@ un punto de entrada común y proporcionar la interfaz web.
 
   CR-04                   Implementar la          Middleware de
                           validación de JWT en el validación de tokens.
-                          Gateway, según los      
-                          requisitos de           
-                          autenticación           
-                          acordados.              
+                          Gateway para todas las
+                          rutas excepto Ballot,
+                          que es anónima y no
+                          recibe JWT ni cookies.
 
   CR-05                   Implementar el frontend Aplicación web
                           web en Next.js          funcional.
-                          utilizando SSR.         
+                          utilizando SSR, con los
+                          subcomponentes Servidor
+                          SSR y Cliente navegador
+                          y su conector interno.
 
   CR-06                   Desarrollar las         Flujos de usuario en la
                           pantallas necesarias    web.
-                          para autenticación,     
-                          consulta de elecciones, 
-                          votación y consulta de  
-                          resultados, de acuerdo  
-                          con el alcance          
-                          funcional definido.     
+                          para autenticación,
+                          consulta de elecciones,
+                          votación y consulta de
+                          resultados, incluyendo
+                          en el Cliente navegador
+                          el cegado del token y
+                          el cifrado del voto.
 
   CR-07                   Integrar el frontend    Web conectada al
                           con el Gateway y        backend.
-                          gestionar los errores   
-                          de comunicación.        
+                          gestionar los errores
+                          de comunicación. El
+                          envío de la papeleta no
+                          debe adjuntar la sesión
+                          del votante.
 
   CR-08                   Crear Dockerfiles para  Contenedores del
                           los componentes         Gateway y de la web.
@@ -179,11 +190,14 @@ administrativa por consola.
   JU-06                   Desarrollar la CLI      Cliente de consola
                           administrativa en Java. ejecutable.
 
-  JU-07                   Implementar las         Comandos de
-                          operaciones             administración.
-                          administrativas         
-                          acordadas mediante las  
-                          interfaces HTTP.        
+  JU-07                   Implementar mediante    Comandos de
+                          las interfaces HTTP las administración.
+                          operaciones
+                          administrativas de la
+                          vista: crear, abrir y
+                          cerrar urnas, lanzar el
+                          escrutinio y consultar
+                          resultados.
 
   JU-08                   Crear pruebas de        Pruebas y
                           autenticación,          documentación.
@@ -226,9 +240,10 @@ necesarios para que los clientes consulten las opciones disponibles.
                           establecidos.           
 
   FA-05                   Definir los estados de  Reglas de negocio
-                          una elección y las      documentadas.
-                          validaciones            
-                          correspondientes.       
+                          una elección, sus       documentadas.
+                          ventanas de tiempo y
+                          las validaciones
+                          correspondientes.
 
   FA-06                   Implementar la          Productor de
                           publicación de eventos  `election.events`.
@@ -244,6 +259,13 @@ necesarios para que los clientes consulten las opciones disponibles.
   FA-08                   Preparar el contenedor  Dockerfile y
                           y la configuración de   configuración del
                           conexión a PostgreSQL.  servicio.
+
+  FA-09                   Generar y custodiar las Gestión de llaves de la
+                          llaves de la urna: la   urna.
+                          pública para cifrar el
+                          voto en los clientes y
+                          la privada para el
+                          descifrado en Tally.
   -----------------------------------------------------------------------
 
 **Criterio de aceptación:** las elecciones pueden administrarse y
@@ -276,9 +298,10 @@ de los votantes de la emisión de firmas ciegas.
 
   KE-05                   Separar la              Servicio independiente
                           implementación          de firma ciega.
-                          criptográfica en el     
-                          servicio Blind          
-                          Signature.              
+                          criptográfica en el
+                          servicio Blind
+                          Signature, accesible
+                          solo desde Identity.
 
   KE-06                   Definir el contrato de  Interfaz documentada.
                           comunicación entre      
@@ -297,8 +320,12 @@ de los votantes de la emisión de firmas ciegas.
                           que sean necesarios.    
 
   KE-09                   Crear los contenedores  Servicios ejecutables.
-                          y probar las conexiones 
-                          con PostgreSQL.         
+                          y probar las conexiones
+                          con PostgreSQL. Blind
+                          Signature solo debe
+                          estar en la red interna
+                          compartida con
+                          Identity.
   -----------------------------------------------------------------------
 
 **Criterio de aceptación:** el sistema puede validar la elegibilidad
@@ -330,7 +357,9 @@ que permita a los usuarios interactuar con el sistema.
 
   AN-04                   Implementar la          Flujo de recepción
                           recepción y validación  funcional.
-                          de papeletas.           
+                          de papeletas, incluida
+                          la verificación de la
+                          firma ciega del token.
 
   AN-05                   Definir las reglas de   Validaciones y pruebas.
                           aceptación y prevención 
@@ -342,11 +371,17 @@ que permita a los usuarios interactuar con el sistema.
 
   AN-07                   Desarrollar la          Aplicación móvil
                           aplicación móvil en     funcional.
-                          Flutter/Dart.           
+                          Flutter/Dart, con el
+                          mismo protocolo de
+                          cegado del token y
+                          cifrado del voto que la
+                          web.
 
   AN-08                   Integrar la aplicación  Cliente móvil conectado
                           móvil con el API        al backend.
-                          Gateway.                
+                          Gateway. El envío de la
+                          papeleta se hace por la
+                          ruta anónima, sin JWT.
 
   AN-09                   Crear los contenedores  Configuración de
                           necesarios para los     ejecución.
@@ -354,6 +389,19 @@ que permita a los usuarios interactuar con el sistema.
                           requieran y documentar  
                           cómo ejecutar la        
                           aplicación móvil.       
+
+  AN-10                   Consumir                Consumidor de eventos
+                          `election.events`       de elección.
+                          (apertura, cierre y
+                          parámetros de la urna)
+                          para aceptar o rechazar
+                          papeletas.
+
+  AN-11                   Exponer un endpoint     API de papeletas para
+                          REST para que Tally     escrutinio.
+                          obtenga las papeletas
+                          cifradas de una urna
+                          cerrada.
   -----------------------------------------------------------------------
 
 **Criterio de aceptación:** un usuario puede utilizar la aplicación
@@ -383,23 +431,31 @@ la infraestructura de comunicación asíncrona.
                           necesarias.             
 
   SE-03                   Documentar los          Esquemas de eventos.
-                          contratos de            
-                          `identity.events`,      
-                          `election.events` y     
-                          `votes.events`.         
+                          contratos de
+                          `identity.events`,
+                          `election.events`,
+                          `votes.events` y de
+                          `tally.completed`,
+                          definiendo si este va
+                          en `votes.events` o en
+                          un exchange
+                          `tally.events`.
 
   SE-04                   Implementar el servicio Servicio de conteo de
                           Tally en Go.            votos.
 
-  SE-05                   Definir cómo recibe     Contrato de entrada de
-                          Tally los eventos o las Tally.
-                          papeletas que debe      
-                          procesar.               
+  SE-05                   Implementar el cliente  Contrato de entrada de
+                          REST Tally → Ballot     Tally.
+                          para obtener las
+                          papeletas cifradas al
+                          cierre de la urna.
 
-  SE-06                   Implementar las reglas  Lógica de conteo.
-                          de conteo y las         
-                          validaciones            
-                          necesarias.             
+  SE-06                   Implementar el          Lógica de conteo.
+                          descifrado de las
+                          papeletas, las reglas
+                          de conteo y las
+                          validaciones
+                          necesarias.
 
   SE-07                   Coordinar con Andres la Integración entre
                           publicación de votos y  componentes.
@@ -409,22 +465,37 @@ la infraestructura de comunicación asíncrona.
 
   SE-08                   Configurar reintentos,  Procesamiento robusto
                           confirmaciones de       de mensajes.
-                          mensajes y manejo de    
-                          errores.                
+                          mensajes y manejo de
+                          errores en el broker, y
+                          hacer el escrutinio
+                          idempotente por
+                          elección.
 
   SE-09                   Implementar pruebas de  Pruebas de mensajería y
                           publicación, consumo y  conteo.
                           procesamiento de votos. 
+
+  SE-10                   Publicar el evento      Productor de eventos de
+                          `tally.completed` con   Tally.
+                          el resultado oficial
+                          del escrutinio.
   -----------------------------------------------------------------------
 
 **Criterio de aceptación:** RabbitMQ permite distribuir eventos entre
-los componentes y Tally procesa los votos sin contabilizar repetidamente
-los mismos registros por causa de reintentos.
+los componentes y Tally cuenta las papeletas sin contabilizar dos veces
+la misma urna si el escrutinio se lanza de nuevo.
 
-**Decisión arquitectónica que debe documentarse:** el diagrama muestra
-una relación entre Tally y Ballot, además de su comunicación con
-RabbitMQ. Deben especificar qué información circula por cada conexión y
-cuál es la fuente de verdad para el conteo.
+**Decisión arquitectónica definida en la vista C&C:** Tally obtiene las
+papeletas cifradas de Ballot mediante REST al cierre de la urna, las
+descifra y las cuenta; no se suscribe al broker ni tiene base de datos
+propia, y publica `tally.completed`. Ballot (colección Votes) es la
+fuente de verdad de las papeletas y Tally la del conteo oficial.
+
+**Pendiente:** la vista no tiene un conector Tally → Election, por lo
+que no está definido cómo obtiene Tally la llave privada de la urna.
+Debe acordarse con Fabian (por ejemplo, un conector REST Tally →
+Election o la entrega de la llave al lanzar el escrutinio desde la CLI)
+y reflejarse en la vista.
 
 ### 3.7. Camilo --- Notifications y MongoDB
 
@@ -434,9 +505,13 @@ eventos del sistema.
   -----------------------------------------------------------------------
   ID                      Actividad               Entregable
   ----------------------- ----------------------- -----------------------
-  CA-01                   Definir los eventos que Catálogo de eventos
-                          deben generar           notificables.
-                          notificaciones.         
+  CA-01                   Definir cuáles de los   Catálogo de eventos
+                          eventos del broker      notificables.
+                          (`identity.*`,
+                          `election.*`,
+                          `tally.completed`)
+                          deben generar
+                          notificaciones.
 
   CA-02                   Implementar el servicio Servicio de
                           Notifications en        notificaciones.
@@ -461,11 +536,10 @@ eventos del sistema.
                           sensibles innecesarios. 
 
   CA-07                   Implementar un endpoint API de consulta.
-                          HTTP para consultar el  
-                          historial de            
-                          notificaciones, si      
-                          corresponde al alcance  
-                          funcional.              
+                          HTTP, expuesto a través
+                          del Gateway, para
+                          consultar el historial
+                          de notificaciones.
 
   CA-08                   Probar el procesamiento Pruebas automatizadas.
                           de eventos repetidos y  
@@ -506,9 +580,12 @@ información de los votos y generar los resultados de las elecciones.
                           Analytics en Rust.      
 
   SR-04                   Implementar el          Consumidor integrado
-                          consumidor de los       con RabbitMQ.
-                          eventos de votos que    
-                          correspondan.           
+                          consumidor de           con RabbitMQ.
+                          `votes.cast`
+                          (participación en
+                          tiempo real) y de
+                          `tally.completed`
+                          (resultados finales).
 
   SR-05                   Desarrollar la lógica   Algoritmo de cálculo de
                           de agregación de los    resultados.
@@ -624,8 +701,16 @@ del 2 de noviembre de 2026.
   Julian                  Cristhian               Autenticación y
                                                   validación de tokens.
 
+  Julian                  Fabian, Sebastian y     Operaciones de la CLI
+                          Sergio                  sobre urnas, escrutinio
+                                                  y resultados.
+
   Fabian                  Sebastian               Publicación de eventos
                                                   de elecciones.
+
+  Fabian                  Sebastian               Acceso de Tally a la
+                                                  llave privada de la
+                                                  urna.
 
   Kevin                   Sebastian               Publicación y consumo
                                                   de eventos de
@@ -633,6 +718,14 @@ del 2 de noviembre de 2026.
 
   Kevin                   Andres                  Flujo de firma ciega y
                                                   envío de papeletas.
+
+  Kevin                   Julian                  Identificador del
+                                                  usuario en el JWT y su
+                                                  relación con el padrón.
+
+  Andres                  Kevin y Cristhian       Mismo protocolo de
+                                                  cegado y cifrado en la
+                                                  app móvil y en la web.
 
   Andres                  Sebastian               Publicación y
                                                   procesamiento de
@@ -788,7 +881,9 @@ Votaciones/
 ```
 
 Esta estructura es una sugerencia y puede adaptarse a la organización
-existente del repositorio.
+existente del repositorio, que hoy tiene `platform/`, `identity/`,
+`ballot/` y `proto/`. Como la vista C&C del prototipo 2 no usa gRPC
+(solo REST/JSON y AMQP), debe decidirse qué pasa con `proto/`.
 
 ### Flujo de trabajo con GitHub
 
@@ -905,7 +1000,10 @@ cambios en el flujo de información.
 
 **Acción:** revisar las propiedades de seguridad del protocolo existente
 y comprobar que los nuevos contratos no introduzcan asociaciones
-indebidas entre votantes y papeletas.
+indebidas entre votantes y papeletas. En particular, `votes.cast` no
+debe incluir el contenido del voto ni datos del votante, y debe evitarse
+que la correlación temporal entre `identity.credential.issued` y
+`votes.cast` permita desanonimizar a los votantes.
 
 ### 10.5. Sobrecarga de trabajo en interfaces y despliegue
 
@@ -922,8 +1020,13 @@ Tally y Analytics tienen responsabilidades cercanas, por lo que debe
 quedar claro qué componente realiza el conteo oficial y cuál calcula
 estadísticas o resultados derivados.
 
-**Acción:** documentar la responsabilidad de cada componente, el formato
-de los eventos y la fuente de verdad de los resultados.
+**Definición según la vista C&C:** Tally realiza el conteo oficial y
+publica `tally.completed`; Analytics calcula la participación en tiempo
+real a partir de `votes.cast` y almacena en Results los resultados
+finales recibidos en `tally.completed`.
+
+**Acción:** documentar el formato de estos eventos y mantener Tally como
+fuente de verdad de los resultados.
 
 ## 11. Checklist final de aceptación
 
@@ -938,7 +1041,8 @@ de los eventos y la fuente de verdad de los resultados.
     relacionales y NoSQL.
 -   [ ] Hay un componente funcional para procesamiento asíncrono.
 -   [ ] Los conectores HTTP están documentados.
--   [ ] Se utilizan al menos cinco lenguajes de propósito general.
+-   [ ] Se utilizan al menos cinco lenguajes de propósito general, y la
+    vista C&C indica el lenguaje del API Gateway.
 -   [ ] La arquitectura se despliega mediante contenedores.
 
 ### Funcionamiento
@@ -959,8 +1063,12 @@ de los eventos y la fuente de verdad de los resultados.
 -   [ ] Está documentada la estructura de descomposición.
 -   [ ] Se describen los elementos, relaciones, estilos y patrones.
 -   [ ] El README contiene las instrucciones para ejecutar el sistema.
--   [ ] El documento se encuentra en Markdown y ha sido exportado a PDF.
--   [ ] El PDF tiene el nombre `p2_X.pdf`.
+-   [ ] Se incluyen el nombre del equipo (2c) y los nombres completos de
+    los integrantes.
+-   [ ] Se incluyen el nombre, el logo y la descripción del sistema.
+-   [ ] El documento se encuentra en Markdown
+    (`docs/entregables/P2/p2_2c.md`) y ha sido exportado a PDF.
+-   [ ] El PDF tiene el nombre `p2_2c.pdf`.
 -   [ ] Se ha comprobado que el archivo está listo para su entrega en
     MiCampus UNAL.
 
