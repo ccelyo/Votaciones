@@ -5,6 +5,8 @@
 #   Frontend  http://localhost:3000   (otro puerto: WEB_PORT=3100 docker compose up --build)
 #   Identity  http://localhost:8000   (IDENTITY_PORT)
 #   Ballot    http://localhost:8080   (BALLOT_PORT)
+#   Analytics http://localhost:8090   (ANALYTICS_PORT)
+#   RabbitMQ  http://localhost:15672  (RABBITMQ_UI_PORT, guest / guest)
 #
 # Usuarios de prueba (identity/seed_dev_users.sql): admin1..admin4 y votante1..votante10,
 # contraseña "prueba123", código MFA "123456".
@@ -83,7 +85,38 @@ services:
         condition: service_healthy
     ports: ["${WEB_PORT:-3000}:3000"]
 
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    ports: ["${RABBITMQ_UI_PORT:-15672}:15672"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      retries: 30
+
+  # Base «Results» de analytics, separada de la de ballot.
+  mongo-results:
+    image: mongo:8.0
+    volumes: ["results-data:/data/db"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      retries: 20
+
+  analytics:
+    build: ./analytics
+    depends_on:
+      mongo-results:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      ANALYTICS_MONGODB_URI: mongodb://mongo-results:27017
+      ANALYTICS_MONGODB_DATABASE: results
+      ANALYTICS_RABBITMQ_URI: amqp://guest:guest@rabbitmq:5672/%2f
+    ports: ["${ANALYTICS_PORT:-8090}:8090"]
+
 volumes:
   postgres-data:
   mongo-data:
   identity-keys:
+  results-data:
