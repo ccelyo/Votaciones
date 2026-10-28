@@ -8,16 +8,22 @@ import type { User } from "@/lib/types/user";
 
 type AdminGuardProps = {
   children: ReactNode;
+  /** El Servidor SSR ya comprobó el rol (requireAdmin); solo en modo mock decide el navegador. */
+  verifiedOnServer?: boolean;
 };
 
-export function AdminGuard({ children }: AdminGuardProps) {
+export function AdminGuard({
+  children,
+  verifiedOnServer = false,
+}: AdminGuardProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!verifiedOnServer);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (verifiedOnServer) return;
     let cancelled = false;
 
     async function checkAccess() {
@@ -48,7 +54,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
     return () => {
       cancelled = true;
     };
-  }, [pathname, router]);
+  }, [pathname, router, verifiedOnServer]);
 
   if (isLoading) {
     return (
@@ -72,7 +78,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
     );
   }
 
-  if (user?.role !== "admin") return null;
+  if (!verifiedOnServer && user?.role !== "admin") return null;
 
   return children;
 }

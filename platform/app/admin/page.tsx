@@ -5,15 +5,19 @@ import { AdminGuard } from "@/components/auth/AuthGuard";
 import { Icon, RiAddLine } from "@/components/icons";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PageShell } from "@/components/layout/PageShell";
+import { loadAllElections, requireAdmin } from "@/lib/server/gateway";
 
 export const metadata = {
   title: "Administración",
 };
 
-export default function AdminPage() {
+export default async function AdminPage() {
+  const verified = await requireAdmin("/admin");
+  const elections = verified ? await loadAllElections() : undefined;
+
   return (
     <PageShell>
-      <AdminGuard>
+      <AdminGuard verifiedOnServer={verified}>
         <PageHeader
           eyebrow="Administración"
           title="Panel de administración"
@@ -26,7 +30,7 @@ export default function AdminPage() {
           }
         />
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
-          <AdminElections />
+          <AdminElections initialElections={elections} />
         </main>
       </AdminGuard>
     </PageShell>

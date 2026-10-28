@@ -35,14 +35,10 @@ import type {
   User,
 } from "@/lib/types/user";
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
+// El navegador solo habla con el Servidor SSR (app/api/[...path]/route.ts), que
+// reenvía al API Gateway y guarda la sesión en una cookie httpOnly.
+const API_URL = "/api";
 const USE_MOCK_API = process.env.NEXT_PUBLIC_API_MODE === "mock";
-const SESSION_STORAGE_KEY = "votaciones.auth.session";
-
-type StoredAuthSession = {
-  accessToken: string;
-  expiresAt: number;
-};
 
 type ElectionParametersResponse = {
   election_id: string;
@@ -82,49 +78,24 @@ class ApiError extends Error {
   }
 }
 
-function getStoredAuthSession(): StoredAuthSession | null {
-  if (typeof window === "undefined") return null;
-  const storedValue = window.sessionStorage.getItem(SESSION_STORAGE_KEY);
-  if (!storedValue) return null;
-
-  try {
-    const session = JSON.parse(storedValue) as StoredAuthSession;
-    if (
-      typeof session.accessToken !== "string" ||
-      !Number.isFinite(session.expiresAt) ||
-      session.expiresAt <= Date.now()
-    ) {
-      window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
-      return null;
-    }
-    return session;
-  } catch {
-    window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
-    return null;
-  }
-}
-
 async function apiFetch<T>(path: string, options: ApiOptions = {}): Promise<T> {
-  if (!API_URL) {
-    throw new Error(
-      "Configura NEXT_PUBLIC_API_URL para conectarte con la API.",
-    );
-  }
-
   const { json, headers, ...rest } = options;
   const requestHeaders = new Headers(headers);
   if (json !== undefined)
     requestHeaders.set("Content-Type", "application/json");
-  const accessToken = getStoredAuthSession()?.accessToken;
-  if (accessToken) requestHeaders.set("Authorization", `Bearer ${accessToken}`);
 
-  const response = await fetch(`${API_URL}${path}`, {
-    ...rest,
-    cache: "no-store",
-    credentials: "include",
-    headers: requestHeaders,
-    body: json !== undefined ? JSON.stringify(json) : rest.body,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      ...rest,
+      cache: "no-store",
+      credentials: "same-origin",
+      headers: requestHeaders,
+      body: json !== undefined ? JSON.stringify(json) : rest.body,
+    });
+  } catch {
+    throw new Error("No se pudo contactar el servidor. Revisa tu conexión.");
+  }
 
   if (!response.ok) {
     const responseBody = await response.text();
@@ -158,7 +129,7 @@ async function apiFetch<T>(path: string, options: ApiOptions = {}): Promise<T> {
 
 export function login(payload: LoginPayload): Promise<User | LoginChallenge> {
   if (USE_MOCK_API) return mockApi.login(payload);
-  return apiFetch<LoginChallenge>("/login", {
+  return apiFetch<LoginChallenge>("/auth/login", {
     method: "POST",
     json: payload,
   });
@@ -172,36 +143,24 @@ export async function completeMfaLogin(
     throw new Error("El inicio de sesión mock no requiere verificación MFA.");
   }
 
-  const result = await apiFetch<MfaLoginResponse>("/login/mfa", {
+  // El Servidor SSR guarda el token en la cookie y solo devuelve su vigencia.
+  const result = await apiFetch<MfaLoginResponse>("/auth/login/mfa", {
     method: "POST",
     json: { challenge_id: challengeId, code },
   });
-  if (
-    result.token_type !== "bearer" ||
-    !result.access_token ||
-    !Number.isFinite(result.expires_in) ||
-    result.expires_in <= 0
-  ) {
+  if (!Number.isFinite(result.expires_in) || result.expires_in <= 0) {
     throw new Error("La API devolvió una sesión no válida.");
   }
-
-  window.sessionStorage.setItem(
-    SESSION_STORAGE_KEY,
-    JSON.stringify({
-      accessToken: result.access_token,
-      expiresAt: Date.now() + result.expires_in * 1000,
-    } satisfies StoredAuthSession),
-  );
 }
 
-export function logout(): Promise<void> {
+export async function logout(): Promise<void> {
   if (USE_MOCK_API) return mockApi.logout();
-  if (!getStoredAuthSession()) return Promise.resolve();
-  return apiFetch<void>("/logout", { method: "POST" }).finally(() => {
-    if (typeof window !== "undefined") {
-      window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
-    }
-  });
+  try {
+    await apiFetch<void>("/auth/logout", { method: "POST" });
+  } catch (error) {
+    // Sin sesión vigente no hay nada que revocar; la cookie ya se borró.
+    if (!(error instanceof ApiError && error.status === 401)) throw error;
+  }
 }
 
 export function register(payload: RegisterPayload): Promise<MessageResponse> {
@@ -286,7 +245,7 @@ export async function castVote(
   borrarTokenAnonimo();
 
   // Marca has_voted en el padrón; el voto ya quedó registrado aunque falle.
-  await apiFetch("/vote-confirmation", {
+  await apiFetch("/identity/vote-confirmation", {
     method: "POST",
     json: { election_id: electionRef },
   }).catch(() => undefined);
@@ -314,7 +273,7 @@ async function requestAnonymousToken(
 
   let response: BlindTokenResponse;
   try {
-    response = await apiFetch<BlindTokenResponse>("/tokens/blind", {
+    response = await apiFetch<BlindTokenResponse>("/identity/tokens/blind", {
       method: "POST",
       json: { election_id: electionRef, blinded_token: aBase64Url(cegado) },
     });
@@ -360,15 +319,11 @@ export function createElection(
 
 export async function getCurrentUser(): Promise<User | null> {
   if (USE_MOCK_API) return mockApi.getCurrentUser();
-  if (!getStoredAuthSession()) return null;
 
   try {
     return await apiFetch<CurrentUser>("/auth/me");
   } catch (error) {
-    if (error instanceof ApiError && error.status === 401) {
-      window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
-      return null;
-    }
+    if (error instanceof ApiError && error.status === 401) return null;
     throw error;
   }
 }
@@ -378,7 +333,7 @@ export async function getCurrentUser(): Promise<User | null> {
 export function getEligibility(electionId: number): Promise<Eligibility> {
   if (USE_MOCK_API) return mockApi.getEligibility(electionId);
   return apiFetch<Eligibility>(
-    `/elections/${encodeURIComponent(electionId)}/eligibility`,
+    `/identity/elections/${encodeURIComponent(electionId)}/eligibility`,
   );
 }
 
@@ -405,13 +360,13 @@ export async function closeElection(electionId: number): Promise<void> {
 
 export function listUsers(): Promise<DirectoryUser[]> {
   if (USE_MOCK_API) return mockApi.listUsers();
-  return apiFetch<DirectoryUser[]>("/users");
+  return apiFetch<DirectoryUser[]>("/auth/users");
 }
 
 export function getVoterRoll(electionId: number): Promise<VoterRollEntry[]> {
   if (USE_MOCK_API) return mockApi.getVoterRoll(electionId);
   return apiFetch<VoterRollEntry[]>(
-    `/elections/${encodeURIComponent(electionId)}/voters`,
+    `/identity/elections/${encodeURIComponent(electionId)}/voters`,
   );
 }
 
@@ -420,10 +375,13 @@ export async function enrollVoter(
   userId: number,
 ): Promise<void> {
   if (USE_MOCK_API) return mockApi.enrollVoter(electionId, userId);
-  await apiFetch(`/elections/${encodeURIComponent(electionId)}/voters`, {
-    method: "POST",
-    json: { user_id: userId, is_eligible: true },
-  });
+  await apiFetch(
+    `/identity/elections/${encodeURIComponent(electionId)}/voters`,
+    {
+      method: "POST",
+      json: { user_id: userId, is_eligible: true },
+    },
+  );
 }
 
 export async function setVoterEligibility(
@@ -434,7 +392,7 @@ export async function setVoterEligibility(
   if (USE_MOCK_API)
     return mockApi.setVoterEligibility(electionId, userId, isEligible);
   await apiFetch(
-    `/elections/${encodeURIComponent(electionId)}/voters/${userId}`,
+    `/identity/elections/${encodeURIComponent(electionId)}/voters/${userId}`,
     { method: "PATCH", json: { is_eligible: isEligible } },
   );
 }

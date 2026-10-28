@@ -1,8 +1,12 @@
 import type { ReactNode } from "react";
 import { Header } from "@/components/layout/Header";
+import { getSessionUser, SERVER_DATA_ENABLED } from "@/lib/server/gateway";
 
 /** Encabezado + contenido + pie comunes a todas las páginas. */
-export function PageShell({ children }: { children: ReactNode }) {
+export async function PageShell({ children }: { children: ReactNode }) {
+  // El Servidor SSR resuelve la sesión: la página llega renderizada con el usuario.
+  const user = SERVER_DATA_ENABLED ? await getSessionUser() : undefined;
+
   return (
     <div className="flex min-h-screen flex-col">
       <a
@@ -11,7 +15,7 @@ export function PageShell({ children }: { children: ReactNode }) {
       >
         Saltar al contenido principal
       </a>
-      <Header />
+      <Header initialUser={user} />
       <div id="main-content" className="flex flex-1 flex-col">
         {children}
       </div>

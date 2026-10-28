@@ -9,11 +9,17 @@ import { UserAvatar } from "@/components/layout/UserAvatar";
 import { getCurrentUser, logout } from "@/lib/api";
 import type { User } from "@/lib/types/user";
 
-export function Header() {
+type HeaderProps = {
+  /** Usuario resuelto por el Servidor SSR; undefined si debe cargarlo el navegador. */
+  initialUser?: User | null;
+};
+
+export function Header({ initialUser }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const renderedOnServer = initialUser !== undefined;
+  const [user, setUser] = useState<User | null>(initialUser ?? null);
+  const [isLoading, setIsLoading] = useState(!renderedOnServer);
   const [userLoadError, setUserLoadError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -21,6 +27,7 @@ export function Header() {
   const isMockApi = process.env.NEXT_PUBLIC_API_MODE === "mock";
 
   useEffect(() => {
+    if (renderedOnServer) return;
     let cancelled = false;
 
     async function loadUser() {
@@ -44,7 +51,7 @@ export function Header() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [renderedOnServer]);
 
   useEffect(() => {
     if (!sidebarOpen) return;

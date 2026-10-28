@@ -28,8 +28,8 @@ export interface LoginChallenge {
   challenge_id: string;
 }
 
+/** Respuesta del Servidor SSR: el token queda en una cookie httpOnly. */
 export interface MfaLoginResponse {
-  access_token: string;
   token_type: "bearer";
   expires_in: number;
 }

@@ -1,9 +1,13 @@
 // Cliente HTTP del servicio `ballot` (M4). Contrato: ballot/internal/httpapi/server.go.
 // Los parámetros de la elección y la firma ciega los sirve identidad (lib/api.ts).
+//
+// Ruta: navegador → Servidor SSR (/api/ballots) → API Gateway → Ballot. Es la
+// ruta anónima de la vista C&C: ni el Servidor SSR ni el Gateway reenvían sesión,
+// cookies ni IP.
 
 import { aBase64Url } from "./token";
 
-const BALLOT_API_URL = (process.env.NEXT_PUBLIC_BALLOT_API_URL ?? "").replace(/\/+$/, "");
+const BALLOT_API_URL = "/api/ballots";
 
 export interface ParametrosEleccion {
   electionId: string;
@@ -42,12 +46,9 @@ export class ErrorPapeleta extends Error {
  * ninguna cabecera de identidad.
  */
 export async function enviarPapeleta(solicitud: SolicitudPapeleta): Promise<RespuestaPapeleta> {
-  if (!BALLOT_API_URL) {
-    throw new ErrorPapeleta("red", "Configura NEXT_PUBLIC_BALLOT_API_URL para enviar votos.");
-  }
   let respuesta: Response;
   try {
-    respuesta = await fetch(`${BALLOT_API_URL}/v1/ballots`, {
+    respuesta = await fetch(BALLOT_API_URL, {
       method: "POST",
       cache: "no-store",
       credentials: "omit", // crítico: no vincular login con papeleta
@@ -100,12 +101,9 @@ export interface ResultadosEleccion {
  * Devuelve null si la elección sigue abierta. Tampoco lleva credenciales.
  */
 export async function obtenerResultados(electionId: string): Promise<ResultadosEleccion | null> {
-  if (!BALLOT_API_URL) {
-    throw new Error("Configura NEXT_PUBLIC_BALLOT_API_URL para consultar los resultados.");
-  }
   let respuesta: Response;
   try {
-    respuesta = await fetch(`${BALLOT_API_URL}/v1/elections/${encodeURIComponent(electionId)}/results`, {
+    respuesta = await fetch(`${BALLOT_API_URL}/elections/${encodeURIComponent(electionId)}/results`, {
       cache: "no-store",
       credentials: "omit",
       referrerPolicy: "no-referrer",
