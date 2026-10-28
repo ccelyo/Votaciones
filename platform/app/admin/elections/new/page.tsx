@@ -2,15 +2,18 @@ import { AdminGuard } from "@/components/auth/AuthGuard";
 import { CreateElectionForm } from "@/components/election/CreateElectionForm";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PageShell } from "@/components/layout/PageShell";
+import { requireAdmin } from "@/lib/server/gateway";
 
 export const metadata = {
   title: "Crear elección",
 };
 
-export default function NewElectionPage() {
+export default async function NewElectionPage() {
+  const verified = await requireAdmin("/admin/elections/new");
+
   return (
     <PageShell>
-      <AdminGuard>
+      <AdminGuard verifiedOnServer={verified}>
         <PageHeader
           eyebrow="Nueva elección"
           title="Crear elección"

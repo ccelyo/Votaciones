@@ -9,22 +9,21 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 
 FROM base AS build
-# NEXT_PUBLIC_* se incrustan en el bundle del navegador durante el build.
-ARG NEXT_PUBLIC_API_URL
-ARG NEXT_PUBLIC_BALLOT_API_URL
+# NEXT_PUBLIC_API_MODE se incrusta en el bundle durante el build. El navegador
+# solo habla con este servidor, así que no hace falta incrustar URLs de backend.
 ARG NEXT_PUBLIC_API_MODE=api
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
-    NEXT_PUBLIC_BALLOT_API_URL=$NEXT_PUBLIC_BALLOT_API_URL \
-    NEXT_PUBLIC_API_MODE=$NEXT_PUBLIC_API_MODE \
+ENV NEXT_PUBLIC_API_MODE=$NEXT_PUBLIC_API_MODE \
     NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN pnpm run build
 
 FROM base AS runtime
+# GATEWAY_URL: dirección interna del API Gateway, leída en tiempo de ejecución.
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
-    PORT=3000
+    PORT=3000 \
+    GATEWAY_URL=http://gateway:8088
 COPY --from=build --chown=node:node /app/package.json ./
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/.next ./.next

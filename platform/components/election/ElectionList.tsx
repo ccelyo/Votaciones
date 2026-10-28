@@ -7,13 +7,29 @@ import { Icon, RiInboxLine } from "@/components/icons";
 import { getCurrentUser, getElections } from "@/lib/api";
 import type { Election } from "@/lib/types/election";
 
-export function ElectionList() {
-  const [elections, setElections] = useState<Election[]>([]);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+type ElectionListProps = {
+  /** Datos cargados por el Servidor SSR; si faltan, los carga el navegador. */
+  initialElections?: Election[];
+  initialAuthenticated?: boolean;
+};
+
+export function ElectionList({
+  initialElections,
+  initialAuthenticated,
+}: ElectionListProps) {
+  const renderedOnServer =
+    initialElections !== undefined && initialAuthenticated !== undefined;
+  const [elections, setElections] = useState<Election[]>(
+    initialElections ?? [],
+  );
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(
+    initialAuthenticated ?? null,
+  );
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!renderedOnServer);
 
   useEffect(() => {
+    if (renderedOnServer) return;
     let cancelled = false;
 
     async function loadElections() {
@@ -42,10 +58,13 @@ export function ElectionList() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [renderedOnServer]);
 
   return (
-    <section aria-labelledby="active-elections-heading" className="card self-start">
+    <section
+      aria-labelledby="active-elections-heading"
+      className="card self-start"
+    >
       <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
         <h2
           id="active-elections-heading"

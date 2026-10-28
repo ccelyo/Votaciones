@@ -7,6 +7,7 @@ import {
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PageShell } from "@/components/layout/PageShell";
 import { IconTile } from "@/components/ui/IconTile";
+import { getSessionUser, loadOpenElections } from "@/lib/server/gateway";
 
 const STEPS = [
   {
@@ -26,7 +27,13 @@ const STEPS = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  // SSR: las elecciones abiertas y la sesión se consultan al Gateway en el servidor.
+  const [elections, user] = await Promise.all([
+    loadOpenElections(),
+    getSessionUser(),
+  ]);
+
   return (
     <PageShell>
       <PageHeader
@@ -35,7 +42,10 @@ export default function HomePage() {
         description="Consulta las elecciones abiertas y emite tu voto de forma secreta y verificable."
       />
       <main className="mx-auto grid w-full max-w-6xl flex-1 gap-8 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_19rem]">
-        <ElectionList />
+        <ElectionList
+          initialElections={elections}
+          initialAuthenticated={elections ? user !== null : undefined}
+        />
         <aside aria-labelledby="how-to-vote">
           <h2
             id="how-to-vote"

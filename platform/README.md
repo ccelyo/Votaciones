@@ -41,30 +41,53 @@ election in the browser. This mode is only a UI mock: it does not validate
 credentials or submit real votes.
 
 To connect to the real backend, set `NEXT_PUBLIC_API_MODE=api` and
-`NEXT_PUBLIC_API_URL` to the API base URL. The frontend sends JSON
-requests to `POST /login` (`username`, `password`) and then `POST /login/mfa`
-(`challenge_id`, `code`). The MFA response's bearer token is stored in
-`sessionStorage` and sent with authenticated requests. `GET /auth/me` returns
-the current user's `id`, `username`, and `role`; `POST /logout` revokes the
-current bearer session. Registration is unavailable against the current API;
-the registration page and links are only shown in mock mode.
+`GATEWAY_URL` to the API Gateway (`gateway/`, default `http://localhost:8088`).
+`GATEWAY_URL` is read by the server at runtime; the browser never sees it.
 
-The home page reads active elections from the public `GET /elections/open`.
+### SSR sub-architecture
+
+The app has the two sub-components of the P2 C&C view:
+
+- **SSR server** (Server Components and `app/api/[...path]/route.ts`): renders
+  pages with data fetched from the Gateway (`lib/server/gateway.ts`) and proxies
+  every browser call under `/api/*` to the Gateway's `/api/*` routes.
+- **Browser client**: hydrates the UI, blinds the token and encrypts the vote
+  (`lib/m4`). It only talks to its own origin (`lib/api.ts`).
+
+The session lives in an `httpOnly`, `SameSite=Strict` cookie (`espivota_session`):
+on `POST /api/auth/login/mfa` the SSR server stores the Gateway's bearer token in
+the cookie and returns only `token_type` and `expires_in`; on later requests it
+sends the token to the Gateway as `Authorization: Bearer`. `POST /api/auth/logout`
+and any `401` clear the cookie. Non-GET requests from another origin get `403`.
+
+`POST /api/ballots` and `GET /api/ballots/...` are the anonymous voting route:
+the browser sends them with `credentials: "omit"` and the SSR server forwards no
+cookie, bearer token, `X-Forwarded-For`, `User-Agent` or `Referer`.
+
+`/`, `/admin` and the admin election pages are rendered on the server with the
+current user and their data; admin pages redirect on the server when the user is
+not an administrator. In mock mode the data lives in the browser, so those
+components fall back to loading it on the client.
+
+Registration is unavailable against the current API; the registration page and
+links are only shown in mock mode.
+
+The home page reads active elections from the public `GET /api/elections/open`.
 It returns an array with `id`, `name`, `starts_at`, `ends_at`, and `created_at`,
 limited to elections with status `open` whose current UTC time is within the
 election's `[starts_at, ends_at)` window.
 The API should return a non-2xx status when a request fails; the frontend reads
-FastAPI `detail` messages and the identity service's `error.message` format.
-Requests include credentials and authenticated calls use the bearer header.
+FastAPI `detail` messages and the `error.message` format used by the identity
+service and the Gateway.
 
 Administrators can create an election at `/admin/elections/new`. The form posts
 `name`, `options`, `encryption_public_key` (base64url without padding), `opens_at`,
-and `closes_at` (UTC epoch seconds) to `POST /elections`; the identity API enforces
-the administrator role as well.
+and `closes_at` (UTC epoch seconds) to `POST /api/elections`; the Gateway and the
+Election service enforce the administrator role as well.
 The shared application sidebar is hidden on login and registration pages, and only
 shows the “Crear votación” link when the current user's role is `admin`.
 Authenticated users open this sidebar from the header menu icon and can end their
-session through `POST /logout`; the API must invalidate the session cookie.
+session through `POST /api/auth/logout`, which revokes the session and clears the cookie.
 
 ## Deploy on Vercel
 

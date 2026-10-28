@@ -8,11 +8,20 @@ import { STATUS_CLASS, STATUS_LABEL } from "@/lib/election-status";
 import { formatDate } from "@/lib/format";
 import type { AdminElection } from "@/lib/types/election";
 
-export function AdminElections() {
-  const [elections, setElections] = useState<AdminElection[] | null>(null);
+type AdminElectionsProps = {
+  /** Elecciones cargadas por el Servidor SSR; si faltan, las carga el navegador. */
+  initialElections?: AdminElection[];
+};
+
+export function AdminElections({ initialElections }: AdminElectionsProps) {
+  const [elections, setElections] = useState<AdminElection[] | null>(
+    initialElections ?? null,
+  );
   const [error, setError] = useState<string | null>(null);
+  const renderedOnServer = initialElections !== undefined;
 
   useEffect(() => {
+    if (renderedOnServer) return;
     listAllElections()
       .then(setElections)
       .catch((loadError: unknown) =>
@@ -22,7 +31,7 @@ export function AdminElections() {
             : "No se pudieron cargar las elecciones.",
         ),
       );
-  }, []);
+  }, [renderedOnServer]);
 
   return (
     <section className="card" aria-labelledby="admin-elections-h">

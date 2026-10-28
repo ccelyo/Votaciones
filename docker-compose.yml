@@ -1,8 +1,9 @@
-# Entorno local completo de Espivota: frontend + identity + ballot + bases de datos.
+# Entorno local completo de Espivota: frontend + gateway + servicios + bases de datos.
 #
 #   docker compose up --build
 #
 #   Frontend  http://localhost:3000   (otro puerto: WEB_PORT=3100 docker compose up --build)
+#   Gateway   http://localhost:8088   (GATEWAY_PORT; catálogo de rutas en /api)
 #   Identity  http://localhost:8000   (IDENTITY_PORT)
 #   Ballot    http://localhost:8080   (BALLOT_PORT)
 #   Analytics http://localhost:8090   (ANALYTICS_PORT)
@@ -72,17 +73,43 @@ services:
     volumes: ["identity-keys:/app/keys"]
     ports: ["${IDENTITY_PORT:-8000}:8000"]
 
+  # Punto de entrada único de los clientes (web SSR, app móvil y CLI).
+  gateway:
+    build: ./gateway
+    depends_on:
+      identity:
+        condition: service_healthy
+      ballot:
+        condition: service_started
+      analytics:
+        condition: service_started
+    environment:
+      # Auth y Election aún viven dentro de identity: cuando se separen, solo
+      # cambian estas URLs. Tally y Notifications responden 503 hasta definirlas.
+      GATEWAY_AUTH_URL: http://identity:8000
+      GATEWAY_ELECTION_URL: http://identity:8000
+      GATEWAY_IDENTITY_URL: http://identity:8000
+      GATEWAY_BALLOT_URL: http://ballot:8080
+      GATEWAY_ANALYTICS_URL: http://analytics:8090
+      GATEWAY_TALLY_URL: ${GATEWAY_TALLY_URL:-}
+      GATEWAY_NOTIFICATIONS_URL: ${GATEWAY_NOTIFICATIONS_URL:-}
+      # Sin secreto el Gateway funciona en modo passthrough (sesiones opacas de
+      # identity). Con el secreto compartido con Auth valida los JWT.
+      GATEWAY_JWT_SECRET: ${GATEWAY_JWT_SECRET:-}
+      GATEWAY_ALLOWED_ORIGINS: http://localhost:${WEB_PORT:-3000},http://127.0.0.1:${WEB_PORT:-3000}
+      GATEWAY_TRUST_FORWARDED_FOR: "true"
+    ports: ["${GATEWAY_PORT:-8088}:8088"]
+
   platform:
     build:
       context: ./platform
       args:
-        # El navegador llama a las APIs desde el host, no desde la red de Docker.
-        NEXT_PUBLIC_API_URL: http://localhost:${IDENTITY_PORT:-8000}
-        NEXT_PUBLIC_BALLOT_API_URL: http://localhost:${BALLOT_PORT:-8080}
         NEXT_PUBLIC_API_MODE: api
     depends_on:
-      identity:
+      gateway:
         condition: service_healthy
+    environment:
+      GATEWAY_URL: http://gateway:8088
     ports: ["${WEB_PORT:-3000}:3000"]
 
   rabbitmq:
