@@ -45,46 +45,37 @@ export function ElectionList() {
   }, []);
 
   return (
-    <section
-      aria-labelledby="active-elections-heading"
-      className="card p-6 sm:p-8"
-    >
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-line pb-5">
-        <div>
-          <p className="eyebrow">Ahora</p>
-          <h2
-            id="active-elections-heading"
-            className="font-display mt-1 text-2xl font-bold text-navy-900 sm:text-3xl"
-          >
-            Elecciones abiertas
-          </h2>
-        </div>
+    <section aria-labelledby="active-elections-heading" className="card self-start">
+      <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
+        <h2
+          id="active-elections-heading"
+          className="text-lg font-bold text-ink"
+        >
+          Elecciones abiertas
+        </h2>
         {!isLoading && elections.length > 0 ? (
-          <span className="badge bg-royal-50 text-royal-700">
+          <span className="text-sm text-muted">
             {elections.length}{" "}
-            {elections.length === 1 ? "disponible" : "disponibles"}
+            {elections.length === 1 ? "elección" : "elecciones"}
           </span>
         ) : null}
       </header>
 
       {error ? (
-        <div className="alert alert-error" role="alert">
-          {error}
+        <div className="p-5">
+          <div className="alert alert-error" role="alert">
+            {error}
+          </div>
         </div>
       ) : isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-hidden>
-          {[0, 1, 2].map((key) => (
-            <div
-              key={key}
-              className="h-52 animate-pulse rounded-2xl border border-line bg-canvas"
-            />
+        <div className="space-y-3 p-5" aria-live="polite">
+          {[0, 1].map((key) => (
+            <div key={key} className="h-20 animate-pulse rounded bg-canvas" />
           ))}
-          <span className="sr-only" aria-live="polite">
-            Cargando elecciones...
-          </span>
+          <span className="sr-only">Cargando elecciones...</span>
         </div>
       ) : elections.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="divide-y divide-line">
           {elections.map((election, index) => (
             <ElectionCard
               key={election.id}
@@ -93,13 +84,11 @@ export function ElectionList() {
               isAuthenticated={isAuthenticated ?? false}
             />
           ))}
-        </div>
+        </ul>
       ) : (
-        <div className="flex flex-col items-center px-6 py-14 text-center">
-          <span className="flex size-14 items-center justify-center rounded-2xl bg-royal-50 text-royal-600">
-            <Icon icon={RiInboxLine} size={28} />
-          </span>
-          <p className="font-display mt-4 text-lg font-bold text-navy-900">
+        <div className="flex flex-col items-center px-6 py-12 text-center">
+          <Icon icon={RiInboxLine} size={32} className="text-subtle" />
+          <p className="mt-3 font-semibold text-ink">
             No hay elecciones abiertas
           </p>
           <p className="mt-1 max-w-sm text-sm text-muted">

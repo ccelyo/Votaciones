@@ -38,3 +38,9 @@ export interface CurrentUser extends User {
   username: string;
   role: UserRole;
 }
+
+export interface DirectoryUser {
+  id: number;
+  username: string;
+  role: UserRole;
+}

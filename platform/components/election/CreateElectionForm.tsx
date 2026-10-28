@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { type FormEvent, useRef, useState, useTransition } from "react";
 
 import {
@@ -126,10 +127,18 @@ export function CreateElectionForm() {
       ) : null}
 
       {createdElection ? (
-        <output className="alert alert-success mb-6 flex items-center gap-2">
+        <output className="alert alert-success mb-6 flex flex-wrap items-center gap-x-3 gap-y-2">
           <Icon icon={RiCheckboxCircleFill} size={20} className="shrink-0" />
-          Elección creada (ID {createdElection.election_id}, estado{" "}
-          {createdElection.status}).
+          <span className="flex-1">
+            Elección creada (ID {createdElection.election_id}). Ahora inscribe a
+            los votantes en el padrón; sin inscripción nadie puede votar.
+          </span>
+          <Link
+            href={`/admin/elections/${createdElection.election_id}`}
+            className="btn btn-primary btn-sm"
+          >
+            Gestionar padrón
+          </Link>
         </output>
       ) : null}
 
@@ -189,7 +198,7 @@ export function CreateElectionForm() {
                       ),
                     )
                   }
-                  className="btn btn-ghost shrink-0 px-3 hover:!bg-danger-soft hover:!text-danger"
+                  className="btn btn-danger shrink-0 px-3"
                   aria-label={`Eliminar opción ${index + 1}`}
                 >
                   <Icon icon={RiDeleteBinLine} size={18} />
@@ -206,7 +215,7 @@ export function CreateElectionForm() {
                 { id: nextOptionId.current++, value: "" },
               ])
             }
-            className="btn btn-secondary w-full border-dashed"
+            className="btn btn-secondary w-full"
           >
             <Icon icon={RiAddLine} size={18} />
             Agregar opción
@@ -302,7 +311,7 @@ function FormSection({
   return (
     <section className="grid gap-4 py-7 first:pt-0 md:grid-cols-[13rem_minmax(0,1fr)] md:gap-8">
       <div className="flex gap-3">
-        <span className="font-display flex size-8 shrink-0 items-center justify-center rounded-lg bg-royal-50 text-sm font-bold text-royal-700">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-line bg-white text-sm font-bold text-royal-700">
           {step}
         </span>
         <div>

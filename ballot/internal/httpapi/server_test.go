@@ -65,6 +65,7 @@ func newFixture(t *testing.T) fixture {
 		handler: NewHandler(Config{
 			Acceptor:       acceptor,
 			Elections:      elections,
+			Votes:          ballots,
 			AllowedOrigins: []string{"https://votaciones.example"},
 		}),
 		elections:   elections,
@@ -194,6 +195,58 @@ func TestElectionParameters(t *testing.T) {
 
 	missing := httptest.NewRecorder()
 	f.handler.ServeHTTP(missing, httptest.NewRequest(http.MethodGet, "/v1/elections/nope/parameters", nil))
+	if missing.Code != http.StatusNotFound {
+		t.Fatalf("missing election status = %d", missing.Code)
+	}
+}
+
+func TestElectionResultsOnlyAfterClose(t *testing.T) {
+	f := newFixture(t)
+	const electionID = "gobernacion-antioquia-2027"
+	for _, vote := range []string{"candidato-1", "candidato-2", "candidato-1", "stub-encrypted-vote"} {
+		recorder := f.post(t, SubmitBallotRequest{
+			ElectionID:    electionID,
+			Token:         string(signedToken(t, f.identityKey, electionID)),
+			EncryptedVote: b64(vote),
+			Proof:         b64("proof"),
+		})
+		if recorder.Code != http.StatusCreated {
+			t.Fatalf("submit status = %d body=%s", recorder.Code, recorder.Body)
+		}
+	}
+
+	results := func() *httptest.ResponseRecorder {
+		recorder := httptest.NewRecorder()
+		f.handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/v1/elections/"+electionID+"/results", nil))
+		return recorder
+	}
+	if open := results(); open.Code != http.StatusConflict || !strings.Contains(open.Body.String(), "election_not_closed") {
+		t.Fatalf("open election results status = %d body=%s", open.Code, open.Body)
+	}
+
+	if _, err := f.elections.Close(context.Background(), electionID, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	closed := results()
+	if closed.Code != http.StatusOK {
+		t.Fatalf("closed election results status = %d body=%s", closed.Code, closed.Body)
+	}
+	var response ElectionResultsResponse
+	if err := json.Unmarshal(closed.Body.Bytes(), &response); err != nil {
+		t.Fatal(err)
+	}
+	want := []OptionResultResponse{{"candidato-1", 2}, {"candidato-2", 1}, {"voto-en-blanco", 0}}
+	if response.TotalBallots != 4 || response.InvalidBallots != 1 || len(response.Results) != len(want) {
+		t.Fatalf("unexpected results: %+v", response)
+	}
+	for i, result := range want {
+		if response.Results[i] != result {
+			t.Fatalf("result %d = %+v, want %+v", i, response.Results[i], result)
+		}
+	}
+
+	missing := httptest.NewRecorder()
+	f.handler.ServeHTTP(missing, httptest.NewRequest(http.MethodGet, "/v1/elections/nope/results", nil))
 	if missing.Code != http.StatusNotFound {
 		t.Fatalf("missing election status = %d", missing.Code)
 	}

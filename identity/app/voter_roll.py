@@ -165,3 +165,41 @@ def confirm_vote(
         is_eligible=entry.is_eligible,
         has_voted=entry.has_voted,
     )
+
+@dataclass(frozen=True)
+class VoterStatus:
+    election_id: str
+    is_eligible: bool
+    has_voted: bool
+    token_issued: bool
+
+
+def voter_status(
+    session: Session,
+    *,
+    election_id: str,
+    user_id: int,
+) -> VoterStatus:
+    """Situación del usuario autenticado en una elección (para la UI de voto)."""
+    election = get_election(session, election_id)
+    entry = session.scalar(
+        select(VoterRollEntry).where(
+            VoterRollEntry.election_id == election.id,
+            VoterRollEntry.user_id == user_id,
+        )
+    )
+    token_issued = (
+        session.scalar(
+            select(IssuedToken.id).where(
+                IssuedToken.election_id == election.id,
+                IssuedToken.user_id == user_id,
+            )
+        )
+        is not None
+    )
+    return VoterStatus(
+        election_id=str(election.id),
+        is_eligible=entry is not None and entry.is_eligible,
+        has_voted=entry is not None and entry.has_voted,
+        token_issued=token_issued,
+    )

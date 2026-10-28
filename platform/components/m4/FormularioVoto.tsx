@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { prepararToken } from "@/lib/m4/blind";
-import { CifradorSimulado } from "@/lib/m4/encryptor";
+import { CifradorTextoPlano } from "@/lib/m4/encryptor";
 import { clavesReciboDemo, parametrosDemo, reciboDemo } from "@/lib/m4/mocks";
 import { serializarSobre } from "@/lib/m4/token";
 import { guardarTokenAnonimo, obtenerTokenAnonimo } from "@/lib/m4/tokenStore";
@@ -65,7 +65,7 @@ export default function FormularioVoto({ electionId }: { electionId: string }) {
         return;
       }
       // Cifrado local: el voto en claro nunca sale del navegador.
-      const cifrador = new CifradorSimulado();
+      const cifrador = new CifradorTextoPlano();
       const { ciphertext, proof } = await cifrador.cifrar(opcion, electionId);
       void ciphertext;
       void proof;
