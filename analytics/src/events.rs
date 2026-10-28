@@ -10,14 +10,18 @@ use serde::de::DeserializeOwned;
 pub const ELECTION_EXCHANGE: &str = "election.events";
 pub const VOTES_EXCHANGE: &str = "votes.events";
 pub const IDENTITY_EXCHANGE: &str = "identity.events";
+/// Plan P2 (SE-03): `tally.completed` puede ir en `votes.events` o en
+/// `tally.events`; analytics escucha en ambos hasta que se decida.
+pub const TALLY_EXCHANGE: &str = "tally.events";
 
 /// (exchange, routing key) a los que se enlaza la cola de analytics.
 pub const BINDINGS: &[(&str, &str)] = &[
     (ELECTION_EXCHANGE, "election.created"),
     (ELECTION_EXCHANGE, "election.closed"),
     (IDENTITY_EXCHANGE, "census.updated"),
-    (VOTES_EXCHANGE, "ballot.cast"),
+    (VOTES_EXCHANGE, "votes.cast"),
     (VOTES_EXCHANGE, "tally.completed"),
+    (TALLY_EXCHANGE, "tally.completed"),
 ];
 
 #[derive(Debug, Deserialize)]
@@ -62,7 +66,7 @@ pub struct CensusUpdated {
 
 /// Solo la elección y el instante; nunca token, recibo ni votante.
 #[derive(Debug, Clone, Deserialize)]
-pub struct BallotCast {
+pub struct VoteCast {
     pub election_id: String,
     pub cast_at: DateTime<Utc>,
 }
@@ -88,7 +92,7 @@ pub enum Event {
     ElectionCreated(ElectionCreated),
     ElectionClosed(ElectionClosed),
     CensusUpdated(CensusUpdated),
-    BallotCast(BallotCast),
+    VoteCast(VoteCast),
     TallyCompleted(TallyCompleted),
 }
 
@@ -118,7 +122,7 @@ pub fn decode(body: &[u8]) -> Result<(Envelope, Event), DecodeError> {
         "election.created" => Event::ElectionCreated(data(&envelope)?),
         "election.closed" => Event::ElectionClosed(data(&envelope)?),
         "census.updated" => Event::CensusUpdated(data(&envelope)?),
-        "ballot.cast" => Event::BallotCast(data(&envelope)?),
+        "votes.cast" => Event::VoteCast(data(&envelope)?),
         "tally.completed" => Event::TallyCompleted(data(&envelope)?),
         other => return Err(DecodeError::UnknownType(other.to_owned())),
     };
@@ -138,7 +142,7 @@ fn validate(event: &Event) -> Result<(), DecodeError> {
         Event::ElectionCreated(e) => &e.election_id,
         Event::ElectionClosed(e) => &e.election_id,
         Event::CensusUpdated(e) => &e.election_id,
-        Event::BallotCast(e) => &e.election_id,
+        Event::VoteCast(e) => &e.election_id,
         Event::TallyCompleted(e) => &e.election_id,
     };
     if election_id.trim().is_empty() {
@@ -207,7 +211,7 @@ mod tests {
     fn rejects_unknown_type_and_version() {
         let unknown = br#"{"event_id":"1","event_type":"x.y","occurred_at":"2026-10-20T18:00:05Z","data":{}}"#;
         assert!(matches!(decode(unknown), Err(DecodeError::UnknownType(_))));
-        let version = br#"{"event_id":"1","event_type":"ballot.cast","schema_version":2,"occurred_at":"2026-10-20T18:00:05Z","data":{}}"#;
+        let version = br#"{"event_id":"1","event_type":"votes.cast","schema_version":2,"occurred_at":"2026-10-20T18:00:05Z","data":{}}"#;
         assert!(matches!(
             decode(version),
             Err(DecodeError::SchemaVersion(2))

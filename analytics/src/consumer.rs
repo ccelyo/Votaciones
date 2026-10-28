@@ -38,6 +38,7 @@ pub async fn declare_topology(channel: &Channel) -> lapin::Result<()> {
         events::ELECTION_EXCHANGE,
         events::VOTES_EXCHANGE,
         events::IDENTITY_EXCHANGE,
+        events::TALLY_EXCHANGE,
     ] {
         channel
             .exchange_declare(
@@ -117,8 +118,8 @@ pub async fn apply(store: &Store, envelope: &Envelope, event: &Event) -> crate::
                 store.apply_census_updated(e).await?;
                 &e.election_id
             }
-            Event::BallotCast(e) => {
-                store.apply_ballot_cast(e).await?;
+            Event::VoteCast(e) => {
+                store.apply_vote_cast(e).await?;
                 &e.election_id
             }
             Event::TallyCompleted(e) => {

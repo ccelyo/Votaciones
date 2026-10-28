@@ -105,7 +105,7 @@ async fn main() -> lapin::Result<()> {
             publish(
                 &channel,
                 VOTES_EXCHANGE,
-                "ballot.cast",
+                "votes.cast",
                 json!({ "election_id": election_id, "cast_at": cast_at }),
             )
             .await?;
@@ -138,7 +138,7 @@ async fn main() -> lapin::Result<()> {
     .await?;
 
     println!(
-        "published {} ballot.cast + 4 lifecycle events for {election_id}",
+        "published {} votes.cast + 4 lifecycle events for {election_id}",
         sent
     );
     connection.close(200, "done").await

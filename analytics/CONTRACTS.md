@@ -6,10 +6,16 @@ Analytics procesa los eventos de una elección y, cuando la elección **ya termi
 tally publicó el conteo final, guarda un informe analítico completo en su propia base
 MongoDB y lo expone por REST/JSON a través del API Gateway.
 
+Alineado con `docs/plan-prototipos/02-Prototype.md` (sección 3.8 y riesgo 10.6): **Tally es
+la fuente de verdad del conteo oficial**; Analytics calcula la **participación en tiempo
+real** a partir de `votes.cast` y almacena en Results los resultados finales recibidos en
+`tally.completed`, junto con las métricas derivadas.
+
 ```
 election.events ─┐
-identity.events ─┼─► RabbitMQ ──► cola analytics.events ──► Analytics (Rust) ──► MongoDB «Results»
-votes.events ────┘                       │                          │
+identity.events ─┤
+votes.events ────┼─► RabbitMQ ──► cola analytics.events ──► Analytics (Rust) ──► MongoDB «Results»
+tally.events ────┘                       │                          │
                                          └─► analytics.events.dlq   └─► GET /v1/analytics/... (vía API Gateway)
 ```
 
@@ -17,7 +23,8 @@ Analytics solo **consume** eventos; no publica ninguno ni llama a otros servicio
 
 Garantías de privacidad: ningún evento ni colección de analytics contiene tokens, recibos,
 identificadores de votante ni el voto individual. La participación se guarda agregada por
-hora, y nada se expone por HTTP hasta que la elección tiene conteo final.
+hora. Con la urna abierta solo se expone el número de papeletas recibidas (sin la hora en
+curso, ver 4.5); resultados y métricas por opción solo existen tras `tally.completed`.
 
 ---
 
@@ -28,6 +35,7 @@ hora, y nada se expone por HTTP hasta que la elección tiene conteo final.
 | `election.events` | exchange `topic` | durable | analytics (idempotente) y Election |
 | `identity.events` | exchange `topic` | durable | analytics (idempotente) e Identity |
 | `votes.events` | exchange `topic` | durable | analytics (idempotente), Ballot y Tally |
+| `tally.events` | exchange `topic` | durable | analytics (idempotente); Tally si lo elige |
 | `analytics.events` | cola | durable, `x-dead-letter-exchange=analytics.dlx` | analytics |
 | `analytics.dlx` | exchange `fanout` | durable | analytics |
 | `analytics.events.dlq` | cola | durable | analytics |
@@ -39,8 +47,14 @@ Bindings de `analytics.events`:
 | `election.events` | `election.created` | Election (Fabian) |
 | `election.events` | `election.closed` | Election (Fabian) |
 | `identity.events` | `census.updated` | Identity (Kevin) |
-| `votes.events` | `ballot.cast` | Ballot (Andres) |
+| `votes.events` | `votes.cast` | Ballot (Andres) |
 | `votes.events` | `tally.completed` | Tally (Sebastian) |
+| `tally.events` | `tally.completed` | Tally (Sebastian) |
+
+> El plan P2 (SE-03) deja abierto si `tally.completed` va en `votes.events` o en un
+> exchange `tally.events`. Analytics escucha en ambos, así que funciona con cualquiera de
+> las dos decisiones; Tally debe publicar en **uno solo** (si publica en los dos, el mismo
+> `event_id` se descarta como duplicado, pero no es necesario).
 
 > Quien declare los mismos exchanges debe usar **exactamente** `topic` + `durable=true`;
 > si no, RabbitMQ rechaza la declaración con `PRECONDITION_FAILED`.
@@ -133,10 +147,11 @@ y abstención; si nunca llega, esas métricas salen `null`.
 | `election_id` | string | sí | |
 | `eligible_voters` | integer ≥ 0 | sí | Total, no incremento. El último recibido prevalece |
 
-### 3.4 `ballot.cast` — Ballot → `votes.events`
+### 3.4 `votes.cast` — Ballot → `votes.events`
 
 Una papeleta aceptada. **Solo** la elección y el instante: nunca token, recibo, `seq`,
-voto ni datos del votante. Se recomienda que ballot trunque `cast_at` al minuto.
+voto ni datos del votante. Se recomienda que ballot trunque `cast_at` al minuto (riesgo
+10.4 del plan P2: evitar la correlación temporal con `identity.credential.issued`).
 
 ```json
 { "election_id": "consejo-superior-2026", "cast_at": "2026-10-20T15:42:00Z" }
@@ -147,9 +162,10 @@ voto ni datos del votante. Se recomienda que ballot trunque `cast_at` al minuto.
 | `election_id` | string | sí |
 | `cast_at` | datetime | sí |
 
-Analytics solo suma 1 en el contador de esa hora (`turnout_hourly`).
+Analytics solo suma 1 en el contador de esa hora (`turnout_hourly`). Con estos contadores
+calcula la participación en tiempo real (4.5) y la línea de tiempo del informe final.
 
-### 3.5 `tally.completed` — Tally → `votes.events`
+### 3.5 `tally.completed` — Tally → `votes.events` o `tally.events`
 
 Conteo final de una elección cerrada. Mismo formato que
 `GET /v1/elections/{election_id}/results` de ballot, más `tallied_at`. **Es el evento que
@@ -213,10 +229,13 @@ Convenciones:
 | GET | `/v1/analytics/elections` | Listado paginado de elecciones con informe |
 | GET | `/v1/analytics/elections/{election_id}` | Informe completo |
 | GET | `/v1/analytics/elections/{election_id}/results` | Resultados por opción |
+| GET | `/v1/analytics/elections/{election_id}/participation` | Participación en tiempo real (también con la urna abierta) |
 | GET | `/v1/analytics/elections/{election_id}/turnout` | Participación y línea de tiempo |
 | POST | `/v1/analytics/elections/{election_id}/recompute` | Recalcula el informe (solo admin, en el Gateway) |
 
 ### Errores comunes a `/v1/analytics/elections/{election_id}[/…]`
+
+(Excepto `/participation`, que solo responde 404 y 503: ver 4.5.)
 
 | Código | `error` | Cuándo |
 | --- | --- | --- |
@@ -335,8 +354,8 @@ Informe completo. `200`:
 | `outcome.blank_won` | El ganador es `blank_option` |
 | `competitiveness.herfindahl_index` | `Σ share_of_valid²` (1 = una sola opción concentra todo) |
 | `competitiveness.effective_number_of_options` | `1 / herfindahl_index` (Laakso–Taagepera) |
-| `participation.recorded_ballots` | Suma de los `ballot.cast` recibidos |
-| `participation.matches_tally` | `recorded_ballots == total_ballots`; `false` indica eventos `ballot.cast` perdidos |
+| `participation.recorded_ballots` | Suma de los `votes.cast` recibidos |
+| `participation.matches_tally` | `recorded_ballots == total_ballots`; `false` indica eventos `votes.cast` perdidos |
 | `participation.first_ballot_at` / `last_ballot_at` | Inicio de la primera hora con votos / fin de la última |
 | `participation.peak` | Hora con más papeletas (la primera si hay empate) |
 | `participation.by_hour_of_day_utc` | 24 posiciones: papeletas por hora del día (UTC) |
@@ -363,7 +382,51 @@ Informe completo. `200`:
 
 (`results` contiene todas las opciones; se recorta aquí por brevedad.)
 
-### 4.5 `GET /v1/analytics/elections/{election_id}/turnout?bucket=hour|day`
+### 4.5 `GET /v1/analytics/elections/{election_id}/participation`
+
+Participación en tiempo real a partir de `votes.cast`. A diferencia del resto de rutas por
+elección, **responde también con la urna abierta**, pero nunca incluye resultados por opción.
+
+- Mientras `status` es `open` o `scheduled`, `timeline` **omite la hora en curso**: solo
+  muestra horas completas, para que el contador no avance voto a voto. `ballots_received`
+  sí es el total al momento.
+- Con `status` `closed` o `final`, `timeline` incluye todas las horas.
+
+`200` (urna abierta, consultada a las 15:30 UTC):
+
+```json
+{
+  "election_id": "consejo-superior-2026",
+  "name": "Consejo Superior Universitario 2026",
+  "status": "open",
+  "opens_at": "2026-10-20T13:00:00Z",
+  "closes_at": "2026-10-20T21:00:00Z",
+  "closed_at": null,
+  "eligible_voters": 1500,
+  "ballots_received": 350,
+  "turnout": 0.2333,
+  "timeline": [
+    { "start": "2026-10-20T13:00:00Z", "ballots": 57, "cumulative": 57, "cumulative_turnout": 0.038 },
+    { "start": "2026-10-20T14:00:00Z", "ballots": 105, "cumulative": 162, "cumulative_turnout": 0.108 }
+  ],
+  "as_of": "2026-10-20T15:30:00Z"
+}
+```
+
+| `status` | Significado |
+| --- | --- |
+| `scheduled` | Aún no abre (`now < opens_at`) |
+| `open` | Abierta |
+| `closed` | Cerró (`election.closed` o pasó `closes_at`); conteo pendiente |
+| `final` | Ya llegó `tally.completed`; el informe completo está en 4.3 |
+| `unknown` | Llegaron `votes.cast` pero no `election.created` |
+
+| Código | `error` | Cuándo |
+| --- | --- | --- |
+| 404 | `election_not_found` | Ni metadatos ni votos de esa elección |
+| 503 | `storage_unavailable` | MongoDB no responde |
+
+### 4.6 `GET /v1/analytics/elections/{election_id}/turnout?bucket=hour|day`
 
 | Parámetro | Defecto | Valores |
 | --- | --- | --- |
@@ -389,7 +452,7 @@ Informe completo. `200`:
 }
 ```
 
-### 4.6 `GET /v1/analytics/elections?limit=20&offset=0`
+### 4.7 `GET /v1/analytics/elections?limit=20&offset=0`
 
 Elecciones con informe, de la más reciente (`tallied_at`) a la más antigua.
 
@@ -420,7 +483,7 @@ Elecciones con informe, de la más reciente (`tallied_at`) a la más antigua.
 }
 ```
 
-### 4.7 `GET /v1/analytics/summary`
+### 4.8 `GET /v1/analytics/summary`
 
 Agregado de todas las elecciones con informe. `200`:
 
@@ -453,7 +516,7 @@ Agregado de todas las elecciones con informe. `200`:
 
 Con cero elecciones, los campos agregados opcionales valen `null`.
 
-### 4.8 `POST /v1/analytics/elections/{election_id}/recompute`
+### 4.9 `POST /v1/analytics/elections/{election_id}/recompute`
 
 Recalcula el informe con lo que hay en la base (sin cuerpo). `200` con el informe de 4.3,
 o los mismos errores 404/409. El Gateway debe restringirlo a administradores.
@@ -475,7 +538,17 @@ replica set.
 
 ---
 
-## 6. Configuración
+## 6. Pendientes de coordinación (plan P2)
+
+| Tema | Con quién | Propuesta de este contrato |
+| --- | --- | --- |
+| Exchange de `tally.completed` (SE-03) | Sebastian | Analytics escucha en `votes.events` y `tally.events` |
+| Formato de `votes.cast` y `tally.completed` (sección 3.8) | Sebastian y Andres | Secciones 3.4 y 3.5 |
+| Evento con el tamaño del censo | Kevin | `census.updated` en `identity.events` (3.3); sin él, participación y abstención salen `null` |
+| Metadatos de la elección | Fabian | `election.created` / `election.closed` en `election.events` (3.1, 3.2) |
+| Respuesta HTTP para el frontend | Cristhian | Sección 4; el Gateway enruta `/v1/analytics/*` y restringe `recompute` a admin |
+
+## 7. Configuración
 
 | Variable | Defecto | Descripción |
 | --- | --- | --- |

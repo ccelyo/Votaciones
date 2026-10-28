@@ -14,7 +14,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use crate::report::{
-    ElectionReport, ElectionSummary, OptionResult, TimelinePoint, daily_timeline, summarize,
+    ElectionReport, ElectionSummary, LiveParticipation, OptionResult, TimelinePoint,
+    daily_timeline, live_participation, summarize,
 };
 use crate::store::Store;
 
@@ -42,6 +43,10 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/v1/analytics/elections/{election_id}/results",
             get(election_results),
+        )
+        .route(
+            "/v1/analytics/elections/{election_id}/participation",
+            get(election_participation),
         )
         .route(
             "/v1/analytics/elections/{election_id}/turnout",
@@ -151,6 +156,26 @@ async fn election_results(
         tie: r.outcome.tie,
         results: r.results,
     }))
+}
+
+/// Disponible también con la urna abierta: solo cuenta papeletas, sin resultados.
+async fn election_participation(
+    State(state): State<AppState>,
+    Path(election_id): Path<String>,
+) -> ApiResult<LiveParticipation> {
+    let meta = state.store.election_meta(&election_id).await?;
+    let buckets = state.store.hour_buckets(&election_id).await?;
+    if meta.is_none() && buckets.is_empty() {
+        return Err(ApiError::NotFound);
+    }
+    let has_tally = state.store.has_tally(&election_id).await?;
+    Ok(Json(live_participation(
+        &election_id,
+        meta.as_ref(),
+        &buckets,
+        has_tally,
+        Utc::now(),
+    )))
 }
 
 #[derive(Deserialize)]

@@ -1,8 +1,10 @@
 # Analytics (Rust)
 
-Consume los eventos de RabbitMQ (`election.events`, `identity.events`, `votes.events`),
-guarda en su MongoDB «Results» las analíticas de cada elección **ya cerrada** y las
-expone por REST/JSON. Contratos completos (eventos, API, colecciones): [CONTRACTS.md](CONTRACTS.md).
+Consume los eventos de RabbitMQ (`election.events`, `identity.events`, `votes.events`,
+`tally.events`), calcula la participación en tiempo real a partir de `votes.cast`, guarda
+en su MongoDB «Results» las analíticas de cada elección **ya cerrada** (a partir de
+`tally.completed`, conteo oficial de Tally) y las expone por REST/JSON. Sigue el plan
+`docs/plan-prototipos/02-Prototype.md` (sección 3.8). Contratos completos (eventos, API, colecciones): [CONTRACTS.md](CONTRACTS.md).
 
 ## Ejecutar
 

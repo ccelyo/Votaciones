@@ -320,6 +320,68 @@ fn participation(
     }
 }
 
+/// Participación en tiempo real (plan P2, SR-04), calculada con los `votes.cast`.
+/// Nunca incluye resultados por opción: esos solo existen tras `tally.completed`.
+#[derive(Debug, Clone, Serialize)]
+pub struct LiveParticipation {
+    pub election_id: String,
+    pub name: Option<String>,
+    pub status: String,
+    pub opens_at: Option<DateTime<Utc>>,
+    pub closes_at: Option<DateTime<Utc>>,
+    pub closed_at: Option<DateTime<Utc>>,
+    pub eligible_voters: Option<u64>,
+    pub ballots_received: u64,
+    pub turnout: Option<f64>,
+    pub timeline: Vec<TimelinePoint>,
+    pub as_of: DateTime<Utc>,
+}
+
+/// `status`: `final` (hay conteo), `closed` (cerró, conteo pendiente), `open`,
+/// `scheduled` (aún no abre) o `unknown` (votos sin `election.created`).
+///
+/// Mientras la urna no ha cerrado, la línea de tiempo omite la hora en curso:
+/// un contador que sube voto a voto permitiría correlacionar cada papeleta con
+/// la emisión de su credencial (plan P2, riesgo 10.4).
+pub fn live_participation(
+    election_id: &str,
+    meta: Option<&ElectionMeta>,
+    buckets: &[HourBucket],
+    has_tally: bool,
+    now: DateTime<Utc>,
+) -> LiveParticipation {
+    let eligible = meta.and_then(|m| m.eligible_voters).filter(|&n| n > 0);
+    let closed =
+        meta.is_some_and(|m| m.closed_at.is_some() || m.closes_at.is_some_and(|c| c <= now));
+    let status = match meta {
+        _ if has_tally => "final",
+        _ if closed => "closed",
+        Some(m) if m.opens_at.is_some_and(|o| o > now) => "scheduled",
+        Some(_) => "open",
+        None => "unknown",
+    };
+    let current_hour = hour_start(now);
+    let visible: Vec<HourBucket> = buckets
+        .iter()
+        .copied()
+        .filter(|b| has_tally || closed || b.start < current_hour)
+        .collect();
+    let ballots_received = buckets.iter().map(|b| b.ballots).sum();
+    LiveParticipation {
+        election_id: election_id.to_owned(),
+        name: meta.and_then(|m| m.name.clone()),
+        status: status.into(),
+        opens_at: meta.and_then(|m| m.opens_at),
+        closes_at: meta.and_then(|m| m.closes_at),
+        closed_at: meta.and_then(|m| m.closed_at),
+        eligible_voters: eligible,
+        ballots_received,
+        turnout: eligible.and_then(|e| ratio(ballots_received, e)),
+        timeline: participation(&visible, ballots_received, eligible).timeline,
+        as_of: now,
+    }
+}
+
 /// Reagrupa la línea de tiempo horaria por día (UTC).
 pub fn daily_timeline(hourly: &[TimelinePoint], eligible: Option<u64>) -> Vec<TimelinePoint> {
     let mut days: Vec<TimelinePoint> = Vec::new();
@@ -599,5 +661,49 @@ mod tests {
         assert_eq!(summary.weighted_turnout, Some(0.3));
         assert_eq!(summary.highest_turnout.unwrap().election_id, "e1");
         assert_eq!(summary.closest_race.unwrap().election_id, "e2");
+    }
+
+    #[test]
+    fn live_participation_hides_current_hour_while_open() {
+        let mut m = meta();
+        m.closed_at = None;
+        let buckets = [
+            HourBucket {
+                start: at(8),
+                ballots: 2,
+            },
+            HourBucket {
+                start: at(9),
+                ballots: 3,
+            },
+            HourBucket {
+                start: at(10),
+                ballots: 1,
+            },
+        ];
+        let now = at(10) + Duration::minutes(30);
+        let live = live_participation("e1", Some(&m), &buckets, false, now);
+        assert_eq!(live.status, "open");
+        assert_eq!(live.ballots_received, 6);
+        assert_eq!(live.turnout, Some(0.3));
+        assert_eq!(live.timeline.len(), 2);
+        assert_eq!(live.timeline[1].cumulative, 5);
+
+        let closed = live_participation("e1", Some(&meta()), &buckets, false, now);
+        assert_eq!(closed.status, "closed");
+        assert_eq!(closed.timeline.len(), 3);
+
+        assert_eq!(
+            live_participation("e1", Some(&m), &[], false, at(7)).status,
+            "scheduled"
+        );
+        assert_eq!(
+            live_participation("e1", None, &buckets, false, now).status,
+            "unknown"
+        );
+        assert_eq!(
+            live_participation("e1", Some(&m), &buckets, true, now).status,
+            "final"
+        );
     }
 }

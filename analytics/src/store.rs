@@ -16,7 +16,7 @@ use mongodb::{Client, Collection, Database, IndexModel};
 use serde::{Deserialize, Serialize};
 
 use crate::events::{
-    BallotCast, CensusUpdated, ElectionClosed, ElectionCreated, OptionVotes, TallyCompleted,
+    CensusUpdated, ElectionClosed, ElectionCreated, OptionVotes, TallyCompleted, VoteCast,
 };
 use crate::report::{ElectionMeta, ElectionReport, HourBucket, Tally, build_report, hour_start};
 
@@ -143,7 +143,7 @@ impl Store {
             .await
     }
 
-    pub async fn apply_ballot_cast(&self, e: &BallotCast) -> Result<()> {
+    pub async fn apply_vote_cast(&self, e: &VoteCast) -> Result<()> {
         let hour = hour_start(e.cast_at);
         self.turnout
             .update_one(
@@ -214,7 +214,7 @@ impl Store {
             }))
     }
 
-    async fn hour_buckets(&self, election_id: &str) -> Result<Vec<HourBucket>> {
+    pub async fn hour_buckets(&self, election_id: &str) -> Result<Vec<HourBucket>> {
         let docs: Vec<Document> = self
             .turnout
             .find(doc! { "election_id": election_id })
@@ -254,6 +254,14 @@ impl Store {
             .with_options(ReplaceOptions::builder().upsert(true).build())
             .await?;
         Ok(Some(report))
+    }
+
+    pub async fn has_tally(&self, election_id: &str) -> Result<bool> {
+        Ok(self
+            .tallies
+            .count_documents(doc! { "_id": election_id })
+            .await?
+            > 0)
     }
 
     pub async fn report(&self, election_id: &str) -> Result<Option<ElectionReport>> {
