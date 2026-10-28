@@ -1,0 +1,40 @@
+# Entorno aislado de analytics: MongoDB «Results» + RabbitMQ + el servicio.
+#
+#   docker compose up --build
+#   docker compose exec analytics /publish-sample      # publica una elección de ejemplo
+#   curl localhost:8090/v1/analytics/elections/consejo-superior-2026
+#
+#   RabbitMQ management: http://localhost:15672 (guest / guest)
+services:
+  mongo-results:
+    image: mongo:8.0
+    ports: ["27018:27017"]
+    volumes: ["results-data:/data/db"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    ports: ["5672:5672", "15672:15672"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      retries: 30
+
+  analytics:
+    build: .
+    depends_on:
+      mongo-results:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      ANALYTICS_MONGODB_URI: mongodb://mongo-results:27017
+      ANALYTICS_MONGODB_DATABASE: results
+      ANALYTICS_RABBITMQ_URI: amqp://guest:guest@rabbitmq:5672/%2f
+    ports: ["8090:8090"]
+
+volumes:
+  results-data:
