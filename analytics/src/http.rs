@@ -24,6 +24,7 @@ const MAX_PAGE: u64 = 100;
 #[derive(Clone)]
 pub struct AppState {
     pub store: Store,
+    pub auth: crate::auth::Auth,
     pub consumer_ready: Arc<AtomicBool>,
 }
 
@@ -34,29 +35,26 @@ pub fn router(state: AppState) -> Router {
             get(|| async { Json(json!({ "status": "ok" })) }),
         )
         .route("/readyz", get(readyz))
-        .route("/v1/analytics/summary", get(global_summary))
-        .route("/v1/analytics/elections", get(list_elections))
+        // API para el Gateway, que valida el JWT (CONTRACTS.md §4).
+        .nest("/v1/analytics", data_routes())
+        // Panel web con sesión propia (email + contraseña).
+        .merge(crate::web::routes(state.clone()))
+        .with_state(state)
+}
+
+/// Rutas de datos, compartidas por la API del Gateway y la del panel web.
+pub fn data_routes() -> Router<AppState> {
+    Router::new()
+        .route("/summary", get(global_summary))
+        .route("/elections", get(list_elections))
+        .route("/elections/{election_id}", get(election_report))
+        .route("/elections/{election_id}/results", get(election_results))
         .route(
-            "/v1/analytics/elections/{election_id}",
-            get(election_report),
-        )
-        .route(
-            "/v1/analytics/elections/{election_id}/results",
-            get(election_results),
-        )
-        .route(
-            "/v1/analytics/elections/{election_id}/participation",
+            "/elections/{election_id}/participation",
             get(election_participation),
         )
-        .route(
-            "/v1/analytics/elections/{election_id}/turnout",
-            get(election_turnout),
-        )
-        .route(
-            "/v1/analytics/elections/{election_id}/recompute",
-            post(recompute),
-        )
-        .with_state(state)
+        .route("/elections/{election_id}/turnout", get(election_turnout))
+        .route("/elections/{election_id}/recompute", post(recompute))
 }
 
 pub enum ApiError {

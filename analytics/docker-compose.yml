@@ -4,6 +4,9 @@
 #   docker compose exec analytics /publish-sample      # publica una elección de ejemplo
 #   curl localhost:8090/v1/analytics/elections/consejo-superior-2026
 #
+#   Panel web: http://localhost:8090/dashboard
+#   (SOLO desarrollo: admin@espivota.dev / prueba123)
+#
 #   RabbitMQ management: http://localhost:15672 (guest / guest)
 services:
   mongo-results:
@@ -34,6 +37,9 @@ services:
       ANALYTICS_MONGODB_URI: mongodb://mongo-results:27017
       ANALYTICS_MONGODB_DATABASE: results
       ANALYTICS_RABBITMQ_URI: amqp://guest:guest@rabbitmq:5672/%2f
+      ANALYTICS_DASHBOARD_EMAIL: ${ANALYTICS_DASHBOARD_EMAIL:-admin@espivota.dev}
+      ANALYTICS_DASHBOARD_PASSWORD: ${ANALYTICS_DASHBOARD_PASSWORD:-prueba123}
+      ANALYTICS_DASHBOARD_NAME: ${ANALYTICS_DASHBOARD_NAME:-Administración Espivota}
     ports: ["8090:8090"]
 
 volumes:

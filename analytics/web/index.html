@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Analítica · Espivota</title>
+    <meta name="description" content="Panel de analítica electoral de Espivota: participación y resultados de cada elección." />
+    <link rel="icon" href="/dashboard/assets/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Public+Sans:wght@400;500;600;700&display=swap" />
+    <link rel="stylesheet" href="/dashboard/assets/app.css?v={{v}}" />
+    <script src="/dashboard/assets/charts.js?v={{v}}" defer></script>
+    <script src="/dashboard/assets/app.js?v={{v}}" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Saltar al contenido principal</a>
+
+    <header class="site-header">
+      <div class="container">
+        <div class="header-left">
+          <a class="logo" href="#/" aria-label="Espivota — Analítica, inicio">
+            <img src="/dashboard/assets/logo.png" alt="" />
+            <span>Espivota</span>
+          </a>
+          <nav class="main-nav" aria-label="Navegación principal">
+            <ul>
+              <li><a href="#/" data-nav="summary">Resumen</a></li>
+              <li><a href="#/elections" data-nav="elections">Elecciones</a></li>
+            </ul>
+          </nav>
+        </div>
+        <div class="user-box">
+          <span class="badge badge-royal">Analítica</span>
+          <span class="user-chip" id="user-chip" hidden>
+            <span class="avatar" id="user-initials" aria-hidden="true"></span>
+            <span class="name" id="user-name"></span>
+          </span>
+          <button type="button" class="btn btn-secondary btn-sm" id="logout">Cerrar sesión</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="page-header security-paper">
+      <img class="watermark" src="/dashboard/assets/logo.png" alt="" />
+      <div class="container">
+        <nav class="breadcrumbs" aria-label="Ruta de navegación" id="breadcrumbs" hidden><ol></ol></nav>
+        <div class="page-header-row">
+          <div class="reveal">
+            <p class="eyebrow" id="page-eyebrow">Analítica electoral</p>
+            <h1 id="page-title">Resumen</h1>
+            <p class="lead" id="page-lead"></p>
+          </div>
+          <div class="no-print" id="page-actions"></div>
+        </div>
+      </div>
+    </section>
+
+    <main class="content container" id="main-content" tabindex="-1">
+      <div id="view" aria-live="polite"></div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <span>© <span data-year>2026</span> Espivota · Votación electrónica</span>
+        <span>Analítica agregada · Sin datos de los votantes</span>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -69,6 +69,24 @@ impl Store {
         })
     }
 
+    pub fn database(&self) -> &Database {
+        &self.db
+    }
+
+    /// Ids de las elecciones conocidas que aún no tienen conteo final.
+    pub async fn pending_election_ids(&self) -> Result<Vec<String>> {
+        let known: Vec<Document> = self.elections.find(doc! {}).await?.try_collect().await?;
+        let mut ids = Vec::new();
+        for election in known {
+            if let Ok(id) = election.get_str("_id")
+                && self.tallies.count_documents(doc! { "_id": id }).await? == 0
+            {
+                ids.push(id.to_owned());
+            }
+        }
+        Ok(ids)
+    }
+
     pub async fn ensure_indexes(&self) -> Result<()> {
         self.turnout
             .create_index(

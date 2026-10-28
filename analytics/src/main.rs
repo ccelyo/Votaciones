@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
+use analytics::auth::Auth;
 use analytics::consumer::Consumer;
 use analytics::http::{AppState, router};
 use analytics::store::Store;
@@ -48,6 +49,29 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
     .await?;
     store.ensure_indexes().await?;
 
+    let auth = Auth::new(
+        store.database(),
+        env_or("ANALYTICS_COOKIE_SECURE", "false") == "true",
+    );
+    auth.ensure_indexes().await?;
+    match (
+        std::env::var("ANALYTICS_DASHBOARD_EMAIL")
+            .ok()
+            .filter(|v| !v.is_empty()),
+        std::env::var("ANALYTICS_DASHBOARD_PASSWORD")
+            .ok()
+            .filter(|v| !v.is_empty()),
+    ) {
+        (Some(email), Some(password)) => {
+            let name = env_or("ANALYTICS_DASHBOARD_NAME", "Administración");
+            auth.upsert_user(&email, &name, &password).await?;
+            tracing::info!(email = %email, "dashboard user ready");
+        }
+        _ => tracing::warn!(
+            "ANALYTICS_DASHBOARD_EMAIL/PASSWORD not set: no dashboard user was created or updated"
+        ),
+    }
+
     let (shutdown_tx, shutdown_rx) = watch::channel(false);
     let ready = Arc::new(AtomicBool::new(false));
     let consumer = Consumer {
@@ -66,6 +90,7 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
 
     let app = router(AppState {
         store,
+        auth,
         consumer_ready: ready,
     });
     let listener = tokio::net::TcpListener::bind(&http_addr).await?;

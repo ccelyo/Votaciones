@@ -6,7 +6,7 @@
 #   Gateway   http://localhost:8088   (GATEWAY_PORT; catálogo de rutas en /api)
 #   Identity  http://localhost:8000   (IDENTITY_PORT)
 #   Ballot    http://localhost:8080   (BALLOT_PORT)
-#   Analytics http://localhost:8090   (ANALYTICS_PORT)
+#   Analytics http://localhost:8090   (ANALYTICS_PORT; panel en /dashboard)
 #   RabbitMQ  http://localhost:15672  (RABBITMQ_UI_PORT, guest / guest)
 #
 # Usuarios de prueba (identity/seed_dev_users.sql): admin1..admin4 y votante1..votante10,
@@ -140,6 +140,10 @@ services:
       ANALYTICS_MONGODB_URI: mongodb://mongo-results:27017
       ANALYTICS_MONGODB_DATABASE: results
       ANALYTICS_RABBITMQ_URI: amqp://guest:guest@rabbitmq:5672/%2f
+      # Panel web en /dashboard. SOLO desarrollo: credenciales públicas.
+      ANALYTICS_DASHBOARD_EMAIL: ${ANALYTICS_DASHBOARD_EMAIL:-admin@espivota.dev}
+      ANALYTICS_DASHBOARD_PASSWORD: ${ANALYTICS_DASHBOARD_PASSWORD:-prueba123}
+      ANALYTICS_DASHBOARD_NAME: ${ANALYTICS_DASHBOARD_NAME:-Administración Espivota}
     ports: ["${ANALYTICS_PORT:-8090}:8090"]
 
 volumes:

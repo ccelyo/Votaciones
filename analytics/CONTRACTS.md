@@ -21,6 +21,9 @@ tally.events ────┘                       │                          
 
 Analytics solo **consume** eventos; no publica ninguno ni llama a otros servicios.
 
+Además de la API REST, el servicio sirve un **panel web** en `/dashboard` (sección 7), con
+acceso por correo y contraseña, que muestra todas las analíticas con gráficas.
+
 Garantías de privacidad: ningún evento ni colección de analytics contiene tokens, recibos,
 identificadores de votante ni el voto individual. La participación se guarda agregada por
 hora. Con la urna abierta solo se expone el número de papeletas recibidas (sin la hora en
@@ -535,6 +538,8 @@ replica set.
 | `turnout_hourly` | ObjectId | `election_id`, `hour` (inicio de la hora UTC), `ballots` | único `(election_id, hour)` |
 | `reports` | `election_id` | El informe de 4.3 tal cual | `tallied_at` desc |
 | `processed_events` | `event_id` | `event_type`, `processed_at` | — |
+| `dashboard_users` | correo | `name`, `password_hash` (argon2id), `created_at` | — |
+| `dashboard_sessions` | SHA-256 del token | `email`, `created_at`, `expires_at` | TTL sobre `expires_at` |
 
 ---
 
@@ -548,7 +553,47 @@ replica set.
 | Metadatos de la elección | Fabian | `election.created` / `election.closed` en `election.events` (3.1, 3.2) |
 | Respuesta HTTP para el frontend | Cristhian | Sección 4; el Gateway enruta `/v1/analytics/*` y restringe `recompute` a admin |
 
-## 7. Configuración
+## 7. Panel web (`/dashboard`)
+
+El binario de Rust embebe el panel (HTML, CSS y JS en `web/`, gráficas SVG propias, sin
+dependencias de terceros salvo la fuente Public Sans de Google Fonts). Usa el mismo sistema
+visual que la plataforma (`platform/app/globals.css`).
+
+| Ruta | Descripción |
+| --- | --- |
+| `GET /` | Redirige a `/dashboard` |
+| `GET /dashboard/login` | Formulario de acceso (correo + contraseña) |
+| `GET /dashboard` | Panel; sin sesión válida redirige a `/dashboard/login` |
+| `GET /dashboard/assets/{archivo}` | `app.css`, `app.js`, `charts.js`, `login.js`, `logo.png` |
+| `POST /dashboard/api/login` | `{ "email", "password" }` → `200 { "user": { "email", "name" } }` + cookie de sesión |
+| `POST /dashboard/api/logout` | Cierra la sesión → `204` |
+| `GET /dashboard/api/me` | Usuario de la sesión |
+| `GET /dashboard/api/live` | Participación en vivo (formato 4.5) de las elecciones sin conteo oficial |
+| `GET/POST /dashboard/api/…` | Las mismas rutas de la sección 4 (`/summary`, `/elections`, `/elections/{id}`, `…/results`, `…/participation`, `…/turnout`, `…/recompute`) |
+
+Vistas del panel:
+
+- **Resumen** (`#/`): indicadores globales, participación en vivo (se actualiza cada 30 s),
+  participación y margen de victoria por elección, destacados y elecciones recientes.
+- **Elecciones** (`#/elections`): listado paginado.
+- **Informe** (`#/elections/{id}`): ganador, segundo lugar y margen; censo, papeletas,
+  participación, válidos, nulos y blancos; barras por opción; dona de composición del
+  censo; tabla de resultados; participación por hora o por día con la participación
+  acumulada; distribución por hora del día; competitividad y consistencia del dato. Si la
+  elección no tiene conteo oficial, muestra su participación en vivo.
+
+Seguridad del acceso:
+
+| Aspecto | Implementación |
+| --- | --- |
+| Usuarios | Colección `dashboard_users` (`_id` = correo en minúsculas, hash **argon2id**). El usuario de `ANALYTICS_DASHBOARD_EMAIL`/`_PASSWORD` se crea o actualiza al arrancar |
+| Sesión | Token aleatorio de 256 bits en la cookie `analytics_session` (`HttpOnly; SameSite=Strict; Path=/dashboard`, `Secure` con `ANALYTICS_COOKIE_SECURE=true`), 8 h. En `dashboard_sessions` solo se guarda su SHA-256, con índice TTL |
+| Fuerza bruta | 5 intentos fallidos seguidos bloquean el correo 5 minutos (`429 too_many_attempts`); un correo inexistente tarda lo mismo que uno válido |
+| CSRF | Cookie `SameSite=Strict` y cabecera obligatoria `X-Requested-With` en `POST` (`403 csrf_header_missing`) |
+| Cabeceras | `Content-Security-Policy` restrictiva, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy: no-referrer`, `Cache-Control: no-store` |
+| Errores | `401 invalid_credentials` (login), `401 unauthenticated` (API sin sesión) |
+
+## 8. Configuración
 
 | Variable | Defecto | Descripción |
 | --- | --- | --- |
@@ -557,4 +602,8 @@ replica set.
 | `ANALYTICS_MONGODB_DATABASE` | `results` | |
 | `ANALYTICS_RABBITMQ_URI` | `amqp://guest:guest@localhost:5672/%2f` | |
 | `ANALYTICS_PREFETCH` | `16` | Mensajes en vuelo por consumidor |
+| `ANALYTICS_DASHBOARD_EMAIL` | — | Correo del usuario del panel |
+| `ANALYTICS_DASHBOARD_PASSWORD` | — | Su contraseña (se guarda con argon2id) |
+| `ANALYTICS_DASHBOARD_NAME` | `Administración` | Nombre visible en el panel |
+| `ANALYTICS_COOKIE_SECURE` | `false` | `true` detrás de HTTPS |
 | `RUST_LOG` | `info` | Nivel de logs (JSON a stdout) |
