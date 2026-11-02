@@ -83,16 +83,18 @@ services:
         condition: service_started
       analytics:
         condition: service_started
+      notification:
+        condition: service_started
     environment:
       # Auth y Election aún viven dentro de identity: cuando se separen, solo
-      # cambian estas URLs. Tally y Notifications responden 503 hasta definirlas.
+      # cambian estas URLs. Tally sigue provisional hasta implementarse.
       GATEWAY_AUTH_URL: http://identity:8000
       GATEWAY_ELECTION_URL: http://identity:8000
       GATEWAY_IDENTITY_URL: http://identity:8000
       GATEWAY_BALLOT_URL: http://ballot:8080
       GATEWAY_ANALYTICS_URL: http://analytics:8090
+      GATEWAY_NOTIFICATIONS_URL: http://notification:3000
       GATEWAY_TALLY_URL: ${GATEWAY_TALLY_URL:-}
-      GATEWAY_NOTIFICATIONS_URL: ${GATEWAY_NOTIFICATIONS_URL:-}
       # Sin secreto el Gateway funciona en modo passthrough (sesiones opacas de
       # identity). Con el secreto compartido con Auth valida los JWT.
       GATEWAY_JWT_SECRET: ${GATEWAY_JWT_SECRET:-}
@@ -142,8 +144,32 @@ services:
       ANALYTICS_RABBITMQ_URI: amqp://guest:guest@rabbitmq:5672/%2f
     ports: ["${ANALYTICS_PORT:-8090}:8090"]
 
+  notifications-mongo:
+    image: mongo:8.0
+    volumes: ["notifications-data:/data/db"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      retries: 20
+
+  notification:
+    build: ./notification
+    depends_on:
+      notifications-mongo:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      MONGO_URL: mongodb://notifications-mongo:27017
+      MONGO_DATABASE: notifications
+      RABBIT_URL: amqp://guest:guest@rabbitmq:5672/
+      RABBIT_PREFETCH: 10
+    ports: ["${NOTIFICATION_PORT:-8091}:3000"]
+
 volumes:
   postgres-data:
   mongo-data:
   identity-keys:
   results-data:
+  notifications-data:
