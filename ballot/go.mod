@@ -4,6 +4,7 @@ go 1.27.2
 
 require (
 	github.com/cloudflare/circl v1.6.5
+	github.com/rabbitmq/amqp091-go v1.16.0
 	go.mongodb.org/mongo-driver/v2 v2.9.2
 	google.golang.org/grpc v1.84.0
 	google.golang.org/protobuf v1.36.12

@@ -102,6 +102,40 @@ inválidas.
 | 404 | `election_not_found` |
 | 409 | `election_not_closed` |
 
+## `GET /v1/elections/{election_id}/ballots`
+
+Lista de papeletas cifradas para Tally. Solo responde con la urna cerrada.
+Tally la llama directo a ballot, en la red interna (`http://ballot:8080`); no
+pasa por el API Gateway y el navegador no la usa.
+
+Cada elemento trae `encrypted_vote` y `proof` en base64url. No incluye el
+token, el recibo, `seq` ni los hashes de la cadena, así que la lista no se
+puede cruzar con un recibo.
+
+```json
+{
+  "election_id": "gobernacion-antioquia-2027",
+  "ballots": [
+    { "encrypted_vote": "Y2FuZGlkYXRvLTE", "proof": "cHJvb2Y" }
+  ]
+}
+```
+
+| Código | `error` |
+| --- | --- |
+| 200 | — |
+| 404 | `election_not_found` |
+| 409 | `election_not_closed` |
+
+## `votes.cast`
+
+Cuando una papeleta nueva queda guardada, ballot publica en el exchange
+`votes.events` (topic, durable) con routing key `votes.cast`. Un reintento
+de la misma papeleta no publica otra vez. El cuerpo sigue
+`analytics/CONTRACTS.md`: solo `election_id` y `cast_at` truncado al minuto.
+Si RabbitMQ no confirma el mensaje, el voto igual queda guardado y el fallo
+queda en el log.
+
 ## `GET /healthz`, `GET /readyz`
 
 Liveness y readiness (`readyz` hace ping a MongoDB).
@@ -154,6 +188,7 @@ la hora de emisión del token en identidad; el orden lo da `seq`.
 | `PORT` / `BALLOT_HTTP_ADDR` | `:8080` | `PORT` lo fija Cloud Run |
 | `BALLOT_GRPC_ADDR` | `127.0.0.1:9091` | API admin interna (identity) |
 | `BALLOT_ALLOWED_ORIGINS` | vacío | Orígenes CORS separados por coma |
+| `BALLOT_RABBITMQ_URI` | vacío → no publica ni consume | `amqp://usuario:clave@host:5672/%2f`. Sin ella no hay `votes.cast` ni se leen `election.events` (ver `docs/election-events.md`) |
 
 ## Local
 

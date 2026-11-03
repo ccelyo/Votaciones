@@ -226,18 +226,34 @@ func (s *MemoryCommitStore) CountBallots(ctx context.Context, electionID string)
 
 // Votes implements VoteReader.
 func (s *MemoryCommitStore) Votes(ctx context.Context, electionID string) ([][]byte, error) {
+	ballots, err := s.SealedBallots(ctx, electionID)
+	if err != nil {
+		return nil, err
+	}
+	votes := make([][]byte, len(ballots))
+	for i, ballot := range ballots {
+		votes[i] = ballot.EncryptedVote
+	}
+	return votes, nil
+}
+
+// SealedBallots implements SealedBallotReader. The token and the hash chain stay inside the store.
+func (s *MemoryCommitStore) SealedBallots(ctx context.Context, electionID string) ([]SealedBallot, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	var votes [][]byte
+	ballots := make([]SealedBallot, 0)
 	for _, record := range s.records {
 		if record.ElectionID == electionID {
-			votes = append(votes, append([]byte(nil), record.EncryptedVote...))
+			ballots = append(ballots, SealedBallot{
+				EncryptedVote: append([]byte(nil), record.EncryptedVote...),
+				Proof:         append([]byte(nil), record.Proof...),
+			})
 		}
 	}
-	return votes, nil
+	return ballots, nil
 }
 
 func sameSubmission(record BallotRecord, submission BallotSubmission) bool {
