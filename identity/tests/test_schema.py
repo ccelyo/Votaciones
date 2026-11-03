@@ -7,20 +7,22 @@ agrega o quita columnas/tablas en uno de los dos lados sin actualizar el otro.
 import re
 from pathlib import Path
 
-from app.config import Settings, normalize_database_url
-from app.models import Base
+from app.core.config import Settings, normalize_database_url
+from app.db.census import CensusBase
+from app.db.models import Base
 
 SCHEMA = Path(__file__).parents[1] / "schema.sql"
+CENSUS_SCHEMA = Path(__file__).parents[2] / "census" / "schema.sql"
 TABLE = re.compile(r"CREATE TABLE (\w+) \((.*?)\n\);", re.DOTALL | re.IGNORECASE)
 COLUMN = re.compile(
-    r"^\s*(\w+)\s+(?:SERIAL|INTEGER|BIGINT|VARCHAR|TEXT|BOOLEAN|TIMESTAMP|JSONB|BYTEA)\b",
+    r"^\s*(\w+)\s+(?:SERIAL|INTEGER|BIGINT|VARCHAR|TEXT|BOOLEAN|TIMESTAMP|DATE|JSONB|BYTEA)\b",
     re.IGNORECASE,
 )
 
 
-def sql_columns() -> dict[str, set[str]]:
+def sql_columns(path: Path = SCHEMA) -> dict[str, set[str]]:
     tables = {}
-    for name, body in TABLE.findall(SCHEMA.read_text()):
+    for name, body in TABLE.findall(path.read_text(encoding="utf-8")):
         tables[name] = {
             match.group(1)
             for line in body.splitlines()
@@ -38,10 +40,24 @@ def test_models_match_schema_sql_tables_and_columns():
     assert declared == expected
 
 
-def test_schema_sql_keeps_the_critical_unique_constraints():
-    sql = SCHEMA.read_text()
-    assert "uq_issued_tokens_user_election" in sql
-    assert "UNIQUE (user_id, election_id)" in sql
+def test_census_models_match_census_schema_sql():
+    declared = {
+        table.name: {column.name for column in table.columns}
+        for table in CensusBase.metadata.sorted_tables
+    }
+    assert declared == sql_columns(CENSUS_SCHEMA)
+
+
+def test_census_schema_keeps_the_critical_unique_constraints():
+    sql = CENSUS_SCHEMA.read_text(encoding="utf-8")
+    assert "uq_issued_credentials_election_voter" in sql
+    assert "UNIQUE (election_id, voter_id)" in sql
+
+
+def test_census_is_independent_from_auth_and_has_no_exact_timestamps():
+    sql = CENSUS_SCHEMA.read_text(encoding="utf-8").upper()
+    assert "REFERENCES" not in sql  # sin claves foráneas hacia users/elections
+    assert "TIMESTAMP" not in sql  # solo el día de emisión, no la hora
 
 
 def test_database_url_accepts_env_example_format(monkeypatch):

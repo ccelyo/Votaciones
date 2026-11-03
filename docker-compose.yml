@@ -36,6 +36,32 @@ services:
       interval: 3s
       retries: 30
 
+  # Census: base del padrón electoral, separada de la de Auth/Identity (vista C&C).
+  postgres-census:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: census
+      POSTGRES_USER: census
+      POSTGRES_PASSWORD: census
+    volumes:
+      - census-data:/var/lib/postgresql/data
+      - ./census/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U census -d census"]
+      interval: 3s
+      retries: 30
+
+  # Firma ciega RSA. Solo es accesible desde Identity: sin `ports`, no se publica
+  # al host y el Gateway no tiene ruta hacia él.
+  blind-signature:
+    build: ./blind-signature
+    environment:
+      # Secreto compartido con identity. Para cambiarlo: BLINDSIG_API_KEY=... docker compose up
+      # (el valor por defecto es SOLO desarrollo, como las demás credenciales de este archivo).
+      BLINDSIG_API_KEY: ${BLINDSIG_API_KEY:-dev-only-blindsig-token}
+    volumes: ["blind-signature-keys:/app/keys"]
+    expose: ["8100"]
+
   mongo:
     image: mongo:8.0
     command: ["--replSet", "rs0", "--bind_ip_all"]
@@ -68,10 +94,17 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      postgres-census:
+        condition: service_healthy
+      blind-signature:
+        condition: service_healthy
       ballot:
         condition: service_started
     environment:
       DATABASE_URL: postgresql://votaciones:votaciones@postgres:5432/votaciones
+      IDENTITY_CENSUS_DATABASE_URL: postgresql://census:census@postgres-census:5432/census
+      IDENTITY_BLIND_SIGNATURE_URL: http://blind-signature:8100
+      IDENTITY_BLIND_SIGNATURE_API_KEY: ${BLINDSIG_API_KEY:-dev-only-blindsig-token}
       IDENTITY_BALLOT_GRPC_ADDR: ballot:9091
       IDENTITY_BALLOT_GRPC_TLS: "false"
       IDENTITY_ALLOWED_ORIGINS: http://localhost:${WEB_PORT:-3000},http://127.0.0.1:${WEB_PORT:-3000}
@@ -222,6 +255,8 @@ services:
 
 volumes:
   postgres-data:
+  census-data:
+  blind-signature-keys:
   mongo-data:
   identity-keys:
   results-data:

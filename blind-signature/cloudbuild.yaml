@@ -1,0 +1,29 @@
+# CI/CD de blind-signature (Python). Lo dispara el trigger de GitHub en cambios bajo blind-signature/.
+# Construye la imagen y actualiza el servicio de Cloud Run "blind-signature". La
+# configuración (ingreso interno, VPC, secretos, volumen de claves) vive en el servicio;
+# aquí solo se cambia la imagen. Ver blind-signature/DEPLOY.md para crear el servicio la primera vez.
+substitutions:
+  _REGION: us-central1
+  _IMAGE: us-central1-docker.pkg.dev/${PROJECT_ID}/votaciones/blind-signature
+
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    dir: blind-signature
+    env: ["DOCKER_BUILDKIT=1"]
+    args: ["build", "-t", "${_IMAGE}:${BUILD_ID}", "-t", "${_IMAGE}:latest", "."]
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args: ["push", "--all-tags", "${_IMAGE}"]
+
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args: ["run", "deploy", "blind-signature", "--image", "${_IMAGE}:${BUILD_ID}", "--region", "${_REGION}", "--quiet"]
+
+images: ["${_IMAGE}:${BUILD_ID}", "${_IMAGE}:latest"]
+options:
+  logging: CLOUD_LOGGING_ONLY
+  substitutionOption: ALLOW_LOOSE
+  dynamicSubstitutions: true

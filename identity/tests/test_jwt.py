@@ -7,12 +7,12 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
 from sqlalchemy import select
 
-from app import jwt_tokens
-from app.config import Settings
-from app.encoding import b64url_encode
-from app.errors import Unauthenticated
-from app.models import Role, User, UserSession
-from app.security import hash_password
+from app.core import jwt_tokens
+from app.core.config import Settings
+from app.core.encoding import b64url_encode
+from app.core.errors import Unauthenticated
+from app.db.models import Role, User, UserSession
+from app.core.security import hash_password
 
 ISSUER = Settings().jwt_issuer
 AUDIENCE = Settings().jwt_audience
@@ -99,13 +99,14 @@ def test_only_the_jti_hash_is_stored(client, session_factory):
     assert stored == [hashlib.sha256(jti.encode()).hexdigest()]
 
 
-def test_jwt_key_is_not_the_blind_signing_key(client, keys):
+def test_jwt_key_is_not_the_blind_signing_key(client, keys, signer):
     jwks = client.get("/.well-known/jwks.json").json()
     assert [key["kid"] for key in jwks["keys"]] == [keys.jwt_kid]
-    assert keys.jwt_kid != keys.token_kid
+    # La clave de firma ciega la custodia Blind Signature; nunca debe coincidir con la del JWT.
+    assert keys.jwt_kid != signer.kid
     assert (
         keys.jwt_private.public_key().public_numbers().n
-        != keys.token_private.public_key().public_numbers().n
+        != signer.private.public_key().public_numbers().n
     )
     assert set(jwks["keys"][0]) == {"kty", "use", "alg", "kid", "n", "e"}
 

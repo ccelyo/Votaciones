@@ -1,6 +1,6 @@
 from sqlalchemy import select
 
-from app.models import Role
+from app.db.models import Role
 from tests.conftest import ADMIN, voter
 
 
