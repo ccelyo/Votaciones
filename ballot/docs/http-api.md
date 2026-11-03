@@ -102,6 +102,30 @@ inválidas.
 | 404 | `election_not_found` |
 | 409 | `election_not_closed` |
 
+## `GET /v1/elections/{election_id}/ballots`
+
+Volcado **interno** que consume Tally para el escrutinio (SE-05). Solo responde
+con la urna cerrada y no lo expone el API Gateway. Devuelve únicamente
+`encrypted_vote`, en el mismo orden de almacenamiento; nunca el `_id` (token),
+`seq`, la prueba ni datos del votante.
+
+Si `BALLOT_TALLY_TOKEN` está definida, exige
+`Authorization: Bearer <token>`; Tally envía `TALLY_BALLOT_TOKEN`.
+
+```json
+{
+  "election_id": "gobernacion-antioquia-2027",
+  "ballots": ["<base64url>", "<base64url>"]
+}
+```
+
+| Código | `error` |
+| --- | --- |
+| 200 | — |
+| 401 | `unauthorized` |
+| 404 | `election_not_found` |
+| 409 | `election_not_closed` |
+
 ## `GET /healthz`, `GET /readyz`
 
 Liveness y readiness (`readyz` hace ping a MongoDB).
@@ -154,6 +178,7 @@ la hora de emisión del token en identidad; el orden lo da `seq`.
 | `PORT` / `BALLOT_HTTP_ADDR` | `:8080` | `PORT` lo fija Cloud Run |
 | `BALLOT_GRPC_ADDR` | `127.0.0.1:9091` | API admin interna (identity) |
 | `BALLOT_ALLOWED_ORIGINS` | vacío | Orígenes CORS separados por coma |
+| `BALLOT_TALLY_TOKEN` | vacío | Bearer compartido con Tally para `GET /v1/elections/{id}/ballots` |
 
 ## Local
 
