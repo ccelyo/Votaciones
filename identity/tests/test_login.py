@@ -1,5 +1,5 @@
-from app.models import Role, User
-from app.security import hash_password
+from app.db.models import Role, User
+from app.core.security import hash_password
 
 
 def create_login_user(session_factory):

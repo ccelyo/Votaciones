@@ -1,18 +1,23 @@
+import hashlib
 import itertools
 import time
 
 import pytest
 from fastapi.testclient import TestClient
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 from sqlalchemy import create_engine, event, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.ballot_client import ElectionRegistration, TokenKey
-from app.config import Settings
-from app.errors import BallotUnavailable
-from app.keys import load_keys
+from app.clients.ballot_client import ElectionRegistration, TokenKey
+from app.core.config import Settings
+from app.clients.blind_signature import BlindSignature
+from app.core.errors import BallotUnavailable, BlindSignatureUnavailable, InvalidRequest
+from app.core.keys import load_keys
 from app.main import create_app
-from app.models import Base, Role, User, VoterRollEntry
+from app.db.census import CensusBase, VoterRollEntry
+from app.db.models import Base, Role, User
 
 ADMIN = {"X-Dev-User": "1", "X-Dev-Roles": "admin"}
 
@@ -60,6 +65,57 @@ class FakeBallot:
         return self.ballots.get(election_id, 0)
 
 
+class FakeBlindSigner:
+    """Doble de Blind Signature: misma matemática RSA, sin red.
+
+    Registra lo que RECIBE para poder comprobar que Identity nunca le envía datos
+    del votante: solo ``election_id`` y el mensaje cegado.
+    """
+
+    VARIANT = "RSABSSA-SHA384-PSS-Randomized"
+
+    def __init__(self, private: rsa.RSAPrivateKey):
+        self.private = private
+        self.calls: list[tuple] = []
+        self.down = False
+
+    @property
+    def public_der(self) -> bytes:
+        return self.private.public_key().public_bytes(
+            serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo
+        )
+
+    @property
+    def kid(self) -> str:
+        return hashlib.sha256(self.public_der).hexdigest()[:16]
+
+    def token_key(self, election_id: str) -> TokenKey:
+        if self.down:
+            raise BlindSignatureUnavailable("blind signature service unreachable")
+        return TokenKey(self.kid, self.public_der, self.VARIANT)
+
+    def sign(self, election_id: str, blinded_message: bytes) -> BlindSignature:
+        if self.down:
+            raise BlindSignatureUnavailable("blind signature service unreachable")
+        self.calls.append((election_id, blinded_message))
+        numbers = self.private.private_numbers()
+        n = numbers.public_numbers.n
+        if len(blinded_message) != 256 or int.from_bytes(blinded_message, "big") >= n:
+            raise InvalidRequest("blinded message is not valid for this key")
+        s = pow(int.from_bytes(blinded_message, "big"), numbers.d, n)
+        return BlindSignature(self.kid, self.VARIANT, s.to_bytes(256, "big"))
+
+
+@pytest.fixture(scope="session")
+def signer_key():
+    return rsa.generate_private_key(public_exponent=65537, key_size=2048)
+
+
+@pytest.fixture
+def signer(signer_key):
+    return FakeBlindSigner(signer_key)
+
+
 @pytest.fixture(scope="session")
 def keys(tmp_path_factory):
     return load_keys(tmp_path_factory.mktemp("keys"))
@@ -83,13 +139,19 @@ def session_factory():
         connection.execute("PRAGMA foreign_keys=ON")
 
     Base.metadata.create_all(engine)
+    CensusBase.metadata.create_all(engine)  # en pruebas Census comparte el SQLite
     return sessionmaker(engine, expire_on_commit=False)
 
 
 @pytest.fixture
-def client(session_factory, ballot, keys):
+def client(session_factory, ballot, keys, signer):
     app = create_app(
-        Settings(dev_auth=True), session_factory=session_factory, ballot=ballot, keys=keys
+        Settings(dev_auth=True),
+        session_factory=session_factory,
+        census_session_factory=session_factory,
+        ballot=ballot,
+        blind_signer=signer,
+        keys=keys,
     )
     with TestClient(app) as test_client:
         yield test_client
@@ -121,7 +183,7 @@ def enroll(session_factory):
         with session_factory() as session:
             session.add(
                 VoterRollEntry(
-                    user_id=user_id, election_id=int(election_id), is_eligible=is_eligible
+                    voter_id=str(user_id), election_id=election_id, is_eligible=is_eligible
                 )
             )
             session.commit()

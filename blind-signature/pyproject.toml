@@ -1,0 +1,18 @@
+[project]
+name = "blind-signature"
+version = "0.1.0"
+description = "Servicio de firma ciega RSA (RFC 9474, RSABSSA). Solo accesible desde Identity."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "cryptography>=44.0.0",
+    "fastapi[standard]>=0.142.4",
+    "pydantic-settings>=2.7.0",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.3.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

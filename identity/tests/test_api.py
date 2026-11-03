@@ -7,9 +7,10 @@ from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives.serialization import load_der_public_key
 from sqlalchemy import inspect, select
 
-from app import parameters
-from app.encoding import b64url_decode, b64url_encode
-from app.models import STATUS_CLOSED, STATUS_OPEN, Election, IssuedToken
+from app.services import parameters
+from app.core.encoding import b64url_decode, b64url_encode
+from app.db.census import IssuedCredential
+from app.db.models import STATUS_CLOSED, STATUS_OPEN, Election
 from tests import rsabssa_client
 from tests.conftest import ADMIN, voter
 
@@ -37,7 +38,7 @@ def request_token(client, election_id, headers, blinded: bytes | None = None):
 
 
 def test_create_election_registers_signed_parameters_in_ballot(
-    client, ballot, election_payload, keys
+    client, ballot, election_payload, keys, signer
 ):
     response = create_election(client, election_payload)
     assert response.status_code == 201
@@ -48,9 +49,9 @@ def test_create_election_registers_signed_parameters_in_ballot(
     assert registration.options == ["Alpha", "Beta", "Blanco"]
     assert registration.opens_at == election_payload["opens_at"]
     assert registration.closes_at == election_payload["closes_at"]
-    assert registration.token_keys[0].kid == keys.token_kid
+    assert registration.token_keys[0].kid == signer.kid
     assert registration.token_keys[0].signature_variant == "RSABSSA-SHA384-PSS-Randomized"
-    assert registration.token_keys[0].public_key_der == keys.token_public_der
+    assert registration.token_keys[0].public_key_der == signer.public_der
 
     # La firma de parámetros que recibió ballot verifica con la clave pública de identidad.
     public_key = ed25519.Ed25519PublicKey.from_public_bytes(keys.parameter_public_raw)
@@ -230,7 +231,7 @@ def test_status_and_close_require_admin(client, election_payload, new_user):
 
 
 def test_happy_path_blind_token_verifies_without_identity_seeing_it(
-    client, election_payload, enroll, new_user, keys
+    client, election_payload, enroll, new_user, signer
 ):
     election_id = create_ok(client, election_payload)
     user_id = new_user()
@@ -245,7 +246,7 @@ def test_happy_path_blind_token_verifies_without_identity_seeing_it(
     response = request_token(client, election_id, voter(user_id), blinded)
     assert response.status_code == 200, response.text
     body = response.json()
-    assert body["kid"] == keys.token_kid == params["token_key"]["kid"]
+    assert body["kid"] == signer.kid == params["token_key"]["kid"]
     assert body["variant"] == "RSABSSA-SHA384-PSS-Randomized"
 
     # Navegador: desciega y obtiene una firma válida sobre el token original.
@@ -294,7 +295,7 @@ def test_user_outside_voter_roll_gets_no_token(client, election_payload, new_use
     assert response.status_code == 403
     assert response.json()["error"]["code"] == "not_in_voter_roll"
     with session_factory() as session:
-        assert session.scalars(select(IssuedToken)).all() == []
+        assert session.scalars(select(IssuedCredential)).all() == []
 
 
 def test_ineligible_voter_roll_entry_gets_no_token(client, election_payload, enroll, new_user):
@@ -367,40 +368,42 @@ def test_identity_stores_no_link_between_user_and_token(
         request_token(client, election_id, voter(user_id), blinded).json()["blind_signature"]
     )
 
-    columns = {c["name"] for c in inspect(session_factory.kw["bind"]).get_columns("issued_tokens")}
-    assert columns == {"id", "user_id", "election_id", "issued_at"}
+    columns = {
+        c["name"] for c in inspect(session_factory.kw["bind"]).get_columns("issued_credentials")
+    }
+    # Solo el DÍA de emisión (issued_on): ni hora exacta, ni mensaje cegado, ni firma.
+    assert columns == {"id", "election_id", "voter_id", "issued_on"}
     with session_factory() as session:
-        row = session.scalars(select(IssuedToken)).one()
-        stored = json.dumps([row.user_id, row.election_id]).encode()
+        row = session.scalars(select(IssuedCredential)).one()
+        stored = json.dumps([row.voter_id, row.election_id]).encode()
         assert blinded not in stored and signature not in stored
-        assert (row.user_id, row.election_id) == (user_id, int(election_id))
+        assert (row.voter_id, row.election_id) == (str(user_id), election_id)
 
 
 def test_public_keys_endpoint_exposes_only_public_material(client, keys):
     body = client.get("/keys").json()
-    assert body["token_signing"]["kid"] == keys.token_kid
     assert body["parameter_signing"]["key_id"] == keys.parameter_key_id
-    private_pem = keys.token_private.private_bytes(
-        serialization.Encoding.PEM,
-        serialization.PrivateFormat.PKCS8,
-        serialization.NoEncryption(),
-    )
+    assert "token_signing" not in body  # la clave de tokens es por elección y vive en Blind Signature
     assert b"PRIVATE" not in client.get("/keys").content
-    assert private_pem not in client.get("/keys").content
 
 
 def test_root_keeps_the_original_service_message(client):
     assert client.get("/").json() == {"message": "Identity service running"}
 
 
-def test_dev_auth_disabled_by_default(session_factory, ballot, keys):
+def test_dev_auth_disabled_by_default(session_factory, ballot, keys, signer):
     from fastapi.testclient import TestClient
 
-    from app.config import Settings
+    from app.core.config import Settings
     from app.main import create_app
 
     app = create_app(
-        Settings(dev_auth=False), session_factory=session_factory, ballot=ballot, keys=keys
+        Settings(dev_auth=False),
+        session_factory=session_factory,
+        census_session_factory=session_factory,
+        ballot=ballot,
+        blind_signer=signer,
+        keys=keys,
     )
     with TestClient(app) as strict_client:
         assert strict_client.post("/elections", json={}, headers=ADMIN).status_code == 401
@@ -478,3 +481,58 @@ def test_open_requires_admin(client, election_payload, new_user):
     election_id = create_draft(client, election_payload)
     response = client.post(f"/elections/{election_id}/open", headers=voter(new_user()))
     assert response.status_code == 403
+
+
+# --- integración Identity -> Blind Signature / Census -----------------------
+
+
+def test_blind_signature_service_never_receives_the_voter_identity(
+    client, election_payload, enroll, new_user, signer
+):
+    election_id = create_ok(client, election_payload)
+    user_id = new_user()
+    enroll(user_id, election_id)
+    blinded = b"\x05" * 256
+
+    assert request_token(client, election_id, voter(user_id), blinded).status_code == 200
+
+    # Lo único que recibe el servicio de firma: (election_id, mensaje cegado).
+    assert signer.calls == [(election_id, blinded)]
+
+
+def test_blind_signature_outage_returns_502_and_keeps_the_right_to_a_token(
+    client, election_payload, enroll, new_user, signer, session_factory
+):
+    election_id = create_ok(client, election_payload)
+    user_id = new_user()
+    enroll(user_id, election_id)
+
+    signer.down = True
+    response = request_token(client, election_id, voter(user_id))
+    assert response.status_code == 502
+    assert response.json()["error"]["code"] == "blind_signature_unavailable"
+    with session_factory() as session:
+        assert session.scalars(select(IssuedCredential)).all() == []  # reserva revertida
+
+    signer.down = False
+    assert request_token(client, election_id, voter(user_id)).status_code == 200
+
+
+def test_invalid_blinded_message_does_not_consume_the_credential(
+    client, election_payload, enroll, new_user
+):
+    election_id = create_ok(client, election_payload)
+    user_id = new_user()
+    enroll(user_id, election_id)
+
+    assert request_token(client, election_id, voter(user_id), b"\x01" * 10).status_code == 400
+    assert request_token(client, election_id, voter(user_id)).status_code == 200
+
+
+def test_election_creation_fails_cleanly_when_blind_signature_is_down(
+    client, election_payload, signer, session_factory
+):
+    signer.down = True
+    assert create_election(client, election_payload).status_code == 502
+    with session_factory() as session:
+        assert session.scalars(select(Election)).all() == []

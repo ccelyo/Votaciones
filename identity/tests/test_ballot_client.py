@@ -5,8 +5,8 @@ from concurrent import futures
 import grpc
 import pytest
 
-from app.ballot_client import ElectionRegistration, GrpcBallotClient, TokenKey
-from app.errors import (
+from app.clients.ballot_client import ElectionRegistration, GrpcBallotClient, TokenKey
+from app.core.errors import (
     BallotUnavailable,
     ElectionAlreadyExists,
     ElectionNotFound,
