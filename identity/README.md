@@ -29,12 +29,15 @@ clave de verificación de tokens y parámetros firmados).
 |---|---|
 | `main.py` | `uvicorn main:app` (reexporta `app.main:app`) |
 | `app/api.py` | Endpoints HTTP (REST/JSON) |
-| `app/elections.py` | Alta, cierre y estado de urnas; registro en `ballot` |
+| `app/elections.py` | Alta (abierta o `draft`), apertura, cierre y estado de urnas; registro en `ballot` |
+| `app/jwt_tokens.py` | Emisión y validación del JWT RS256 de acceso y JWKS para el Gateway |
+| `app/sessions.py` | Challenge MFA, sesión (hash del `jti`), revocación |
+| `app/users.py` | Alta y activación/desactivación de usuarios por el administrador |
 | `app/tokens.py` | Emisión del token: urna abierta, padrón, `UNIQUE(user_id, election_id)` |
 | `app/blind_rsa.py` | `BlindSign` de RFC 9474 (RSABSSA-SHA384-PSS-Randomized) |
 | `app/parameters.py` | Parámetros públicos canónicos y su firma Ed25519 |
 | `app/ballot_client.py` | Cliente gRPC de `BallotAdminService` (`proto/ballot.proto`) |
-| `app/keys.py` | Claves privadas (RSA de tokens, Ed25519 de parámetros) |
+| `app/keys.py` | Claves privadas (RSA de tokens, Ed25519 de parámetros, RSA del JWT) |
 | `app/models.py` | Modelos que reflejan `schema.sql` |
 | `app/auth.py` | Contrato `Principal` + autenticación Bearer y modo de desarrollo |
 | `app/pb/` | Stubs generados desde `proto/ballot.proto` (versionados) |
@@ -44,11 +47,17 @@ clave de verificación de tokens y parámetros firmados).
 | Método y ruta | Acceso | Descripción |
 |---|---|---|
 | `POST /login` | público | Valida usuario/contraseña y crea un challenge MFA |
-| `POST /login/mfa` | público | Consume el challenge y entrega un bearer de sesión |
+| `POST /login/mfa` | público | Consume el challenge y entrega el JWT de acceso |
 | `GET /auth/me` | sesión | Devuelve `id`, `username` y `role` del usuario autenticado |
-| `POST /logout` | sesión | Revoca la sesión Bearer actual (204) |
+| `POST /logout` | sesión | Revoca la sesión del JWT actual (204) |
+| `GET /.well-known/jwks.json` | público | Clave pública (JWKS) para validar el JWT en el Gateway |
+| `GET /users` | admin | Usuarios activos |
+| `POST /users` | admin | Crea un usuario `{username, password, role}` (`role`: `admin` o `voter`) |
+| `PATCH /users/{id}` | admin | Activa o desactiva un usuario `{is_active}` |
 | `GET /elections/open` | público | Lista elecciones `open` dentro de su ventana UTC |
-| `POST /elections` | admin | Crea la urna, firma sus parámetros y la registra en `ballot` por gRPC |
+| `GET /elections` | admin | Todas las urnas (cualquier estado) |
+| `POST /elections` | admin | Crea la urna y firma sus parámetros; la registra en `ballot` salvo con `open: false` |
+| `POST /elections/{id}/open` | admin | Registra en `ballot` una urna `draft` y la deja `open` (idempotente) |
 | `POST /elections/{id}/close` | admin | Cierra la urna en `ballot` (irreversible, idempotente) y en PostgreSQL |
 | `GET /elections/{id}/status` | admin | Estado en ambos lados y participación (`CountBallots`) |
 | `GET /elections/{id}/parameters` | sesión | Parámetros firmados que descarga el navegador |
@@ -65,19 +74,54 @@ sesión autenticada y no se envían a identidad el recibo, el `ballot_hash`, el 
 ni datos de la papeleta.
 
 `POST /elections` recibe `{name, options[], encryption_public_key (base64url), opens_at, closes_at}`
-(epoch en segundos UTC) y responde `{election_id, status}`. La fila se crea como `draft` y pasa a
-`open` solo cuando `ballot` confirma el registro; si `ballot` falla se revierte todo.
+(epoch en segundos UTC) y opcionalmente `open` (por defecto `true`); responde `{election_id, status}`.
+La fila se crea como `draft` y pasa a `open` solo cuando `ballot` confirma el registro; si `ballot`
+falla se revierte todo. Con `open: false` queda en `draft` (sin llegar a `ballot`, sin emitir tokens)
+hasta `POST /elections/{id}/open`; si ese registro falla sigue en `draft` y se puede reintentar.
+Una urna `closed` no se reabre (`409 election_closed`); cerrar una `draft` no toca `ballot`.
 
 `POST /login` recibe `{username, password}` y responde `{mfa_required, challenge_id}`.
 `POST /login/mfa` recibe `{challenge_id, code}` y devuelve `{access_token, token_type, expires_in}`.
-Las rutas de sesión requieren `Authorization: Bearer <access_token>`.
+Las rutas de sesión requieren `Authorization: Bearer <access_token>`, donde `access_token` es el
+JWT descrito en la sección siguiente.
 `GET /elections/open` no requiere sesión y solo devuelve elecciones cuyo estado es `open` y cuya
 hora UTC actual cae en `[starts_at, ends_at)`. Cada elemento contiene `id`, `name`,
 `starts_at`, `ends_at` y `created_at`.
 
 Errores: `{"error": {"code": "...", "message": "..."}}`. Códigos principales:
 `401 unauthenticated`, `403 forbidden | not_in_voter_roll`, `404 election_not_found`,
-`409 election_not_open | token_already_issued`, `400 invalid_request`, `502 ballot_unavailable`.
+`409 election_not_open | election_closed | token_already_issued | user_already_exists`,
+`404 user_not_found`, `400 invalid_request`, `502 ballot_unavailable`.
+
+## JWT de acceso (contrato con el Gateway)
+
+`POST /login/mfa` devuelve un **JWT firmado con RS256**. El Gateway lo valida sin secretos
+compartidos, con la clave pública de `GET /.well-known/jwks.json`.
+
+| Elemento | Valor |
+|---|---|
+| Cabecera | `alg: RS256`, `typ: JWT`, `kid` (16 hex del SHA-256 de la clave pública DER) |
+| `iss` | `IDENTITY_JWT_ISSUER` (por defecto `votaciones-identity`) |
+| `aud` | `IDENTITY_JWT_AUDIENCE` (por defecto `votaciones`) |
+| `sub` | `users.id` como texto |
+| `username`, `role` | Usuario y rol (`admin` o `voter`) |
+| `iat`, `nbf`, `exp` | Epoch en segundos; `exp = iat + IDENTITY_SESSION_TTL_SECONDS` (3600 por defecto) |
+| `jti` | Id aleatorio de la sesión; identidad guarda solo su SHA-256 en `sessions.token_hash` |
+
+Reglas de validación para el Gateway:
+
+1. Aceptar **solo** `RS256` (rechazar `none` y `HS*`) y buscar la clave por `kid` en el JWKS
+   (cacheable; recargar ante un `kid` desconocido para soportar rotación).
+2. Comprobar `iss`, `aud`, `exp` y `nbf` (tolerancia de reloj ≤ 30 s, la misma que usa identidad).
+3. Autorizar por `role`: las rutas de administración exigen `admin`.
+4. **No reenviar el JWT a `ballot`**: la zona de votación es anónima y no debe recibir datos de identidad.
+
+Identidad además comprueba en cada petición que la sesión del `jti` no esté revocada (`/logout`) y
+que el usuario siga activo, y toma el rol de la base de datos. El Gateway, sin estado, acepta un
+JWT revocado hasta su `exp`; por eso la vigencia es corta.
+
+La clave del JWT (`jwt_signing.pem`) es **distinta** de la de firma ciega: esta última firma lo que
+envía el votante, así que con la misma clave cualquiera podría obtener un JWT forjado.
 
 ## Flujo del token anónimo
 
@@ -153,7 +197,9 @@ Todo va en **base64url sin relleno**, no base64 estándar (`btoa`).
 | `IDENTITY_DEV_AUTH` | `false` | Autenticación simulada (solo desarrollo) |
 | `IDENTITY_MFA_CODE` | `123456` | Código MFA de demostración para Prototype 1 |
 | `IDENTITY_MFA_CHALLENGE_TTL_SECONDS` | `300` | Vigencia del challenge MFA en segundos |
-| `IDENTITY_SESSION_TTL_SECONDS` | `3600` | Vigencia de la sesión autenticada en segundos |
+| `IDENTITY_SESSION_TTL_SECONDS` | `3600` | Vigencia de la sesión y `exp` del JWT, en segundos |
+| `IDENTITY_JWT_ISSUER` | `votaciones-identity` | Claim `iss` del JWT (el Gateway valida el mismo) |
+| `IDENTITY_JWT_AUDIENCE` | `votaciones` | Claim `aud` del JWT (el Gateway valida el mismo) |
 
 ## Ejecutar
 

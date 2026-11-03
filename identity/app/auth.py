@@ -24,9 +24,9 @@ def get_principal(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ) -> Principal:
-    """Obtiene al usuario desde una sesión real o desde el modo de desarrollo."""
+    """Obtiene al usuario desde el JWT de sesión o desde el modo de desarrollo."""
 
-    # Autenticación real mediante Bearer token.
+    # Autenticación real: JWT RS256 en la cabecera Bearer.
     if credentials is not None:
         token = credentials.credentials.strip()
 
@@ -37,7 +37,12 @@ def get_principal(
         from app.sessions import principal_from_token
 
         with request.app.state.session_factory() as session:
-            return principal_from_token(session, token)
+            return principal_from_token(
+                session,
+                token,
+                keys=request.app.state.keys,
+                settings=request.app.state.settings,
+            )
 
     settings = request.app.state.settings
 

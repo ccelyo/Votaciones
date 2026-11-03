@@ -2,6 +2,7 @@
 
 * Clave RSA de firma ciega de tokens (la pública se registra en `ballot`).
 * Clave Ed25519 que firma los parámetros públicos de cada elección.
+* Clave RSA que firma los JWT de acceso (separada de la de firma ciega).
 
 Las claves privadas viven solo en este proceso/volumen y nunca se envían por red.
 """
@@ -19,6 +20,7 @@ from app import blind_rsa
 RSA_BITS = 2048  # Mínimo exigido por `ballot` (>= 2048 bits).
 TOKEN_KEY_FILE = "token_signing.pem"
 PARAMETER_KEY_FILE = "parameter_signing.pem"
+JWT_KEY_FILE = "jwt_signing.pem"
 
 
 @dataclass(frozen=True)
@@ -27,6 +29,8 @@ class IdentityKeys:
     token_kid: str
     parameter_private: ed25519.Ed25519PrivateKey
     parameter_key_id: str
+    jwt_private: rsa.RSAPrivateKey
+    jwt_kid: str
 
     @property
     def token_public_der(self) -> bytes:
@@ -72,8 +76,14 @@ def load_keys(keys_dir: Path) -> IdentityKeys:
     parameter_private = _load_or_create(
         keys_dir / PARAMETER_KEY_FILE, ed25519.Ed25519PrivateKey.generate
     )
+    jwt_private = _load_or_create(
+        keys_dir / JWT_KEY_FILE,
+        lambda: rsa.generate_private_key(public_exponent=65537, key_size=RSA_BITS),
+    )
     if not isinstance(token_private, rsa.RSAPrivateKey) or token_private.key_size < RSA_BITS:
         raise ValueError("token signing key must be RSA with at least 2048 bits")
+    if not isinstance(jwt_private, rsa.RSAPrivateKey) or jwt_private.key_size < RSA_BITS:
+        raise ValueError("JWT signing key must be RSA with at least 2048 bits")
     if not isinstance(parameter_private, ed25519.Ed25519PrivateKey):
         raise ValueError("parameter signing key must be Ed25519")
 
@@ -85,4 +95,6 @@ def load_keys(keys_dir: Path) -> IdentityKeys:
         token_kid=_key_id(blind_rsa.public_key_der(token_private.public_key())),
         parameter_private=parameter_private,
         parameter_key_id=_key_id(parameter_public_raw),
+        jwt_private=jwt_private,
+        jwt_kid=_key_id(blind_rsa.public_key_der(jwt_private.public_key())),
     )
