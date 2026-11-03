@@ -67,6 +67,7 @@ func newFixture(t *testing.T) fixture {
 			Elections:      elections,
 			Votes:          ballots,
 			AllowedOrigins: []string{"https://votaciones.example"},
+			TallyToken:     "tally-secret",
 		}),
 		elections:   elections,
 		ballots:     ballots,
@@ -249,6 +250,66 @@ func TestElectionResultsOnlyAfterClose(t *testing.T) {
 	f.handler.ServeHTTP(missing, httptest.NewRequest(http.MethodGet, "/v1/elections/nope/results", nil))
 	if missing.Code != http.StatusNotFound {
 		t.Fatalf("missing election status = %d", missing.Code)
+	}
+}
+
+func TestElectionBallotsRequiresClosedUrnAndInternalToken(t *testing.T) {
+	f := newFixture(t)
+	const electionID = "gobernacion-antioquia-2027"
+	recorder := f.post(t, SubmitBallotRequest{
+		ElectionID:    electionID,
+		Token:         string(signedToken(t, f.identityKey, electionID)),
+		EncryptedVote: b64("candidato-1"),
+		Proof:         b64("proof"),
+	})
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("submit status = %d body=%s", recorder.Code, recorder.Body)
+	}
+
+	get := func(token string) *httptest.ResponseRecorder {
+		request := httptest.NewRequest(http.MethodGet, "/v1/elections/"+electionID+"/ballots", nil)
+		if token != "" {
+			request.Header.Set("Authorization", "Bearer "+token)
+		}
+		result := httptest.NewRecorder()
+		f.handler.ServeHTTP(result, request)
+		return result
+	}
+
+	if open := get("tally-secret"); open.Code != http.StatusConflict {
+		t.Fatalf("open urn status = %d body=%s", open.Code, open.Body)
+	}
+	if unauthenticated := get(""); unauthenticated.Code != http.StatusUnauthorized {
+		t.Fatalf("unauthenticated status = %d", unauthenticated.Code)
+	}
+	if wrong := get("other"); wrong.Code != http.StatusUnauthorized {
+		t.Fatalf("wrong token status = %d", wrong.Code)
+	}
+
+	if _, err := f.elections.Close(context.Background(), electionID, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	closed := get("tally-secret")
+	if closed.Code != http.StatusOK {
+		t.Fatalf("closed urn status = %d body=%s", closed.Code, closed.Body)
+	}
+	var response struct {
+		ElectionID string   `json:"election_id"`
+		Ballots    []string `json:"ballots"`
+	}
+	if err := json.Unmarshal(closed.Body.Bytes(), &response); err != nil {
+		t.Fatal(err)
+	}
+	if response.ElectionID != electionID || len(response.Ballots) != 1 || response.Ballots[0] != b64("candidato-1") {
+		t.Fatalf("unexpected ballots: %+v", response)
+	}
+
+	missing := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v1/elections/nope/ballots", nil)
+	request.Header.Set("Authorization", "Bearer tally-secret")
+	f.handler.ServeHTTP(missing, request)
+	if missing.Code != http.StatusNotFound {
+		t.Fatalf("missing election status = %d body=%s", missing.Code, missing.Body)
 	}
 }
 

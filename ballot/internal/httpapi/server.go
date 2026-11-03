@@ -6,6 +6,7 @@ package httpapi
 
 import (
 	"context"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -49,8 +50,11 @@ type Config struct {
 	Votes          ballotflow.VoteReader
 	Ready          ReadinessChecker
 	AllowedOrigins []string
-	Logger         *slog.Logger
-	Now            func() time.Time
+	// TallyToken, when set, is required as a Bearer token on the internal
+	// ballot dump used by Tally. It is empty in development.
+	TallyToken string
+	Logger     *slog.Logger
+	Now        func() time.Time
 }
 
 type api struct {
@@ -69,6 +73,7 @@ func NewHandler(config Config) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /v1/ballots", a.submitBallot)
 	mux.HandleFunc("GET /v1/elections/{electionID}/parameters", a.electionParameters)
+	mux.HandleFunc("GET /v1/elections/{electionID}/ballots", a.electionBallots)
 	mux.HandleFunc("GET /v1/elections/{electionID}/results", a.electionResults)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
@@ -274,6 +279,56 @@ func (a *api) electionResults(w http.ResponseWriter, r *http.Request) {
 		InvalidBallots: tally.Invalid,
 		Results:        results,
 	})
+}
+
+func (a *api) electionBallots(w http.ResponseWriter, r *http.Request) {
+	if a.Votes == nil {
+		writeError(w, http.StatusNotFound, "not_found")
+		return
+	}
+	if a.TallyToken != "" && !validBearer(r.Header.Get("Authorization"), a.TallyToken) {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	electionID := r.PathValue("electionID")
+	electionStatus, err := a.Elections.Status(r.Context(), electionID, a.Now().UTC())
+	if err != nil {
+		a.Logger.Error("read election status failed", "error", err.Error())
+		writeError(w, http.StatusInternalServerError, "internal_error")
+		return
+	}
+	switch electionStatus {
+	case pb.ElectionStatus_ELECTION_STATUS_NOT_FOUND:
+		writeError(w, http.StatusNotFound, "election_not_found")
+		return
+	case pb.ElectionStatus_ELECTION_STATUS_CLOSED:
+		// La urna está cerrada; se puede leer el volcado.
+	default:
+		writeError(w, http.StatusConflict, "election_not_closed")
+		return
+	}
+	votes, err := a.Votes.Votes(r.Context(), electionID)
+	if err != nil {
+		a.Logger.Error("read votes failed", "error", err.Error())
+		writeError(w, http.StatusInternalServerError, "internal_error")
+		return
+	}
+	encodedVotes := make([]string, len(votes))
+	for i, v := range votes {
+		encodedVotes[i] = base64.RawURLEncoding.EncodeToString(v)
+	}
+	writeJSON(w, http.StatusOK, struct {
+		ElectionID string   `json:"election_id"`
+		Ballots    []string `json:"ballots"`
+	}{ElectionID: electionID, Ballots: encodedVotes})
+}
+
+func validBearer(header, expected string) bool {
+	const prefix = "Bearer "
+	if !strings.HasPrefix(header, prefix) {
+		return false
+	}
+	return subtle.ConstantTimeCompare([]byte(strings.TrimPrefix(header, prefix)), []byte(expected)) == 1
 }
 
 func (a *api) readiness(w http.ResponseWriter, r *http.Request) {
