@@ -66,25 +66,37 @@ Acceso: **public** sin token · **user** JWT válido · **admin** JWT con rol `a
 - Un servicio sin URL configurada responde `503 service_not_configured`.
 - La consulta (`?limit=…`) se reenvía tal cual.
 
-## Contrato JWT con Auth (CR-04 / JU-05)
+## Contrato JWT con identity (CR-04 / JU-05)
 
-Propuesta para acordar con Julian:
+Acordado con Julian; el lado emisor está en `identity/README.md`, sección
+"JWT de acceso (contrato con el Gateway)".
 
-- Algoritmo **HS256** con un secreto compartido (`GATEWAY_JWT_SECRET` en el Gateway).
-  Se rechaza cualquier otro `alg`, incluido `none`.
-- Claims obligatorios: `sub` (id del usuario) y `exp`. Opcionales: `nbf`, `iss`
-  (`GATEWAY_JWT_ISSUER`) y `aud` (`GATEWAY_JWT_AUDIENCE`); si están configurados en
-  el Gateway, se exigen. Se toleran 30 s de desfase de reloj.
-- Roles: `roles` (lista) o `role` (texto). `admin` habilita las rutas de administración.
+- Algoritmo **RS256**. Se rechaza cualquier otro `alg`, incluidos `none` y `HS*`
+  (evita la confusión de algoritmo con la clave pública).
+- La clave pública se obtiene del JWKS de identity (`GATEWAY_JWKS_URL`, p. ej.
+  `http://identity:8000/.well-known/jwks.json`) y se elige por el `kid` de la cabecera.
+  El Gateway no comparte ningún secreto: solo identity puede firmar tokens.
+- El JWKS se cachea. Si llega un `kid` desconocido (rotación de clave) se recarga, como
+  mucho una vez cada 30 s para que tokens con `kid` inventados no saturen a identity. Solo
+  se aceptan claves RSA de firma de al menos 2048 bits.
+- Claims exigidos: `iss` = `votaciones-identity` (`GATEWAY_JWT_ISSUER`), `aud` =
+  `votaciones` (`GATEWAY_JWT_AUDIENCE`), `sub` (id del usuario, en texto) y `exp`. Si viene
+  `nbf` también se aplica. Se toleran 30 s de desfase de reloj.
+- Rol: claim `role` (`admin` | `voter`). `admin` habilita las rutas de administración.
 - El token llega en `Authorization: Bearer <jwt>`. Con un token válido, el Gateway
-  reenvía al servicio `Authorization`, `X-User-Id` y `X-User-Roles`. Las cabeceras
-  `X-User-*` que envíe el cliente se descartan siempre.
+  reenvía al servicio `Authorization`, `X-User-Id` y `X-User-Roles`, **excepto a Ballot**,
+  que nunca recibe nada de identidad. Las cabeceras `X-User-*` que envíe el cliente se
+  descartan siempre.
+- Token inválido o expirado: `401 invalid_token`. Si identity no responde y no hay JWKS en
+  caché: `503 auth_unavailable`.
+- **Revocación**: `/logout` revoca la sesión en identity al instante, pero el Gateway no
+  guarda estado y la sigue aceptando hasta su `exp` (1 hora). Se acepta para el prototipo;
+  identity sí rechaza el token revocado en sus propios endpoints.
 
-**Modo de transición (`passthrough`)**: mientras Auth no emita JWT (hoy `identity`
-emite sesiones opacas), el Gateway arranca en este modo si no hay `GATEWAY_JWT_SECRET`.
-Exige un Bearer en las rutas `user` y `admin`, y es el servicio quien valida la sesión
-y el rol. Cuando Auth emita JWT, basta con definir `GATEWAY_JWT_SECRET` para pasar al
-modo `jwt`.
+**Modo `passthrough`** (solo desarrollo): si no hay `GATEWAY_JWKS_URL`, el Gateway exige
+un Bearer en las rutas `user` y `admin` pero delega su validación y la del rol en el
+servicio de destino. `GATEWAY_JWT_SECRET` ya no se admite: si está definido, el Gateway
+no arranca, para que ningún despliegue crea que sigue validando con HS256.
 
 ## Ruta anónima de votación
 
@@ -93,6 +105,10 @@ En las rutas `anonymous` (Ballot) el Gateway solo reenvía `Content-Type`, `Acce
 `Referer` ni `X-Request-Id`, y no registra IP, cuerpo ni identificadores. Así Ballot no
 puede vincular una papeleta con el votante. El Servidor SSR de la web aplica la misma
 regla antes de llegar al Gateway.
+
+Además, el Gateway nunca reenvía `Authorization` ni `X-User-*` al servicio Ballot,
+aunque se le añada una ruta que no sea `anonymous`: la zona de votación no recibe nada
+de identidad.
 
 ## Otras protecciones
 
@@ -116,8 +132,9 @@ regla antes de llegar al Gateway.
 | --- | --- | --- |
 | `GATEWAY_PORT` | `8088` | Puerto HTTP |
 | `GATEWAY_AUTH_URL` … `GATEWAY_NOTIFICATIONS_URL` | — | URL base de cada servicio: `AUTH`, `ELECTION`, `IDENTITY`, `BALLOT`, `TALLY`, `ANALYTICS`, `NOTIFICATIONS` |
-| `GATEWAY_AUTH_MODE` | `jwt` si hay secreto, si no `passthrough` | Modo de autenticación |
-| `GATEWAY_JWT_SECRET` · `_ISSUER` · `_AUDIENCE` | — | Validación del JWT |
+| `GATEWAY_AUTH_MODE` | `jwt` si hay JWKS, si no `passthrough` | Modo de autenticación |
+| `GATEWAY_JWKS_URL` | — | JWKS de identity con la clave pública del JWT |
+| `GATEWAY_JWT_ISSUER` · `_AUDIENCE` | `votaciones-identity` · `votaciones` | `iss` y `aud` exigidos |
 | `GATEWAY_ALLOWED_ORIGINS` | — | Orígenes CORS, separados por coma |
 | `GATEWAY_RATE_LIMIT_LOGIN` · `_DEFAULT` · `_BALLOT` | `20` · `300` · `600` | Peticiones por minuto (`0` desactiva) |
 | `GATEWAY_TRUST_FORWARDED_FOR` | `false` | Usar `X-Forwarded-For` como IP del cliente |
@@ -132,7 +149,7 @@ contiene esas funciones. Cuando Julian y Fabian separen sus servicios, solo camb
 | --- | --- |
 | `src/routes.ts` | Catálogo de rutas, acceso y cuotas |
 | `src/router.ts` | Coincidencia de rutas y construcción de la ruta del servicio |
-| `src/jwt.ts` | Validación HS256 |
+| `src/jwt.ts` | Validación RS256 y caché del JWKS |
 | `src/rateLimit.ts` | Ventana fija por cliente y cuota |
 | `src/config.ts` | Variables de entorno |
 | `src/app.ts` | CORS, autenticación, reenvío y errores |

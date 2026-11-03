@@ -5,9 +5,9 @@ import { after, before, beforeEach, describe, test } from "node:test";
 
 import { createGateway } from "../src/app.ts";
 import { type GatewayConfig, loadConfig } from "../src/config.ts";
-import { signJwt } from "../src/jwt.ts";
+import { identityClaims, jwks, newKey, signHs256WithPublicKey, signRs256 } from "./keys.ts";
 
-const SECRET = "secreto-de-pruebas";
+const KEY = newKey("identity-k1");
 
 interface Recorded {
   method: string;
@@ -43,6 +43,23 @@ before(async () => {
 
 after(() => upstream.close());
 
+// JWKS falso de identity, separado del servicio para no mezclar sus peticiones.
+let jwksServer: Server;
+let jwksUrl: string;
+let jwksRequests = 0;
+
+before(async () => {
+  jwksServer = createServer((_req, res) => {
+    jwksRequests += 1;
+    res.setHeader("Content-Type", "application/json");
+    res.end(JSON.stringify(jwks(KEY)));
+  });
+  await new Promise<void>((resolve) => jwksServer.listen(0, "127.0.0.1", resolve));
+  jwksUrl = `http://127.0.0.1:${(jwksServer.address() as AddressInfo).port}/.well-known/jwks.json`;
+});
+
+after(() => jwksServer.close());
+
 beforeEach(() => {
   recorded = [];
   slowDelayMs = 0;
@@ -67,14 +84,13 @@ async function startGateway(env: Record<string, string>): Promise<{ url: string;
   };
 }
 
-const exp = Math.floor(Date.now() / 1000) + 3600;
-const voterToken = signJwt({ sub: "42", roles: ["voter"], exp }, SECRET);
-const adminToken = signJwt({ sub: "1", roles: ["admin"], exp }, SECRET);
+const voterToken = signRs256(identityClaims({ sub: "42", role: "voter" }), KEY);
+const adminToken = signRs256(identityClaims({ sub: "1", role: "admin", username: "admin" }), KEY);
 
 describe("modo jwt", () => {
   let gw: { url: string; close: () => void };
   before(async () => {
-    gw = await startGateway({ GATEWAY_JWT_SECRET: SECRET });
+    gw = await startGateway({ GATEWAY_JWKS_URL: jwksUrl });
   });
   after(() => gw.close());
 
@@ -105,6 +121,32 @@ describe("modo jwt", () => {
     });
     assert.equal(response.status, 401);
     assert.equal(recorded.length, 0);
+  });
+
+  test("rechaza HS256 aunque se firme con la clave pública del JWKS", async () => {
+    const forged = signHs256WithPublicKey(identityClaims({ sub: "1", role: "admin" }), KEY);
+    const response = await fetch(`${gw.url}/api/elections`, {
+      headers: { Authorization: `Bearer ${forged}` },
+    });
+    assert.equal(response.status, 401);
+    assert.equal(recorded.length, 0);
+  });
+
+  test("rechaza un token de otro emisor o audiencia", async () => {
+    for (const overrides of [{ iss: "otro" }, { aud: "otro" }]) {
+      const token = signRs256(identityClaims(overrides), KEY);
+      const response = await fetch(`${gw.url}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+      assert.equal(response.status, 401);
+    }
+    assert.equal(recorded.length, 0);
+  });
+
+  test("cachea el JWKS entre peticiones", async () => {
+    const before = jwksRequests;
+    for (let i = 0; i < 3; i += 1) {
+      await fetch(`${gw.url}/api/auth/me`, { headers: { Authorization: `Bearer ${voterToken}` } });
+    }
+    assert.ok(jwksRequests - before <= 1);
   });
 
   test("exige el rol admin en las rutas de administración", async () => {
@@ -290,8 +332,26 @@ describe("protecciones", () => {
   });
 });
 
-test("la configuración exige secreto en modo jwt", () => {
-  assert.throws(() => loadConfig({ GATEWAY_AUTH_MODE: "jwt" }), /GATEWAY_JWT_SECRET/);
+test("responde 503 si no puede obtener el JWKS de identity", async () => {
+  const gw = await startGateway({ GATEWAY_JWKS_URL: "http://127.0.0.1:1/.well-known/jwks.json" });
+  try {
+    const response = await fetch(`${gw.url}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${voterToken}` },
+    });
+    assert.equal(response.status, 503);
+    assert.equal(((await response.json()) as { error: { code: string } }).error.code, "auth_unavailable");
+    assert.equal(recorded.length, 0);
+  } finally {
+    gw.close();
+  }
+});
+
+test("la configuración exige el JWKS en modo jwt y rechaza el secreto HS256", () => {
+  assert.throws(() => loadConfig({ GATEWAY_AUTH_MODE: "jwt" }), /GATEWAY_JWKS_URL/);
+  assert.throws(() => loadConfig({ GATEWAY_JWT_SECRET: "s" }), /RS256/);
   assert.equal(loadConfig({}).authMode, "passthrough");
-  assert.equal(loadConfig({ GATEWAY_JWT_SECRET: "s" }).authMode, "jwt");
+  const config = loadConfig({ GATEWAY_JWKS_URL: "http://identity:8000/.well-known/jwks.json" });
+  assert.equal(config.authMode, "jwt");
+  assert.equal(config.jwtIssuer, "votaciones-identity");
+  assert.equal(config.jwtAudience, "votaciones");
 });
