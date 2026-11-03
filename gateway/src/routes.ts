@@ -69,8 +69,8 @@ export const ROUTES: readonly RouteDefinition[] = [
   { method: "GET", path: "/api/ballots/elections/:electionId/results", service: "ballot", upstreamPath: "/v1/elections/:electionId/results", access: "anonymous", rateTier: "ballot", description: "Conteo agregado de una urna cerrada" },
 
   // --- Tally (Sebastian) ---------------------------------------------------
-  { method: "POST", path: "/api/tally/elections/:electionId", service: "tally", upstreamPath: "/v1/tally/elections/:electionId", access: "admin", description: "Lanza el escrutinio" },
-  { method: "GET", path: "/api/tally/elections/:electionId", service: "tally", upstreamPath: "/v1/tally/elections/:electionId", access: "user", description: "Conteo oficial" },
+  { method: "POST", path: "/api/tally/elections/:electionId", service: "tally", upstreamPath: "/v1/tally/elections/:electionId", access: "admin", description: "Lanza el escrutinio", provisional: true },
+  { method: "GET", path: "/api/tally/elections/:electionId", service: "tally", upstreamPath: "/v1/tally/elections/:electionId", access: "user", description: "Conteo oficial", provisional: true },
 
   // --- Analytics (Sergio): analytics/CONTRACTS.md §4 ----------------------
   { method: "GET", path: "/api/analytics/summary", service: "analytics", upstreamPath: "/v1/analytics/summary", access: "user", description: "Resumen de todas las elecciones" },

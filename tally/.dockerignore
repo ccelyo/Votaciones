@@ -1,5 +1,0 @@
-.git
-*.md
-Dockerfile
-docker-compose.yml
-integration_test.go

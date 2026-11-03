@@ -52,8 +52,8 @@ Acceso: **public** sin token · **user** JWT válido · **admin** JWT con rol `a
 | POST | `/api/ballots` | Ballot | `/v1/ballots` | anonymous |
 | GET | `/api/ballots/elections/:id/parameters` | Ballot | `/v1/elections/:id/parameters` | anonymous |
 | GET | `/api/ballots/elections/:id/results` | Ballot | `/v1/elections/:id/results` | anonymous |
-| POST | `/api/tally/elections/:id` | Tally | `/v1/tally/elections/:id` | admin |
-| GET | `/api/tally/elections/:id` | Tally | `/v1/tally/elections/:id` | user |
+| POST | `/api/tally/elections/:id` | Tally | `/v1/tally/elections/:id` | admin · provisional |
+| GET | `/api/tally/elections/:id` | Tally | `/v1/tally/elections/:id` | user · provisional |
 | GET | `/api/analytics/summary` | Analytics | `/v1/analytics/summary` | user |
 | GET | `/api/analytics/elections` | Analytics | `/v1/analytics/elections` | user |
 | GET | `/api/analytics/elections/:id[/results\|/participation\|/turnout]` | Analytics | `/v1/analytics/elections/:id[...]` | user |
@@ -61,8 +61,8 @@ Acceso: **public** sin token · **user** JWT válido · **admin** JWT con rol `a
 | GET | `/api/notifications` | Notifications | `/v1/notifications` | user · provisional |
 
 - **Blind Signature no tiene ruta**: según la vista solo es accesible desde Identity.
-- Las rutas **provisionales** dependen de contratos que Notifications aún no ha
-  publicado. Hay que confirmarlas con Camilo.
+- Las rutas **provisionales** dependen de contratos que Tally y Notifications aún no han
+  publicado. Hay que confirmarlas con Sebastian y Camilo.
 - Un servicio sin URL configurada responde `503 service_not_configured`.
 - La consulta (`?limit=…`) se reenvía tal cual.
 

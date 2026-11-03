@@ -34,8 +34,8 @@ curso, ver 4.5); resultados y métricas por opción solo existen tras `tally.com
 | --- | --- | --- | --- |
 | `election.events` | exchange `topic` | durable | analytics (idempotente) y Election |
 | `identity.events` | exchange `topic` | durable | analytics (idempotente) e Identity |
-| `votes.events` | exchange `topic` | durable | analytics (idempotente) y Ballot |
-| `tally.events` | exchange `topic` | durable | Tally y analytics (idempotente) |
+| `votes.events` | exchange `topic` | durable | analytics (idempotente), Ballot y Tally |
+| `tally.events` | exchange `topic` | durable | analytics (idempotente); Tally si lo elige |
 | `analytics.events` | cola | durable, `x-dead-letter-exchange=analytics.dlx` | analytics |
 | `analytics.dlx` | exchange `fanout` | durable | analytics |
 | `analytics.events.dlq` | cola | durable | analytics |
@@ -48,13 +48,13 @@ Bindings de `analytics.events`:
 | `election.events` | `election.closed` | Election (Fabian) |
 | `identity.events` | `census.updated` | Identity (Kevin) |
 | `votes.events` | `votes.cast` | Ballot (Andres) |
-| `votes.events` | `tally.completed` | Tally (solo compatibilidad; publica en `tally.events`) |
+| `votes.events` | `tally.completed` | Tally (Sebastian) |
 | `tally.events` | `tally.completed` | Tally (Sebastian) |
 
-> **Decidido (SE-03):** Tally publica `tally.completed` únicamente en el exchange
-> `tally.events`. Analytics y Notifications siguen escuchando también en `votes.events`
-> por compatibilidad, pero no es necesario publicar dos veces; el mismo `event_id`
-> determinista se descartaría como duplicado.
+> El plan P2 (SE-03) deja abierto si `tally.completed` va en `votes.events` o en un
+> exchange `tally.events`. Analytics escucha en ambos, así que funciona con cualquiera de
+> las dos decisiones; Tally debe publicar en **uno solo** (si publica en los dos, el mismo
+> `event_id` se descarta como duplicado, pero no es necesario).
 
 > Quien declare los mismos exchanges debe usar **exactamente** `topic` + `durable=true`;
 > si no, RabbitMQ rechaza la declaración con `PRECONDITION_FAILED`.
@@ -165,7 +165,7 @@ voto ni datos del votante. Se recomienda que ballot trunque `cast_at` al minuto 
 Analytics solo suma 1 en el contador de esa hora (`turnout_hourly`). Con estos contadores
 calcula la participación en tiempo real (4.5) y la línea de tiempo del informe final.
 
-### 3.5 `tally.completed` — Tally → `tally.events`
+### 3.5 `tally.completed` — Tally → `votes.events` o `tally.events`
 
 Conteo final de una elección cerrada. Mismo formato que
 `GET /v1/elections/{election_id}/results` de ballot, más `tallied_at`. **Es el evento que
@@ -182,8 +182,7 @@ genera el informe**: sin él no hay analíticas de la elección.
     { "option": "candidato-3", "votes": 98 },
     { "option": "voto-en-blanco", "votes": 57 }
   ],
-  "tallied_at": "2026-10-20T21:02:00Z",
-  "ballots_digest": "9f2c…"
+  "tallied_at": "2026-10-20T21:02:00Z"
 }
 ```
 
@@ -194,7 +193,6 @@ genera el informe**: sin él no hay analíticas de la elección.
 | `invalid_ballots` | integer | sí | Papeletas nulas |
 | `results` | `{option, votes}[]` | sí | Votos válidos por opción (el blanco cuenta como válido) |
 | `tallied_at` | datetime | sí | Si no llegó `election.closed`, se usa como `closed_at` |
-| `ballots_digest` | string | no | SHA-256 hex de `election_id`, opciones y papeletas ordenadas; auditoría de recuentos |
 
 Un nuevo `tally.completed` (recuento) reemplaza el anterior y regenera el informe.
 
