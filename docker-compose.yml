@@ -6,6 +6,7 @@
 #   Gateway   http://localhost:8088   (GATEWAY_PORT; catálogo de rutas en /api)
 #   Identity  http://localhost:8000   (IDENTITY_PORT)
 #   Ballot    http://localhost:8080   (BALLOT_PORT)
+#   Tally     interno (sin puerto en el host; se accede por el Gateway)
 #   Analytics http://localhost:8090   (ANALYTICS_PORT)
 #   RabbitMQ  http://localhost:15672  (RABBITMQ_UI_PORT, guest / guest)
 #
@@ -58,6 +59,8 @@ services:
       BALLOT_RECEIPT_PRIVATE_KEY: ${BALLOT_RECEIPT_PRIVATE_KEY:-NDmGYtqqwr1bI7YmEEWO+G18wItrcVOi4Ac/WAhGQbYLvTScxo+fKLPt8u1yAOf6ng9rs5uLswbN3fDoL056+Q==}
       BALLOT_GRPC_ADDR: 0.0.0.0:9091
       BALLOT_ALLOWED_ORIGINS: http://localhost:${WEB_PORT:-3000},http://127.0.0.1:${WEB_PORT:-3000}
+      # Token compartido con Tally para el volcado interno de papeletas.
+      BALLOT_TALLY_TOKEN: ${BALLOT_TALLY_TOKEN:-dev-tally-token}
     ports: ["${BALLOT_PORT:-8080}:8080"]
 
   identity:
@@ -88,16 +91,21 @@ services:
         condition: service_started
       notification:
         condition: service_started
+      tally:
+        condition: service_healthy
     environment:
       # Auth y Election aún viven dentro de identity: cuando se separen, solo
-      # cambian estas URLs. Tally sigue provisional hasta implementarse.
+      # cambian estas URLs.
       GATEWAY_AUTH_URL: http://identity:8000
       GATEWAY_ELECTION_URL: http://identity:8000
       GATEWAY_IDENTITY_URL: http://identity:8000
       GATEWAY_BALLOT_URL: http://ballot:8080
       GATEWAY_ANALYTICS_URL: http://analytics:8090
       GATEWAY_NOTIFICATIONS_URL: http://notification:3000
-      GATEWAY_TALLY_URL: ${GATEWAY_TALLY_URL:-}
+      GATEWAY_TALLY_URL: http://tally:8092
+      # El POST de Tally es síncrono: descuenta y responde con el conteo. Debe
+      # poder superar el timeout global por defecto del Gateway (10 s).
+      GATEWAY_UPSTREAM_TIMEOUT_MS: ${GATEWAY_UPSTREAM_TIMEOUT_MS:-70000}
       # Sin secreto el Gateway funciona en modo passthrough (sesiones opacas de
       # identity). Con el secreto compartido con Auth valida los JWT.
       GATEWAY_JWT_SECRET: ${GATEWAY_JWT_SECRET:-}
@@ -127,11 +135,45 @@ services:
 
   rabbitmq:
     image: rabbitmq:4-management-alpine
+    # La topología se declara una vez al arrancar: exchanges duraderos, colas
+    # con DLQ y bindings (ver tally/docs/events.md). Los servicios también la
+    # declaran de forma idempotente, así que pueden arrancar sin este archivo.
+    volumes:
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
     ports: ["${RABBITMQ_UI_PORT:-15672}:15672"]
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 5s
       retries: 30
+
+  # Servicio de escrutinio: lee las papeletas cifradas de Ballot, las descifra,
+  # las cuenta y publica tally.completed. No tiene base de datos propia.
+  tally:
+    build: ./tally
+    depends_on:
+      ballot:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      TALLY_HTTP_ADDR: ":8092"
+      BALLOT_URL: http://ballot:8080
+      BALLOT_TALLY_TOKEN: ${BALLOT_TALLY_TOKEN:-dev-tally-token}
+      TALLY_RABBITMQ_URI: amqp://guest:guest@rabbitmq:5672/%2f
+      TALLY_EXCHANGE: tally.events
+      # P1 guarda la opción en claro; P2 puede desactivarlo con "false".
+      TALLY_ALLOW_PLAINTEXT: "true"
+      # Clave privada de la urna por defecto (opcional). También puede enviarse
+      # en el cuerpo del POST que lanza el escrutinio.
+      TALLY_PRIVATE_KEY: ${TALLY_PRIVATE_KEY:-}
+      TALLY_PRIVATE_KEY_FILE: ${TALLY_PRIVATE_KEY_FILE:-}
+    healthcheck:
+      test: ["CMD", "/tally", "-healthcheck"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
 
   # Base «Results» de analytics, separada de la de ballot.
   mongo-results:

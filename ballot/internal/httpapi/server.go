@@ -6,6 +6,7 @@ package httpapi
 
 import (
 	"context"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -57,8 +58,11 @@ type Config struct {
 	Publisher      VotePublisher
 	Ready          ReadinessChecker
 	AllowedOrigins []string
-	Logger         *slog.Logger
-	Now            func() time.Time
+	// TallyToken, when set, is required as a Bearer token on the internal
+	// ballot dump used by Tally. It is empty in development.
+	TallyToken string
+	Logger     *slog.Logger
+	Now        func() time.Time
 }
 
 type api struct {
@@ -77,6 +81,7 @@ func NewHandler(config Config) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /v1/ballots", a.submitBallot)
 	mux.HandleFunc("GET /v1/elections/{electionID}/parameters", a.electionParameters)
+	mux.HandleFunc("GET /v1/elections/{electionID}/ballots", a.electionBallots)
 	mux.HandleFunc("GET /v1/elections/{electionID}/results", a.electionResults)
 	mux.HandleFunc("GET /v1/elections/{electionID}/ballots", a.electionBallots)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {

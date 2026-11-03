@@ -1,0 +1,9 @@
+# Binarios y artefactos locales.
+/tally
+/tally.exe
+*.test
+*.out
+
+# Secretos: la clave privada de la urna nunca se versiona.
+.env
+*.pem

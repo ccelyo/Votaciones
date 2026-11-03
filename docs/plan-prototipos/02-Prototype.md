@@ -491,11 +491,14 @@ descifra y las cuenta; no se suscribe al broker ni tiene base de datos
 propia, y publica `tally.completed`. Ballot (colección Votes) es la
 fuente de verdad de las papeletas y Tally la del conteo oficial.
 
-**Pendiente:** la vista no tiene un conector Tally → Election, por lo
-que no está definido cómo obtiene Tally la llave privada de la urna.
-Debe acordarse con Fabian (por ejemplo, un conector REST Tally →
-Election o la entrega de la llave al lanzar el escrutinio desde la CLI)
-y reflejarse en la vista.
+**Decisión de implementación (P2):** la llave privada de la urna se entrega
+al lanzar el escrutinio desde la CLI/administración:
+`POST /v1/tally/elections/{id}` acepta `private_key` en el cuerpo (PEM, DER o
+base64); como alternativa para automatización, `TALLY_PRIVATE_KEY(_FILE)`.
+Tally compara la clave con `encryption_public_key` de Ballot, rechaza una
+clave que no corresponda y no la persiste. Queda pendiente que Fabian
+confirme esta variante y se refleje en la vista C&C; si se prefiere un
+conector REST Tally → Election, solo cambia la fuente de la llave.
 
 ### 3.7. Camilo --- Notifications y MongoDB
 

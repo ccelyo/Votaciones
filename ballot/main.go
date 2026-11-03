@@ -124,6 +124,7 @@ func run(logger *slog.Logger) error {
 		Publisher:      publisher,
 		Ready:          ready,
 		AllowedOrigins: splitList(os.Getenv("BALLOT_ALLOWED_ORIGINS")),
+		TallyToken:     strings.TrimSpace(os.Getenv("BALLOT_TALLY_TOKEN")),
 		Logger:         logger,
 	})
 	// Cloud Run exposes a single port, so the admin gRPC API can share it with
