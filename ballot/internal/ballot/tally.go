@@ -9,6 +9,18 @@ type VoteReader interface {
 	Votes(ctx context.Context, electionID string) ([][]byte, error)
 }
 
+// SealedBallot is one stored ballot without the token, the receipt or the hash chain.
+type SealedBallot struct {
+	EncryptedVote []byte
+	Proof         []byte
+}
+
+// SealedBallotReader returns the ciphertexts Tally decrypts after the election closes.
+// It must not include token IDs, sequence numbers or hashes that appear on a receipt.
+type SealedBallotReader interface {
+	SealedBallots(ctx context.Context, electionID string) ([]SealedBallot, error)
+}
+
 // OptionCount is the number of ballots cast for one option.
 type OptionCount struct {
 	Option string

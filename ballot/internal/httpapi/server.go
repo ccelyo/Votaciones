@@ -42,11 +42,19 @@ type ElectionReader interface {
 // ReadinessChecker reports whether backing storage is reachable.
 type ReadinessChecker func(ctx context.Context) error
 
+// VotePublisher announces that one new ballot was accepted.
+// The call carries only the election and the time: never the token, the receipt or the vote.
+type VotePublisher interface {
+	VoteCast(ctx context.Context, electionID string, at time.Time) error
+}
+
 // Config wires the HTTP API dependencies.
 type Config struct {
 	Acceptor       BallotAcceptor
 	Elections      ElectionReader
 	Votes          ballotflow.VoteReader
+	Sealed         ballotflow.SealedBallotReader
+	Publisher      VotePublisher
 	Ready          ReadinessChecker
 	AllowedOrigins []string
 	Logger         *slog.Logger
@@ -70,6 +78,7 @@ func NewHandler(config Config) http.Handler {
 	mux.HandleFunc("POST /v1/ballots", a.submitBallot)
 	mux.HandleFunc("GET /v1/elections/{electionID}/parameters", a.electionParameters)
 	mux.HandleFunc("GET /v1/elections/{electionID}/results", a.electionResults)
+	mux.HandleFunc("GET /v1/elections/{electionID}/ballots", a.electionBallots)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
@@ -142,6 +151,11 @@ func (a *api) submitBallot(w http.ResponseWriter, r *http.Request) {
 	status := http.StatusCreated
 	if result == token.SpendReplay {
 		status = http.StatusOK
+	} else if a.Publisher != nil {
+		// A replay returns the same receipt and must not be announced again.
+		if err := a.Publisher.VoteCast(r.Context(), request.ElectionID, a.Now().UTC()); err != nil {
+			a.Logger.Error("votes.cast was not published", "error", err.Error())
+		}
 	}
 	writeJSON(w, status, SubmitBallotResponse{
 		ElectionID: receipt.ElectionID,
@@ -274,6 +288,60 @@ func (a *api) electionResults(w http.ResponseWriter, r *http.Request) {
 		InvalidBallots: tally.Invalid,
 		Results:        results,
 	})
+}
+
+// SealedBallotResponse is one ciphertext Tally can decrypt. It has no token or receipt field.
+type SealedBallotResponse struct {
+	EncryptedVote string `json:"encrypted_vote"`
+	Proof         string `json:"proof"`
+}
+
+// ElectionBallotsResponse lists the sealed ballots of a closed election.
+type ElectionBallotsResponse struct {
+	ElectionID string                 `json:"election_id"`
+	Ballots    []SealedBallotResponse `json:"ballots"`
+}
+
+// electionBallots is the internal read Tally uses after the ballot box closes.
+// While the election is open the list stays hidden, same as the aggregate results.
+func (a *api) electionBallots(w http.ResponseWriter, r *http.Request) {
+	if a.Sealed == nil {
+		writeError(w, http.StatusNotFound, "not_found")
+		return
+	}
+	electionID := r.PathValue("electionID")
+	if _, err := a.Elections.Parameters(r.Context(), electionID); errors.Is(err, election.ErrElectionNotFound) {
+		writeError(w, http.StatusNotFound, "election_not_found")
+		return
+	} else if err != nil {
+		a.Logger.Error("read election parameters failed", "error", err.Error())
+		writeError(w, http.StatusInternalServerError, "internal_error")
+		return
+	}
+	electionStatus, err := a.Elections.Status(r.Context(), electionID, a.Now().UTC())
+	if err != nil {
+		a.Logger.Error("read election status failed", "error", err.Error())
+		writeError(w, http.StatusInternalServerError, "internal_error")
+		return
+	}
+	if electionStatus != pb.ElectionStatus_ELECTION_STATUS_CLOSED {
+		writeError(w, http.StatusConflict, "election_not_closed")
+		return
+	}
+	stored, err := a.Sealed.SealedBallots(r.Context(), electionID)
+	if err != nil {
+		a.Logger.Error("read sealed ballots failed", "error", err.Error())
+		writeError(w, http.StatusInternalServerError, "internal_error")
+		return
+	}
+	ballots := make([]SealedBallotResponse, len(stored))
+	for i, ballot := range stored {
+		ballots[i] = SealedBallotResponse{
+			EncryptedVote: base64.RawURLEncoding.EncodeToString(ballot.EncryptedVote),
+			Proof:         base64.RawURLEncoding.EncodeToString(ballot.Proof),
+		}
+	}
+	writeJSON(w, http.StatusOK, ElectionBallotsResponse{ElectionID: electionID, Ballots: ballots})
 }
 
 func (a *api) readiness(w http.ResponseWriter, r *http.Request) {

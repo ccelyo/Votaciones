@@ -243,27 +243,44 @@ func (s *Store) CountBallots(ctx context.Context, electionID string) (uint64, er
 
 // Votes implements ballot.VoteReader, projecting only the vote contents.
 func (s *Store) Votes(ctx context.Context, electionID string) ([][]byte, error) {
+	ballots, err := s.SealedBallots(ctx, electionID)
+	if err != nil {
+		return nil, err
+	}
+	votes := make([][]byte, len(ballots))
+	for i, ballot := range ballots {
+		votes[i] = ballot.EncryptedVote
+	}
+	return votes, nil
+}
+
+// SealedBallots implements ballot.SealedBallotReader.
+// The projection omits the token id, the sequence and the hash chain.
+func (s *Store) SealedBallots(ctx context.Context, electionID string) ([]ballotflow.SealedBallot, error) {
 	cursor, err := s.ballots.Find(ctx,
 		bson.D{{Key: "election_id", Value: electionID}},
-		options.Find().SetProjection(bson.D{{Key: "_id", Value: 0}, {Key: "encrypted_vote", Value: 1}}),
+		options.Find().
+			SetProjection(bson.D{{Key: "_id", Value: 0}, {Key: "encrypted_vote", Value: 1}, {Key: "proof", Value: 1}}).
+			SetSort(bson.D{{Key: "seq", Value: 1}}),
 	)
 	if err != nil {
 		return nil, err
 	}
 	var documents []struct {
 		EncryptedVote []byte `bson:"encrypted_vote"`
+		Proof         []byte `bson:"proof"`
 	}
 	if err := cursor.All(ctx, &documents); err != nil {
 		return nil, err
 	}
-	votes := make([][]byte, len(documents))
+	ballots := make([]ballotflow.SealedBallot, len(documents))
 	for i, document := range documents {
-		votes[i] = document.EncryptedVote
+		ballots[i] = ballotflow.SealedBallot{EncryptedVote: document.EncryptedVote, Proof: document.Proof}
 	}
-	return votes, nil
+	return ballots, nil
 }
 
-func (d ballotDocument) record()ballotflow.BallotRecord {
+func (d ballotDocument) record() ballotflow.BallotRecord {
 	return ballotflow.BallotRecord{
 		ElectionID:    d.ElectionID,
 		TokenID:       d.TokenID,
