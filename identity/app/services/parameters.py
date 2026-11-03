@@ -11,8 +11,8 @@ import json
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric import ed25519
 
-from app.ballot_client import TokenKey
-from app.encoding import b64url_encode
+from app.clients.ballot_client import TokenKey
+from app.core.encoding import b64url_encode
 
 DOMAIN = b"votaciones.identity.election-parameters.v1\x00"
 ALGORITHM = "Ed25519"

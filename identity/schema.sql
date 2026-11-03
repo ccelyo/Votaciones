@@ -29,45 +29,8 @@ CREATE TABLE elections (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Padrón electoral: relación entre usuarios y elecciones.
-CREATE TABLE voter_roll (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL,
-    election_id INTEGER NOT NULL,
-    is_eligible BOOLEAN NOT NULL DEFAULT TRUE,
-    has_voted BOOLEAN NOT NULL DEFAULT FALSE,
-
-    CONSTRAINT fk_voter_roll_user
-        FOREIGN KEY (user_id)
-        REFERENCES users(id),
-
-    CONSTRAINT fk_voter_roll_election
-        FOREIGN KEY (election_id)
-        REFERENCES elections(id),
-
-    CONSTRAINT uq_voter_roll_user_election
-        UNIQUE (user_id, election_id)
-);
-
--- Registro de emisión de tokens.
--- Un usuario solo puede recibir un token por elección.
-CREATE TABLE issued_tokens (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL,
-    election_id INTEGER NOT NULL,
-    issued_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_issued_tokens_user
-        FOREIGN KEY (user_id)
-        REFERENCES users(id),
-
-    CONSTRAINT fk_issued_tokens_election
-        FOREIGN KEY (election_id)
-        REFERENCES elections(id),
-
-    CONSTRAINT uq_issued_tokens_user_election
-        UNIQUE (user_id, election_id)
-);
+-- El padrón (voter_roll) y las credenciales emitidas (issued_credentials) ya no
+-- viven aquí: pertenecen a la base Census (census/schema.sql).
 
 -- Roles iniciales del sistema.
 INSERT INTO roles (name)

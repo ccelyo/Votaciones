@@ -3,7 +3,7 @@
 import base64
 import binascii
 
-from app.errors import InvalidRequest
+from app.core.errors import InvalidRequest
 
 
 def b64url_encode(data: bytes) -> str:

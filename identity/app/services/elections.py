@@ -13,11 +13,12 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
-from app import blind_rsa, parameters
-from app.ballot_client import BallotGateway, ElectionRegistration, TokenKey
-from app.errors import ElectionNotFound, InvalidRequest
-from app.keys import IdentityKeys
-from app.models import (
+from app.services import parameters
+from app.clients.blind_signature import BlindSigner
+from app.clients.ballot_client import BallotGateway, ElectionRegistration, TokenKey
+from app.core.errors import ElectionNotFound, InvalidRequest
+from app.core.keys import IdentityKeys
+from app.db.models import (
     STATUS_CLOSED,
     STATUS_DRAFT,
     STATUS_OPEN,
@@ -109,6 +110,7 @@ def create_election(
     session: Session,
     ballot: BallotGateway,
     keys: IdentityKeys,
+    signer: BlindSigner,
     *,
     name: str,
     options: list[str],
@@ -145,11 +147,12 @@ def create_election(
     session.flush()  # asigna elections.id
     election_id = election_ref(election)
 
-    token_key = TokenKey(
-        kid=keys.token_kid,
-        public_key_der=keys.token_public_der,
-        signature_variant=blind_rsa.VARIANT,
-    )
+    try:
+        # Blind Signature crea (o reutiliza) la clave RSA de esta elección.
+        token_key = signer.token_key(election_id)
+    except Exception:
+        session.rollback()
+        raise
     signed_parameters = parameters.canonical_parameters(
         election_id=election_id,
         name=name,

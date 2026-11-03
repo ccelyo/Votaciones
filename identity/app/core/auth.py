@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.errors import Forbidden, Unauthenticated
+from app.core.errors import Forbidden, Unauthenticated
 
 
 ROLE_ADMIN = "admin"
@@ -34,7 +34,7 @@ def get_principal(
             raise Unauthenticated("invalid session")
 
         # Import local para evitar una dependencia circular.
-        from app.sessions import principal_from_token
+        from app.services.sessions import principal_from_token
 
         with request.app.state.session_factory() as session:
             return principal_from_token(session, token)

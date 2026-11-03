@@ -22,26 +22,27 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app import elections as election_service
-from app import tokens as token_service
-from app.auth import Principal, bearer_scheme, get_principal, require_admin
-from app.ballot_client import BallotGateway
-from app.encoding import b64url_decode, b64url_encode
-from app.keys import IdentityKeys
+from app.services import elections as election_service
+from app.services import tokens as token_service
+from app.core.auth import Principal, bearer_scheme, get_principal, require_admin
+from app.clients.ballot_client import BallotGateway
+from app.clients.blind_signature import BlindSigner
+from app.core.encoding import b64url_decode, b64url_encode
+from app.core.keys import IdentityKeys
 
-from app.login import authenticate_user
+from app.services.login import authenticate_user
 
 import secrets
 
-from app.errors import Unauthenticated
-from app.sessions import (
+from app.core.errors import Unauthenticated
+from app.services.sessions import (
     complete_mfa_challenge,
     create_mfa_challenge,
     revoke_session,
 )
 
-from app import voter_roll as voter_roll_service
-from app.models import STATUS_OPEN, Election, Role, User
+from app.services import voter_roll as voter_roll_service
+from app.db.models import STATUS_OPEN, Election, Role, User
 
 router = APIRouter()
 
@@ -60,6 +61,15 @@ def get_ballot(request: Request) -> BallotGateway:
 
 def get_keys(request: Request) -> IdentityKeys:
     return request.app.state.keys
+
+
+def get_census(request: Request) -> Iterator[Session]:
+    with request.app.state.census_session_factory() as census:
+        yield census
+
+
+def get_signer(request: Request) -> BlindSigner:
+    return request.app.state.blind_signer
 
 
 # --- esquemas ---------------------------------------------------------------
@@ -193,11 +203,13 @@ def blind_token(
     body: BlindTokenRequest,
     principal: Principal = Depends(get_principal),
     session: Session = Depends(get_session),
-    keys: IdentityKeys = Depends(get_keys),
+    census: Session = Depends(get_census),
+    signer: BlindSigner = Depends(get_signer),
 ) -> dict:
     result = token_service.issue_blind_signature(
         session,
-        keys,
+        census,
+        signer,
         user_id=principal.user_id,
         election_id=body.election_id,
         blinded_message=b64url_decode(body.blinded_token, "blinded_token"),
@@ -214,9 +226,10 @@ def eligibility(
     election_id: str,
     principal: Principal = Depends(get_principal),
     session: Session = Depends(get_session),
+    census: Session = Depends(get_census),
 ) -> dict:
     result = voter_roll_service.voter_status(
-        session, election_id=election_id, user_id=principal.user_id
+        session, census, election_id=election_id, user_id=principal.user_id
     )
     return {
         "election_id": result.election_id,
@@ -287,11 +300,9 @@ def list_open_elections(
 
 @router.get("/keys")
 def public_keys(keys: IdentityKeys = Depends(get_keys)) -> dict:
+    """Clave pública de firma de parámetros. La clave de tokens es por elección
+    y viaja dentro de ``GET /elections/{id}/parameters`` (``token_key``)."""
     return {
-        "token_signing": {
-            "kid": keys.token_kid,
-            "public_key_der": b64url_encode(keys.token_public_der),
-        },
         "parameter_signing": {
             "key_id": keys.parameter_key_id,
             "algorithm": "Ed25519",
@@ -310,11 +321,13 @@ def create_election(
     session: Session = Depends(get_session),
     ballot: BallotGateway = Depends(get_ballot),
     keys: IdentityKeys = Depends(get_keys),
+    signer: BlindSigner = Depends(get_signer),
 ) -> dict:
     election = election_service.create_election(
         session,
         ballot,
         keys,
+        signer,
         name=body.name,
         options=body.options,
         encryption_public_key=b64url_decode(body.encryption_public_key, "encryption_public_key"),
@@ -401,9 +414,11 @@ def enroll_voter(
     body: EnrollVoterRequest,
     _: Principal = Depends(require_admin),
     session: Session = Depends(get_session),
+    census: Session = Depends(get_census),
 ) -> dict:
     entry = voter_roll_service.enroll_voter(
         session,
+        census,
         election_id=election_id,
         user_id=body.user_id,
         is_eligible=body.is_eligible,
@@ -422,9 +437,11 @@ def list_voters(
     election_id: str,
     _: Principal = Depends(require_admin),
     session: Session = Depends(get_session),
+    census: Session = Depends(get_census),
 ) -> list[dict]:
     entries = voter_roll_service.get_voter_roll(
         session,
+        census,
         election_id=election_id,
     )
 
@@ -446,9 +463,11 @@ def update_voter(
     body: UpdateEligibilityRequest,
     _: Principal = Depends(require_admin),
     session: Session = Depends(get_session),
+    census: Session = Depends(get_census),
 ) -> dict:
     entry = voter_roll_service.update_voter_eligibility(
         session,
+        census,
         election_id=election_id,
         user_id=user_id,
         is_eligible=body.is_eligible,
@@ -461,15 +480,18 @@ def update_voter(
         "has_voted": entry.has_voted,
     }
 
-#----- confirmación de voto -------------------------------------------------------cd 
+# --- confirmación de voto ---------------------------------------------------
+
 @router.post("/vote-confirmation")
 def confirm_vote(
     body: VoteConfirmationRequest,
     principal: Principal = Depends(get_principal),
     session: Session = Depends(get_session),
+    census: Session = Depends(get_census),
 ) -> dict:
     entry = voter_roll_service.confirm_vote(
         session,
+        census,
         election_id=body.election_id,
         user_id=principal.user_id,
     )

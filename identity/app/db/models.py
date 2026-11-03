@@ -4,7 +4,8 @@ La fuente de verdad del esquema es ``identity/schema.sql`` (Kevin). Estos modelo
 solo lo reflejan; ``tests/test_schema.py`` falla si dejan de coincidir.
 
 * ``roles`` y ``users``: de M5. Aquí solo existen para resolver las claves foráneas.
-* ``elections``, ``voter_roll`` e ``issued_tokens``: esquema de Kevin, usado tal cual.
+* ``elections``: esquema de Kevin (legacy hasta que Election tenga su servicio).
+* ``voter_roll`` e ``issued_credentials`` viven ahora en Census (``db/census.py``).
 * ``election_parameters``: tabla nueva (M6) 1 a 1 con ``elections`` para lo que
   `ballot` exige y ``elections`` no guarda: opciones, claves y parámetros firmados.
 """
@@ -20,7 +21,6 @@ from sqlalchemy import (
     Integer,
     LargeBinary,
     String,
-    UniqueConstraint,
     func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
@@ -92,39 +92,6 @@ class ElectionParameters(Base):
 
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp())
 
-
-class VoterRollEntry(Base):
-    """Padrón (M5): el usuario puede votar en la elección si ``is_eligible``."""
-
-    __tablename__ = "voter_roll"
-    __table_args__ = (
-        UniqueConstraint("user_id", "election_id", name="uq_voter_roll_user_election"),
-    )
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    election_id: Mapped[int] = mapped_column(ForeignKey("elections.id"))
-    is_eligible: Mapped[bool] = mapped_column(Boolean, default=True)
-    has_voted: Mapped[bool] = mapped_column(Boolean, default=False)
-
-
-class IssuedToken(Base):
-    """Registro de que un usuario ya recibió su token para una elección.
-
-    Identidad conoce ``usuario -> recibió token`` y nada más. Nunca se guarda el
-    mensaje cegado ni la firma, para que el token no pueda enlazarse después.
-    """
-
-    __tablename__ = "issued_tokens"
-    __table_args__ = (
-        # Restricción crítica: un token por usuario y elección.
-        UniqueConstraint("user_id", "election_id", name="uq_issued_tokens_user_election"),
-    )
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    election_id: Mapped[int] = mapped_column(ForeignKey("elections.id"))
-    issued_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp())
 
 class MFAChallenge(Base):
     """Desafío temporal requerido para completar el segundo factor."""

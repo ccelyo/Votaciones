@@ -51,6 +51,12 @@ class BallotUnavailable(IdentityError):
     status_code, code = 502, "ballot_unavailable"
 
 
+class BlindSignatureUnavailable(IdentityError):
+    """El servicio Blind Signature no responde."""
+
+    status_code, code = 502, "blind_signature_unavailable"
+
+
 def install_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(IdentityError)
     async def _identity_error(_: Request, error: IdentityError) -> JSONResponse:

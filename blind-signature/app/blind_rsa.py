@@ -1,6 +1,6 @@
 """Lado servidor de la firma ciega RSA (RFC 9474, RSABSSA).
 
-Identidad solo ejecuta ``BlindSign`` (RFC 9474 sec. 4.2): firma el mensaje cegado
+Este servicio solo ejecuta ``BlindSign`` (RFC 9474 sec. 4.2): firma el mensaje cegado
 que envía el navegador sin ver el contenido del token. Cegar, descegar y la
 codificación EMSA-PSS ocurren en el navegador (``Finalize``); Go verifica el
 resultado con la variante registrada en ``TokenVerificationKey.signature_variant``.

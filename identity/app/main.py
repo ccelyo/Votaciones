@@ -8,18 +8,22 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.api import router
-from app.ballot_client import BallotGateway, GrpcBallotClient
-from app.config import Settings, get_settings
-from app.errors import install_error_handlers
-from app.keys import IdentityKeys, load_keys
-from app.models import Base
+from app.clients.ballot_client import BallotGateway, GrpcBallotClient
+from app.clients.blind_signature import BlindSigner, HttpBlindSigner
+from app.core.config import Settings, get_settings
+from app.core.errors import install_error_handlers
+from app.core.keys import IdentityKeys, load_keys
+from app.db.census import CensusBase
+from app.db.models import Base
 
 
 def create_app(
     settings: Settings | None = None,
     *,
     session_factory: sessionmaker | None = None,
+    census_session_factory: sessionmaker | None = None,
     ballot: BallotGateway | None = None,
+    blind_signer: BlindSigner | None = None,
     keys: IdentityKeys | None = None,
 ) -> FastAPI:
     """Construye la app. Los argumentos opcionales permiten inyectar dobles en pruebas."""
@@ -28,7 +32,9 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         engine = None
+        census_engine = None
         owned_ballot = None
+        owned_signer = None
 
         if session_factory is None:
             engine = create_engine(
@@ -45,6 +51,26 @@ def create_app(
                 expire_on_commit=False,
             )
 
+        if census_session_factory is None:
+            # Sin URL propia, Census comparte la base de Identity (solo desarrollo).
+            census_engine = create_engine(
+                settings.census_database_url or settings.database_url,
+                pool_pre_ping=True,
+            )
+            if settings.auto_create_tables:
+                CensusBase.metadata.create_all(census_engine)
+            app.state.census_session_factory = sessionmaker(
+                census_engine, expire_on_commit=False
+            )
+
+        if blind_signer is None:
+            owned_signer = HttpBlindSigner(
+                settings.blind_signature_url,
+                settings.blind_signature_timeout_seconds,
+                settings.blind_signature_api_key,
+            )
+            app.state.blind_signer = owned_signer
+
         if ballot is None:
             owned_ballot = GrpcBallotClient(
                 settings.ballot_grpc_addr,
@@ -60,6 +86,12 @@ def create_app(
 
         if owned_ballot is not None:
             owned_ballot.close()
+
+        if owned_signer is not None:
+            owned_signer.close()
+
+        if census_engine is not None:
+            census_engine.dispose()
 
         if engine is not None:
             engine.dispose()
@@ -84,8 +116,14 @@ def create_app(
     if session_factory is not None:
         app.state.session_factory = session_factory
 
+    if census_session_factory is not None:
+        app.state.census_session_factory = census_session_factory
+
     if ballot is not None:
         app.state.ballot = ballot
+
+    if blind_signer is not None:
+        app.state.blind_signer = blind_signer
 
     if keys is not None:
         app.state.keys = keys

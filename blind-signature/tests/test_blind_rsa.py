@@ -61,25 +61,25 @@ def test_test_client_reproduces_rfc9474_blinding_and_finalize():
         assert signature == bytes.fromhex(vector["sig"]), vector["name"]
 
 
-def test_blind_sign_rejects_wrong_length(keys):
+def test_blind_sign_rejects_wrong_length(private_key):
     with pytest.raises(blind_rsa.BlindSignError):
-        blind_rsa.blind_sign(keys.token_private, b"\x01" * 10)
+        blind_rsa.blind_sign(private_key, b"\x01" * 10)
 
 
-def test_blind_sign_rejects_representative_out_of_range(keys):
-    n = keys.token_private.public_key().public_numbers().n
-    k = blind_rsa.modulus_size(keys.token_private.public_key())
+def test_blind_sign_rejects_representative_out_of_range(private_key):
+    n = private_key.public_key().public_numbers().n
+    k = blind_rsa.modulus_size(private_key.public_key())
     with pytest.raises(blind_rsa.BlindSignError):
-        blind_rsa.blind_sign(keys.token_private, n.to_bytes(k, "big"))
+        blind_rsa.blind_sign(private_key, n.to_bytes(k, "big"))
     with pytest.raises(blind_rsa.BlindSignError):
-        blind_rsa.blind_sign(keys.token_private, b"\xff" * k)
+        blind_rsa.blind_sign(private_key, b"\xff" * k)
 
 
-def test_blind_sign_round_trip_with_generated_key(keys):
-    public_key = keys.token_private.public_key()
+def test_blind_sign_round_trip_with_generated_key(private_key):
+    public_key = private_key.public_key()
     _, prepared = rsabssa_client.new_prepared_token_message("any-election")
     blinded, inv = rsabssa_client.blind(public_key, prepared)
     signature = rsabssa_client.finalize(
-        public_key, prepared, blind_rsa.blind_sign(keys.token_private, blinded), inv
+        public_key, prepared, blind_rsa.blind_sign(private_key, blinded), inv
     )
     rsabssa_client.verify(public_key, prepared, signature)

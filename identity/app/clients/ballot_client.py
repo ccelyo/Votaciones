@@ -12,7 +12,7 @@ from typing import Protocol
 
 import grpc
 
-from app.errors import (
+from app.core.errors import (
     BallotUnavailable,
     ElectionAlreadyExists,
     ElectionNotFound,

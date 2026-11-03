@@ -1,10 +1,10 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth import Principal
-from app.errors import Unauthenticated
-from app.models import Role, User
-from app.security import verify_password
+from app.core.auth import Principal
+from app.core.errors import Unauthenticated
+from app.db.models import Role, User
+from app.core.security import verify_password
 
 
 def authenticate_user(

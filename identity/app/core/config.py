@@ -35,6 +35,18 @@ class Settings(BaseSettings):
         ),
     )
 
+    # Census: base PostgreSQL del padrón (vista C&C: Identity -> SQL -> Census).
+    # Si se omite se usa la misma base que Auth (útil en desarrollo).
+    census_database_url: str = Field(
+        default="",
+        validation_alias=AliasChoices("IDENTITY_CENSUS_DATABASE_URL", "CENSUS_DATABASE_URL"),
+    )
+
+    # Servicio Blind Signature (REST interno, solo accesible desde Identity).
+    blind_signature_url: str = "http://127.0.0.1:8100"
+    blind_signature_timeout_seconds: float = 5.0
+    blind_signature_api_key: str = ""
+
     # schema.sql es la fuente de verdad del esquema.
     # Por defecto la aplicación no crea las tablas al iniciar.
     auto_create_tables: bool = False
@@ -78,10 +90,10 @@ class Settings(BaseSettings):
             return [item.strip() for item in value.split(",") if item.strip()]
         return value
 
-    @field_validator("database_url")
+    @field_validator("database_url", "census_database_url")
     @classmethod
     def _normalize(cls, value: str) -> str:
-        return normalize_database_url(value)
+        return normalize_database_url(value) if value else value
 
 
 @lru_cache

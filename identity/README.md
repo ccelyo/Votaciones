@@ -23,21 +23,26 @@ clave de verificación de tokens y parámetros firmados).
 - `user_id` es el `users.id` entero y nunca sale de identidad.
 - `tests/test_schema.py` compara los modelos con `schema.sql` y falla si se desfasan.
 
-## Estructura
+## Estructura (Prototipo 2)
 
-| Archivo | Responsabilidad |
+| Carpeta | Contenido |
 |---|---|
-| `main.py` | `uvicorn main:app` (reexporta `app.main:app`) |
-| `app/api.py` | Endpoints HTTP (REST/JSON) |
-| `app/elections.py` | Alta, cierre y estado de urnas; registro en `ballot` |
-| `app/tokens.py` | Emisión del token: urna abierta, padrón, `UNIQUE(user_id, election_id)` |
-| `app/blind_rsa.py` | `BlindSign` de RFC 9474 (RSABSSA-SHA384-PSS-Randomized) |
-| `app/parameters.py` | Parámetros públicos canónicos y su firma Ed25519 |
-| `app/ballot_client.py` | Cliente gRPC de `BallotAdminService` (`proto/ballot.proto`) |
-| `app/keys.py` | Claves privadas (RSA de tokens, Ed25519 de parámetros) |
-| `app/models.py` | Modelos que reflejan `schema.sql` |
-| `app/auth.py` | Contrato `Principal` + autenticación Bearer y modo de desarrollo |
-| `app/pb/` | Stubs generados desde `proto/ballot.proto` (versionados) |
+| `app/main.py`, `main.py` | `create_app` (inyección de dependencias) y arranque `uvicorn main:app` |
+| `app/api/routes.py` | Endpoints HTTP (REST/JSON) |
+| `app/services/` | Lógica de negocio: `tokens` (emisión de credencial), `voter_roll` (padrón sobre Census), `elections`, `parameters`; y, temporalmente, `login`/`sessions` (Auth) |
+| `app/db/` | `models.py` (base de Identity/Auth) y `census.py` (base Census) |
+| `app/clients/` | `blind_signature.py` (REST a Blind Signature), `ballot_client.py` (gRPC temporal a Ballot) |
+| `app/core/` | `config`, `errors`, `encoding`, `keys` (Ed25519 de parámetros), `auth`, `security` |
+| `app/pb/` | Stubs gRPC generados desde `proto/ballot.proto` |
+
+Servicios hermanos: [`../blind-signature`](../blind-signature) (firma ciega, interno) y
+[`../census`](../census) (esquema SQL de la base del padrón).
+
+### Cómo se reparte la responsabilidad
+- **Identity**: elegibilidad, una credencial por votante y elección, confirmación de participación.
+- **Census** (PostgreSQL propio): `voter_roll` e `issued_credentials`. Solo el *día* de emisión.
+- **Blind Signature**: toda la criptografía de firma ciega; recibe solo `election_id` + mensaje cegado.
+- **Legado temporal**: login/MFA/sesiones (Auth) y alta de urnas (Election) siguen aquí hasta que Julian y Fabian entreguen sus servicios; el Gateway ya apunta a ellos.
 
 ## Endpoints
 
@@ -144,6 +149,9 @@ Todo va en **base64url sin relleno**, no base64 estándar (`btoa`).
 
 | Variable | Defecto | Uso |
 |---|---|---|
+| `IDENTITY_CENSUS_DATABASE_URL` | = base de Identity | PostgreSQL de Census (en Docker: `postgres-census`) |
+| `IDENTITY_BLIND_SIGNATURE_URL` | `http://127.0.0.1:8100` | Servicio Blind Signature |
+| `IDENTITY_BLIND_SIGNATURE_API_KEY` | vacío | Secreto compartido opcional (`X-Internal-Token`) |
 | `DATABASE_URL` o `IDENTITY_DATABASE_URL` | `postgresql+psycopg://user:password@localhost:5432/votaciones` | PostgreSQL. Acepta el formato `postgresql://` de `.env.example` |
 | `IDENTITY_AUTO_CREATE_TABLES` | `false` | Crea tablas al arrancar (solo desarrollo; la fuente es `schema.sql`) |
 | `IDENTITY_BALLOT_GRPC_ADDR` | `127.0.0.1:9091` | Listener gRPC interno de `ballot` |

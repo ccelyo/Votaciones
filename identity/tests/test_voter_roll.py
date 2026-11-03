@@ -1,5 +1,6 @@
-from app.models import Election, IssuedToken, Role, User
-from app.security import hash_password
+from app.db.census import IssuedCredential
+from app.db.models import Election, Role, User
+from app.core.security import hash_password
 from tests.conftest import ADMIN, voter
 
 
@@ -34,9 +35,9 @@ def create_issued_token(
 ):
     with session_factory() as session:
         session.add(
-            IssuedToken(
-                user_id=user_id,
-                election_id=int(election_id),
+            IssuedCredential(
+                voter_id=str(user_id),
+                election_id=election_id,
             )
         )
         session.commit()

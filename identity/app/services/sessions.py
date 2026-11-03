@@ -5,9 +5,9 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth import Principal
-from app.errors import Unauthenticated
-from app.models import MFAChallenge, Role, User, UserSession
+from app.core.auth import Principal
+from app.core.errors import Unauthenticated
+from app.db.models import MFAChallenge, Role, User, UserSession
 
 
 def _now() -> datetime:
