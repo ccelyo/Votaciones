@@ -1,4 +1,4 @@
-"""Urnas: alta, parámetros públicos, cierre y estado.
+"""Urnas: alta, apertura, parámetros públicos, cierre y estado.
 
 La urna se guarda en las tablas de Kevin (``elections``) más ``election_parameters``,
 y se registra en `ballot` por gRPC. Hacia fuera (API, token, `ballot`) el
@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from app import blind_rsa, parameters
 from app.ballot_client import BallotGateway, ElectionRegistration, TokenKey
-from app.errors import ElectionNotFound, InvalidRequest
+from app.errors import ElectionClosed, ElectionNotFound, InvalidRequest
 from app.keys import IdentityKeys
 from app.models import (
     STATUS_CLOSED,
@@ -115,13 +115,15 @@ def create_election(
     encryption_public_key: bytes,
     opens_at: int,
     closes_at: int,
+    publish: bool = True,
     now: int | None = None,
 ) -> Election:
-    """Crea la urna, firma sus parámetros y la registra en `ballot`.
+    """Crea la urna y firma sus parámetros; con ``publish`` además la abre.
 
     El id lo asigna PostgreSQL, por eso la fila se inserta primero (``draft``) y
     solo pasa a ``open`` cuando `ballot` confirma el registro. Si `ballot` falla se
-    revierte todo; un reintento obtiene otro id.
+    revierte todo; un reintento obtiene otro id. Sin ``publish`` queda en ``draft``
+    hasta ``open_election``.
     """
     now = int(time.time()) if now is None else now
     name = _validate_name(name)
@@ -161,41 +163,74 @@ def create_election(
     )
     signature = parameters.sign_parameters(keys.parameter_private, signed_parameters)
 
-    session.add(
-        ElectionParameters(
-            election_id=election.id,
-            options=options,
-            encryption_public_key=encryption_public_key,
-            token_kid=token_key.kid,
-            token_public_key_der=token_key.public_key_der,
-            token_variant=token_key.signature_variant,
-            signed_parameters=signed_parameters,
-            parameter_signing_key_id=keys.parameter_key_id,
-            parameter_signature_algorithm=parameters.ALGORITHM,
-            parameter_signature=signature,
-        )
+    stored = ElectionParameters(
+        election_id=election.id,
+        options=options,
+        encryption_public_key=encryption_public_key,
+        token_kid=token_key.kid,
+        token_public_key_der=token_key.public_key_der,
+        token_variant=token_key.signature_variant,
+        signed_parameters=signed_parameters,
+        parameter_signing_key_id=keys.parameter_key_id,
+        parameter_signature_algorithm=parameters.ALGORITHM,
+        parameter_signature=signature,
     )
+    session.add(stored)
     session.flush()
 
+    if not publish:
+        session.commit()
+        return election
+
     try:
-        ballot.register_election(
-            ElectionRegistration(
-                election_id=election_id,
-                options=options,
-                encryption_public_key=encryption_public_key,
-                token_keys=[token_key],
-                opens_at=opens_at,
-                closes_at=closes_at,
-                signed_parameters=signed_parameters,
-                parameter_signing_key_id=keys.parameter_key_id,
-                parameter_signature_algorithm=parameters.ALGORITHM,
-                parameter_signature=signature,
-            )
-        )
+        _register_in_ballot(ballot, election, stored)
     except Exception:
         session.rollback()
         raise
 
+    election.status = STATUS_OPEN
+    session.commit()
+    return election
+
+
+def _register_in_ballot(ballot: BallotGateway, election: Election, stored: ElectionParameters) -> None:
+    ballot.register_election(
+        ElectionRegistration(
+            election_id=election_ref(election),
+            options=list(stored.options),
+            encryption_public_key=stored.encryption_public_key,
+            token_keys=[
+                TokenKey(
+                    kid=stored.token_kid,
+                    public_key_der=stored.token_public_key_der,
+                    signature_variant=stored.token_variant,
+                )
+            ],
+            opens_at=to_epoch(election.starts_at),
+            closes_at=to_epoch(election.ends_at),
+            signed_parameters=stored.signed_parameters,
+            parameter_signing_key_id=stored.parameter_signing_key_id,
+            parameter_signature_algorithm=stored.parameter_signature_algorithm,
+            parameter_signature=stored.parameter_signature,
+        )
+    )
+
+
+def open_election(
+    session: Session, ballot: BallotGateway, election_id: str, *, now: int | None = None
+) -> Election:
+    """Publica en `ballot` una urna ``draft``. Idempotente si ya está abierta."""
+    now = int(time.time()) if now is None else now
+    election, stored = get_parameters(session, election_id)
+    if election.status == STATUS_OPEN:
+        return election
+    if election.status == STATUS_CLOSED:
+        raise ElectionClosed("a closed election cannot be reopened")
+    if to_epoch(election.ends_at) <= now:
+        raise InvalidRequest("the voting window has already ended")
+
+    # `register_election` es idempotente en `ballot`: si falla aquí, se puede reintentar.
+    _register_in_ballot(ballot, election, stored)
     election.status = STATUS_OPEN
     session.commit()
     return election
@@ -218,9 +253,13 @@ def get_parameters(session: Session, election_id: str) -> tuple[Election, Electi
 
 
 def close_election(session: Session, ballot: BallotGateway, election_id: str) -> Election:
-    """Cierra primero en `ballot` (idempotente) y luego marca la urna como cerrada."""
+    """Cierra primero en `ballot` (idempotente) y luego marca la urna como cerrada.
+
+    Una urna ``draft`` nunca llegó a `ballot`: se cierra solo aquí.
+    """
     election = get_election(session, election_id)
-    ballot.close_election(election_ref(election))
+    if election.status != STATUS_DRAFT:
+        ballot.close_election(election_ref(election))
     election.status = STATUS_CLOSED
     session.commit()
     return election

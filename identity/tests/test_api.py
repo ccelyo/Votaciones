@@ -414,3 +414,67 @@ def test_dev_auth_rejects_non_numeric_user(client, election_payload):
             headers={"X-Dev-User": bad, "X-Dev-Roles": "admin"},
         )
         assert response.status_code == 401, bad
+
+
+# --- urnas en borrador (draft) ---------------------------------------------
+
+
+def create_draft(client, payload) -> str:
+    response = create_election(client, payload | {"open": False})
+    assert response.status_code == 201, response.text
+    assert response.json()["status"] == "draft"
+    return response.json()["election_id"]
+
+
+def test_draft_election_is_not_registered_until_opened(client, ballot, election_payload):
+    election_id = create_draft(client, election_payload)
+    assert election_id not in ballot.registrations
+
+    opened = client.post(f"/elections/{election_id}/open", headers=ADMIN)
+    assert opened.status_code == 200
+    assert opened.json() == {"election_id": election_id, "status": "open"}
+    registration = ballot.registrations[election_id]
+    assert registration.options == election_payload["options"]
+    assert registration.closes_at == election_payload["closes_at"]
+
+    # Abrir de nuevo es idempotente.
+    assert client.post(f"/elections/{election_id}/open", headers=ADMIN).json()["status"] == "open"
+
+
+def test_draft_election_issues_no_tokens(client, election_payload, enroll, new_user):
+    election_id = create_draft(client, election_payload)
+    user_id = new_user()
+    enroll(user_id, election_id)
+    assert request_token(client, election_id, voter(user_id)).status_code == 409
+
+
+def test_open_failure_keeps_the_election_in_draft(client, ballot, election_payload):
+    election_id = create_draft(client, election_payload)
+    ballot.down = True
+    assert client.post(f"/elections/{election_id}/open", headers=ADMIN).status_code == 502
+    assert client.get("/elections", headers=ADMIN).json()[0]["status"] == "draft"
+
+    ballot.down = False
+    assert client.post(f"/elections/{election_id}/open", headers=ADMIN).status_code == 200
+
+
+def test_closed_election_cannot_be_reopened(client, election_payload):
+    election_id = create_ok(client, election_payload)
+    client.post(f"/elections/{election_id}/close", headers=ADMIN)
+    response = client.post(f"/elections/{election_id}/open", headers=ADMIN)
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "election_closed"
+
+
+def test_closing_a_draft_does_not_touch_ballot(client, ballot, election_payload):
+    election_id = create_draft(client, election_payload)
+    ballot.down = True
+    response = client.post(f"/elections/{election_id}/close", headers=ADMIN)
+    assert response.status_code == 200 and response.json()["status"] == "closed"
+    assert election_id not in ballot.closed
+
+
+def test_open_requires_admin(client, election_payload, new_user):
+    election_id = create_draft(client, election_payload)
+    response = client.post(f"/elections/{election_id}/open", headers=voter(new_user()))
+    assert response.status_code == 403
