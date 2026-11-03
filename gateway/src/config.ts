@@ -4,8 +4,8 @@ import type { RateLimits } from "./rateLimit.ts";
 import type { ServiceName } from "./routes.ts";
 
 /**
- * - `jwt`: el Gateway valida el JWT emitido por Auth y aplica los roles.
- * - `passthrough`: transición mientras Auth no emite JWT. Exige un Bearer y
+ * - `jwt`: el Gateway valida el JWT RS256 de identity con su JWKS y aplica los roles.
+ * - `passthrough`: solo desarrollo, sin JWKS configurado. Exige un Bearer y
  *   delega su validación y la de los roles en el servicio de destino.
  */
 export type AuthMode = "jwt" | "passthrough";
@@ -14,9 +14,10 @@ export interface GatewayConfig {
   port: number;
   upstreams: Partial<Record<ServiceName, string>>;
   authMode: AuthMode;
-  jwtSecret?: string;
-  jwtIssuer?: string;
-  jwtAudience?: string;
+  /** URL del JWKS de identity, p. ej. http://identity:8000/.well-known/jwks.json. */
+  jwksUrl?: string;
+  jwtIssuer: string;
+  jwtAudience: string;
   allowedOrigins: string[];
   rateLimits: RateLimits;
   /** Toma la IP del cliente de X-Forwarded-For (cuando hay un proxy de confianza delante). */
@@ -57,22 +58,27 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): GatewayConfig 
     if (url) upstreams[service] = new URL(url).toString().replace(/\/+$/, "");
   }
 
-  const jwtSecret = env.GATEWAY_JWT_SECRET?.trim() || undefined;
-  const authMode = (env.GATEWAY_AUTH_MODE?.trim() || (jwtSecret ? "jwt" : "passthrough")) as AuthMode;
+  if (env.GATEWAY_JWT_SECRET?.trim()) {
+    // Evita que un despliegue antiguo crea que sigue validando con HS256.
+    throw new Error("GATEWAY_JWT_SECRET ya no se usa: el JWT es RS256, define GATEWAY_JWKS_URL");
+  }
+  const jwksUrl = env.GATEWAY_JWKS_URL?.trim() ? new URL(env.GATEWAY_JWKS_URL.trim()).toString() : undefined;
+  const authMode = (env.GATEWAY_AUTH_MODE?.trim() || (jwksUrl ? "jwt" : "passthrough")) as AuthMode;
   if (authMode !== "jwt" && authMode !== "passthrough") {
     throw new Error("GATEWAY_AUTH_MODE debe ser jwt o passthrough");
   }
-  if (authMode === "jwt" && !jwtSecret) {
-    throw new Error("GATEWAY_AUTH_MODE=jwt requiere GATEWAY_JWT_SECRET");
+  if (authMode === "jwt" && !jwksUrl) {
+    throw new Error("GATEWAY_AUTH_MODE=jwt requiere GATEWAY_JWKS_URL");
   }
 
   return {
     port: integer(env, "GATEWAY_PORT", 8088),
     upstreams,
     authMode,
-    jwtSecret,
-    jwtIssuer: env.GATEWAY_JWT_ISSUER?.trim() || undefined,
-    jwtAudience: env.GATEWAY_JWT_AUDIENCE?.trim() || undefined,
+    jwksUrl,
+    // Valores que emite identity (IDENTITY_JWT_ISSUER / IDENTITY_JWT_AUDIENCE).
+    jwtIssuer: env.GATEWAY_JWT_ISSUER?.trim() || "votaciones-identity",
+    jwtAudience: env.GATEWAY_JWT_AUDIENCE?.trim() || "votaciones",
     allowedOrigins: list(env.GATEWAY_ALLOWED_ORIGINS),
     rateLimits: {
       login: integer(env, "GATEWAY_RATE_LIMIT_LOGIN", 20),

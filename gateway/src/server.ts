@@ -24,7 +24,7 @@ server.listen(config.port, () => {
     console.warn(
       JSON.stringify({
         level: "warn",
-        message: "GATEWAY_AUTH_MODE=passthrough: los servicios validan la sesión; define GATEWAY_JWT_SECRET cuando Auth emita JWT",
+        message: "GATEWAY_AUTH_MODE=passthrough: los servicios validan la sesión; define GATEWAY_JWKS_URL para validar el JWT RS256 de identity",
       }),
     );
   }

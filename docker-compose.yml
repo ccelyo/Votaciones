@@ -139,9 +139,11 @@ services:
       # El POST de Tally es síncrono: descuenta y responde con el conteo. Debe
       # poder superar el timeout global por defecto del Gateway (10 s).
       GATEWAY_UPSTREAM_TIMEOUT_MS: ${GATEWAY_UPSTREAM_TIMEOUT_MS:-70000}
-      # Sin secreto el Gateway funciona en modo passthrough (sesiones opacas de
-      # identity). Con el secreto compartido con Auth valida los JWT.
-      GATEWAY_JWT_SECRET: ${GATEWAY_JWT_SECRET:-}
+      # JWT RS256 de identity: el Gateway solo usa la clave pública del JWKS, no
+      # comparte ningún secreto. iss/aud deben coincidir con IDENTITY_JWT_ISSUER/_AUDIENCE.
+      GATEWAY_JWKS_URL: http://identity:8000/.well-known/jwks.json
+      GATEWAY_JWT_ISSUER: votaciones-identity
+      GATEWAY_JWT_AUDIENCE: votaciones
       GATEWAY_ALLOWED_ORIGINS: http://localhost:${WEB_PORT:-3000},http://127.0.0.1:${WEB_PORT:-3000},http://localhost:${MOBILE_PORT:-8092},http://127.0.0.1:${MOBILE_PORT:-8092}
       GATEWAY_TRUST_FORWARDED_FOR: "true"
     ports: ["${GATEWAY_PORT:-8088}:8088"]

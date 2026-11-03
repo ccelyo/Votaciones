@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
 import type { GatewayConfig } from "./config.ts";
-import { JwtError, type Principal, verifyJwt } from "./jwt.ts";
+import { createJwksResolver, JwksUnavailableError, JwtError, type Principal, verifyJwt } from "./jwt.ts";
 import { RateLimiter } from "./rateLimit.ts";
 import { buildUpstreamPath, Router } from "./router.ts";
 import { HEALTH_PATHS, type RouteDefinition, ROUTES, type ServiceName } from "./routes.ts";
@@ -41,6 +41,9 @@ export function createGateway(config: GatewayConfig, deps: GatewayDeps = {}) {
   const log = deps.log ?? ((entry) => console.log(JSON.stringify(entry)));
   const router = new Router(ROUTES);
   const limiter = new RateLimiter(config.rateLimits, now);
+  const jwks = config.jwksUrl
+    ? createJwksResolver({ url: config.jwksUrl, fetch: doFetch, now })
+    : undefined;
 
   function clientKey(req: IncomingMessage): string {
     if (config.trustForwardedFor) {
@@ -59,7 +62,7 @@ export function createGateway(config: GatewayConfig, deps: GatewayDeps = {}) {
     }
   }
 
-  function authenticate(req: IncomingMessage, route: RouteDefinition): Principal | null {
+  async function authenticate(req: IncomingMessage, route: RouteDefinition): Promise<Principal | null> {
     if (route.access === "public" || route.access === "anonymous") return null;
 
     const header = req.headers.authorization ?? "";
@@ -68,12 +71,12 @@ export function createGateway(config: GatewayConfig, deps: GatewayDeps = {}) {
       throw new HttpError(401, "unauthenticated", "Se requiere autenticación.");
     }
     // Modo de transición: el servicio valida la sesión y los roles.
-    if (config.authMode === "passthrough") return null;
+    if (config.authMode === "passthrough" || !jwks) return null;
 
     let principal: Principal;
     try {
-      principal = verifyJwt(token, {
-        secret: config.jwtSecret as string,
+      principal = await verifyJwt(token, {
+        keys: jwks,
         issuer: config.jwtIssuer,
         audience: config.jwtAudience,
         now,
@@ -81,6 +84,10 @@ export function createGateway(config: GatewayConfig, deps: GatewayDeps = {}) {
     } catch (error) {
       if (error instanceof JwtError) {
         throw new HttpError(401, "invalid_token", "El token de sesión no es válido o expiró.");
+      }
+      if (error instanceof JwksUnavailableError) {
+        log({ level: "error", message: error.message });
+        throw new HttpError(503, "auth_unavailable", "No se pudo validar la sesión. Intenta más tarde.");
       }
       throw error;
     }
@@ -120,7 +127,9 @@ export function createGateway(config: GatewayConfig, deps: GatewayDeps = {}) {
       if (typeof value === "string") headers.set(name, value);
     }
     // La ruta de votación no lleva nada que permita vincular la papeleta con el votante.
-    if (route.access === "anonymous") return headers;
+    // La zona de votación es anónima: Ballot nunca recibe el JWT ni datos de identidad,
+    // aunque en el futuro se le añada una ruta que no sea `anonymous`.
+    if (route.access === "anonymous" || route.service === "ballot") return headers;
 
     headers.set("x-request-id", requestId);
     if (req.headers.authorization) headers.set("authorization", req.headers.authorization);
@@ -139,7 +148,7 @@ export function createGateway(config: GatewayConfig, deps: GatewayDeps = {}) {
     search: string,
     requestId: string,
   ): Promise<number> {
-    const principal = authenticate(req, route);
+    const principal = await authenticate(req, route);
     const base = config.upstreams[route.service];
     if (!base) {
       throw new HttpError(503, "service_not_configured", `El servicio ${route.service} no está disponible.`);
