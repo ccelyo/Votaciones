@@ -14,6 +14,7 @@ import (
 
 	ballotflow "github.com/ccelyo/Votaciones/ballot/internal/ballot"
 	"github.com/ccelyo/Votaciones/ballot/internal/election"
+	"github.com/ccelyo/Votaciones/ballot/internal/events"
 	"github.com/ccelyo/Votaciones/ballot/internal/httpapi"
 	"github.com/ccelyo/Votaciones/ballot/internal/mongostore"
 	"github.com/ccelyo/Votaciones/ballot/internal/server"
@@ -31,6 +32,7 @@ const (
 type commitStore interface {
 	ballotflow.CommitStore
 	ballotflow.VoteReader
+	ballotflow.SealedBallotReader
 	election.ParticipationCounter
 }
 
@@ -100,11 +102,26 @@ func run(logger *slog.Logger) error {
 		elections,
 		receiptKey,
 	)
+	var publisher httpapi.VotePublisher
+	if uri := strings.TrimSpace(os.Getenv("BALLOT_RABBITMQ_URI")); uri != "" {
+		connected, err := dialPublisher(ctx, uri)
+		if err != nil {
+			return err
+		}
+		defer connected.Close()
+		publisher = connected
+		logger.Info("votes.cast publisher connected", "exchange", events.VotesExchange)
+		go consumeElections(ctx, uri, elections, logger)
+	} else {
+		logger.Warn("BALLOT_RABBITMQ_URI is not set; accepted ballots will not publish votes.cast or consume election.events")
+	}
 	grpcServer := server.NewGRPCServer(server.NewAdminService(elections, nil, ballots))
 	var handler http.Handler = httpapi.NewHandler(httpapi.Config{
 		Acceptor:       acceptor,
 		Elections:      elections,
 		Votes:          ballots,
+		Sealed:         ballots,
+		Publisher:      publisher,
 		Ready:          ready,
 		AllowedOrigins: splitList(os.Getenv("BALLOT_ALLOWED_ORIGINS")),
 		TallyToken:     strings.TrimSpace(os.Getenv("BALLOT_TALLY_TOKEN")),
@@ -179,6 +196,73 @@ func httpListenAddress() string {
 		return ":" + port
 	}
 	return envOr("BALLOT_HTTP_ADDR", defaultHTTPAddress)
+}
+
+func consumeElections(ctx context.Context, uri string, store election.Store, logger *slog.Logger) {
+	for {
+		if ctx.Err() != nil {
+			return
+		}
+		consumer, err := events.DialElectionConsumer(uri)
+		if err != nil {
+			logger.Error("election consumer dial failed", "error", err)
+			if !wait(ctx, 5*time.Second) {
+				return
+			}
+			continue
+		}
+		logger.Info("election consumer connected", "queue", events.ElectionQueue)
+		err = consumer.Run(ctx, func(ctx context.Context, body []byte) error {
+			applyErr := events.ApplyElectionEvent(ctx, store, body)
+			if applyErr == nil {
+				return nil
+			}
+			if errors.Is(applyErr, events.ErrMetadataOnly) || errors.Is(applyErr, events.ErrElectionNotRegistered) || errors.Is(applyErr, events.ErrPermanentEvent) {
+				logger.Warn("election event ignored", "error", applyErr.Error())
+				return nil
+			}
+			logger.Error("election event was not applied", "error", applyErr.Error())
+			return applyErr
+		})
+		_ = consumer.Close()
+		if ctx.Err() != nil {
+			return
+		}
+		logger.Error("election consumer stopped", "error", err)
+		if !wait(ctx, 5*time.Second) {
+			return
+		}
+	}
+}
+
+func wait(ctx context.Context, delay time.Duration) bool {
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return false
+	case <-timer.C:
+		return true
+	}
+}
+
+func dialPublisher(ctx context.Context, uri string) (*events.Publisher, error) {
+	var last error
+	for attempt := 0; attempt < 12; attempt++ {
+		publisher, err := events.Dial(uri)
+		if err == nil {
+			return publisher, nil
+		}
+		last = err
+		timer := time.NewTimer(5 * time.Second)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return nil, last
+		case <-timer.C:
+		}
+	}
+	return nil, last
 }
 
 func envOr(name, fallback string) string {

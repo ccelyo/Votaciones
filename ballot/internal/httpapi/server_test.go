@@ -22,11 +22,12 @@ import (
 )
 
 type fixture struct {
-	handler     http.Handler
-	elections   *election.MemoryStore
-	ballots     *ballotflow.MemoryCommitStore
-	identityKey *rsa.PrivateKey
-	receiptKey  ed25519.PublicKey
+	handler        http.Handler
+	elections      *election.MemoryStore
+	ballots        *ballotflow.MemoryCommitStore
+	identityKey    *rsa.PrivateKey
+	receiptKey     ed25519.PublicKey
+	receiptPrivate ed25519.PrivateKey
 }
 
 func newFixture(t *testing.T) fixture {
@@ -66,13 +67,15 @@ func newFixture(t *testing.T) fixture {
 			Acceptor:       acceptor,
 			Elections:      elections,
 			Votes:          ballots,
+			Sealed:         ballots,
 			AllowedOrigins: []string{"https://votaciones.example"},
 			TallyToken:     "tally-secret",
 		}),
-		elections:   elections,
-		ballots:     ballots,
-		identityKey: identityKey,
-		receiptKey:  receiptPublic,
+		elections:      elections,
+		ballots:        ballots,
+		identityKey:    identityKey,
+		receiptKey:     receiptPublic,
+		receiptPrivate: receiptPrivate,
 	}
 }
 
@@ -198,6 +201,124 @@ func TestElectionParameters(t *testing.T) {
 	f.handler.ServeHTTP(missing, httptest.NewRequest(http.MethodGet, "/v1/elections/nope/parameters", nil))
 	if missing.Code != http.StatusNotFound {
 		t.Fatalf("missing election status = %d", missing.Code)
+	}
+}
+
+type recordingPublisher struct {
+	elections []string
+	times     []time.Time
+	err       error
+}
+
+func (p *recordingPublisher) VoteCast(_ context.Context, electionID string, at time.Time) error {
+	p.elections = append(p.elections, electionID)
+	p.times = append(p.times, at)
+	return p.err
+}
+
+func TestVoteCastIsPublishedOnlyForANewBallot(t *testing.T) {
+	f := newFixture(t)
+	publisher := &recordingPublisher{}
+	f.handler = NewHandler(Config{
+		Acceptor:       ballotflow.NewAcceptor(token.NewVerifier(f.elections, f.elections), ballotflow.StructuralProofVerifier{}, f.ballots, f.elections, f.receiptPrivate),
+		Elections:      f.elections,
+		Votes:          f.ballots,
+		Sealed:         f.ballots,
+		Publisher:      publisher,
+		AllowedOrigins: []string{"https://votaciones.example"},
+		Now:            func() time.Time { return time.Date(2026, 10, 20, 15, 42, 37, 0, time.UTC) },
+	})
+	const electionID = "gobernacion-antioquia-2027"
+	submission := SubmitBallotRequest{
+		ElectionID:    electionID,
+		Token:         string(signedToken(t, f.identityKey, electionID)),
+		EncryptedVote: b64("candidato-1"),
+		Proof:         b64("proof"),
+	}
+	if first := f.post(t, submission); first.Code != http.StatusCreated {
+		t.Fatalf("first submit status = %d body=%s", first.Code, first.Body)
+	}
+	if replay := f.post(t, submission); replay.Code != http.StatusOK {
+		t.Fatalf("replay status = %d body=%s", replay.Code, replay.Body)
+	}
+	submission.EncryptedVote = b64("candidato-2")
+	if conflict := f.post(t, submission); conflict.Code != http.StatusConflict {
+		t.Fatalf("conflict status = %d body=%s", conflict.Code, conflict.Body)
+	}
+	if len(publisher.elections) != 1 || publisher.elections[0] != electionID {
+		t.Fatalf("published elections = %v, want one new ballot", publisher.elections)
+	}
+	if !publisher.times[0].Equal(time.Date(2026, 10, 20, 15, 42, 37, 0, time.UTC)) {
+		t.Fatalf("published at %s", publisher.times[0])
+	}
+}
+
+func TestBallotIsStoredWhenThePublisherFails(t *testing.T) {
+	f := newFixture(t)
+	f.handler = NewHandler(Config{
+		Acceptor:       ballotflow.NewAcceptor(token.NewVerifier(f.elections, f.elections), ballotflow.StructuralProofVerifier{}, f.ballots, f.elections, f.receiptPrivate),
+		Elections:      f.elections,
+		Publisher:      &recordingPublisher{err: context.DeadlineExceeded},
+		AllowedOrigins: []string{"https://votaciones.example"},
+	})
+	recorder := f.post(t, SubmitBallotRequest{
+		ElectionID:    "gobernacion-antioquia-2027",
+		Token:         string(signedToken(t, f.identityKey, "gobernacion-antioquia-2027")),
+		EncryptedVote: b64("candidato-1"),
+		Proof:         b64("proof"),
+	})
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("status = %d body=%s", recorder.Code, recorder.Body)
+	}
+	if count := f.ballots.Count("gobernacion-antioquia-2027"); count != 1 {
+		t.Fatalf("stored ballots = %d, want 1", count)
+	}
+}
+
+func TestSealedBallotsOnlyAfterClose(t *testing.T) {
+	f := newFixture(t)
+	const electionID = "gobernacion-antioquia-2027"
+	tokenText := string(signedToken(t, f.identityKey, electionID))
+	recorder := f.post(t, SubmitBallotRequest{
+		ElectionID:    electionID,
+		Token:         tokenText,
+		EncryptedVote: b64("candidato-1"),
+		Proof:         b64("proof"),
+	})
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("submit status = %d body=%s", recorder.Code, recorder.Body)
+	}
+
+	ballots := func() *httptest.ResponseRecorder {
+		response := httptest.NewRecorder()
+		f.handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v1/elections/"+electionID+"/ballots", nil))
+		return response
+	}
+	if open := ballots(); open.Code != http.StatusConflict || !strings.Contains(open.Body.String(), "election_not_closed") {
+		t.Fatalf("open election ballots status = %d body=%s", open.Code, open.Body)
+	}
+	if _, err := f.elections.Close(context.Background(), electionID, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	closed := ballots()
+	if closed.Code != http.StatusOK {
+		t.Fatalf("closed election ballots status = %d body=%s", closed.Code, closed.Body)
+	}
+	var response ElectionBallotsResponse
+	if err := json.Unmarshal(closed.Body.Bytes(), &response); err != nil {
+		t.Fatal(err)
+	}
+	if response.ElectionID != electionID || len(response.Ballots) != 1 {
+		t.Fatalf("unexpected ballots: %+v", response)
+	}
+	if response.Ballots[0].EncryptedVote != b64("candidato-1") || response.Ballots[0].Proof != b64("proof") {
+		t.Fatalf("ballot = %+v", response.Ballots[0])
+	}
+	body := closed.Body.String()
+	for _, forbidden := range []string{tokenText, "token", "receipt", "ballot_hash", "seq"} {
+		if strings.Contains(body, forbidden) {
+			t.Fatalf("sealed ballot response contains %q: %s", forbidden, body)
+		}
 	}
 }
 

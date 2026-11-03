@@ -2,7 +2,8 @@
 
 Endpoints de mi frente (M6); ``/login`` y la confirmación de voto son de M5/M1:
 
-* ``POST /elections``                       admin: crea y registra la urna en ballot
+* ``POST /elections``                       admin: crea la urna (abierta o ``draft``)
+* ``POST /elections/{id}/open``             admin: registra en ballot una urna ``draft``
 * ``POST /elections/{id}/close``            admin: cierra la urna (irreversible)
 * ``GET  /elections/{id}/status``           admin: estado y participación
 * ``GET  /elections/{id}/parameters``       sesión: parámetros firmados para el navegador
@@ -23,6 +24,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import elections as election_service
+from app import jwt_tokens
+from app import users as user_service
 from app import tokens as token_service
 from app.auth import Principal, bearer_scheme, get_principal, require_admin
 from app.ballot_client import BallotGateway
@@ -79,6 +82,16 @@ class MFARequest(_Strict):
 class VoteConfirmationRequest(_Strict):
     election_id: str = Field(min_length=1, max_length=128)
 
+class CreateUserRequest(_Strict):
+    username: str = Field(min_length=1, max_length=100)
+    password: str = Field(min_length=1, max_length=128)
+    role: str = Field(default="voter", max_length=50)
+
+
+class UpdateUserRequest(_Strict):
+    is_active: bool
+
+
 class EnrollVoterRequest(_Strict):
     user_id: int = Field(gt=0)
     is_eligible: bool = True
@@ -94,6 +107,7 @@ class CreateElectionRequest(_Strict):
     encryption_public_key: str = Field(description="Clave pública de la elección, base64url")
     opens_at: int = Field(description="Epoch en segundos UTC")
     closes_at: int = Field(description="Epoch en segundos UTC")
+    open: bool = Field(default=True, description="false: queda en draft hasta POST /elections/{id}/open")
 
 
 class BlindTokenRequest(_Strict):
@@ -142,7 +156,8 @@ def verify_mfa(
     token = complete_mfa_challenge(
         session,
         body.challenge_id,
-        session_ttl_seconds=settings.session_ttl_seconds,
+        keys=request.app.state.keys,
+        settings=settings,
     )
 
     return {
@@ -175,13 +190,19 @@ def current_user(
 
 @router.post("/logout", status_code=http_status.HTTP_204_NO_CONTENT)
 def logout(
+    request: Request,
     principal: Principal = Depends(get_principal),
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     session: Session = Depends(get_session),
 ) -> Response:
     if credentials is None:
         raise Unauthenticated("authentication required")
-    revoke_session(session, credentials.credentials)
+    revoke_session(
+        session,
+        credentials.credentials.strip(),
+        keys=request.app.state.keys,
+        settings=request.app.state.settings,
+    )
     return Response(status_code=http_status.HTTP_204_NO_CONTENT)
 
 
@@ -285,6 +306,12 @@ def list_open_elections(
     ]
 
 
+@router.get("/.well-known/jwks.json")
+def jwks(keys: IdentityKeys = Depends(get_keys)) -> dict:
+    """Clave pública con la que el Gateway valida los JWT de acceso."""
+    return jwt_tokens.jwks(keys)
+
+
 @router.get("/keys")
 def public_keys(keys: IdentityKeys = Depends(get_keys)) -> dict:
     return {
@@ -320,7 +347,19 @@ def create_election(
         encryption_public_key=b64url_decode(body.encryption_public_key, "encryption_public_key"),
         opens_at=body.opens_at,
         closes_at=body.closes_at,
+        publish=body.open,
     )
+    return {"election_id": election_service.election_ref(election), "status": election.status}
+
+
+@router.post("/elections/{election_id}/open")
+def open_election(
+    election_id: str,
+    _: Principal = Depends(require_admin),
+    session: Session = Depends(get_session),
+    ballot: BallotGateway = Depends(get_ballot),
+) -> dict:
+    election = election_service.open_election(session, ballot, election_id)
     return {"election_id": election_service.election_ref(election), "status": election.status}
 
 
@@ -390,6 +429,33 @@ def list_users(
         {"id": user_id, "username": username, "role": role}
         for user_id, username, role in rows
     ]
+
+
+def _user_json(user: User, role: str) -> dict:
+    return {"id": user.id, "username": user.username, "role": role, "is_active": user.is_active}
+
+
+@router.post("/users", status_code=201)
+def create_user(
+    body: CreateUserRequest,
+    _: Principal = Depends(require_admin),
+    session: Session = Depends(get_session),
+) -> dict:
+    user, role = user_service.create_user(
+        session, username=body.username, password=body.password, role=body.role
+    )
+    return _user_json(user, role)
+
+
+@router.patch("/users/{user_id}")
+def update_user(
+    user_id: int,
+    body: UpdateUserRequest,
+    _: Principal = Depends(require_admin),
+    session: Session = Depends(get_session),
+) -> dict:
+    user, role = user_service.set_active(session, user_id=user_id, is_active=body.is_active)
+    return _user_json(user, role)
 
 
 # --- padrón electoral -------------------------------------------------------

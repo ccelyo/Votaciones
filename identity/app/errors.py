@@ -37,6 +37,18 @@ class ElectionAlreadyExists(IdentityError):
     status_code, code = 409, "election_already_exists"
 
 
+class ElectionClosed(IdentityError):
+    status_code, code = 409, "election_closed"
+
+
+class UserNotFound(IdentityError):
+    status_code, code = 404, "user_not_found"
+
+
+class UserAlreadyExists(IdentityError):
+    status_code, code = 409, "user_already_exists"
+
+
 class ElectionNotOpen(IdentityError):
     status_code, code = 409, "election_not_open"
 

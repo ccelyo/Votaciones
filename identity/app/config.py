@@ -68,8 +68,12 @@ class Settings(BaseSettings):
     # Tiempo de vida del challenge MFA, en segundos.
     mfa_challenge_ttl_seconds: int = 300
 
-    # Duración de la sesión autenticada, en segundos.
+    # Duración de la sesión autenticada, en segundos. Es también el ``exp`` del JWT.
     session_ttl_seconds: int = 3600
+
+    # Claims ``iss`` y ``aud`` del JWT; el Gateway debe validar los mismos valores.
+    jwt_issuer: str = "votaciones-identity"
+    jwt_audience: str = "votaciones"
 
     @field_validator("allowed_origins", mode="before")
     @classmethod
