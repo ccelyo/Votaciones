@@ -5,6 +5,7 @@
 #   Frontend  http://localhost:3000   (otro puerto: WEB_PORT=3100 docker compose up --build)
 #   Gateway   http://localhost:8088   (GATEWAY_PORT; catálogo de rutas en /api)
 #   Identity  http://localhost:8000   (IDENTITY_PORT)
+#   Election  http://localhost:8001   (ELECTION_PORT)
 #   Ballot    http://localhost:8080   (BALLOT_PORT)
 #   Analytics http://localhost:8090   (ANALYTICS_PORT)
 #   RabbitMQ  http://localhost:15672  (RABBITMQ_UI_PORT, guest / guest)
@@ -14,6 +15,9 @@
 #
 # Empezar de cero (borra usuarios, elecciones, votos y claves):
 #   docker compose down -v
+#
+# Election en desarrollo acepta X-Dev-User / X-Dev-Roles sin token, p. ej.:
+#   curl -H 'X-Dev-User: 1' -H 'X-Dev-Roles: admin' localhost:8001/elections
 #
 # SOLO DESARROLLO: las contraseñas y la clave de recibos de abajo son públicas.
 # Para usar otra clave de recibos: BALLOT_RECEIPT_PRIVATE_KEY=... docker compose up
@@ -72,6 +76,38 @@ services:
       IDENTITY_MFA_CODE: "123456"
     volumes: ["identity-keys:/app/keys"]
     ports: ["${IDENTITY_PORT:-8000}:8000"]
+
+  # Base «Elections», exclusiva del servicio Election.
+  postgres-elections:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: elections
+      POSTGRES_USER: elections
+      POSTGRES_PASSWORD: elections
+    volumes:
+      - elections-data:/var/lib/postgresql/data
+      # Solo se ejecuta la primera vez, con el volumen vacío.
+      - ./election/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U elections -d elections"]
+      interval: 3s
+      retries: 30
+
+  election:
+    build: ./election
+    depends_on:
+      postgres-elections:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      ELECTION_DATABASE_URL: postgresql://elections:elections@postgres-elections:5432/elections
+      ELECTION_RABBITMQ_URI: amqp://guest:guest@rabbitmq:5672/%2f
+      ELECTION_JWT_SECRET: ${GATEWAY_JWT_SECRET:-}
+      ELECTION_DEV_AUTH: "true"
+      ELECTION_ALLOWED_ORIGINS: http://localhost:${WEB_PORT:-3000},http://127.0.0.1:${WEB_PORT:-3000}
+    volumes: ["election-keys:/app/keys"]
+    ports: ["${ELECTION_PORT:-8001}:8000"]
 
   # Punto de entrada único de los clientes (web SSR, app móvil y CLI).
   gateway:
@@ -171,5 +207,7 @@ volumes:
   postgres-data:
   mongo-data:
   identity-keys:
+  elections-data:
+  election-keys:
   results-data:
   notifications-data:
