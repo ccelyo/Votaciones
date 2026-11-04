@@ -1,0 +1,1017 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vista de descomposición · Votaciones P2</title>
+<style>
+body{margin:0;background:#f4f4f4;font-family:'Open Sans','Segoe UI',Arial,sans-serif;color:#222;line-height:1.5}
+main{max-width:1640px;margin:0 auto;padding:24px 16px}
+.card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:12px;overflow-x:auto}
+.card svg{min-width:1100px;display:block}
+h2{font-size:18px;margin:28px 0 10px;color:#00A651}
+p{max-width:1100px}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:14px}
+th,td{border:1px solid #ddd;padding:8px 10px;text-align:left;vertical-align:top}
+th{background:#f0f0f0}
+h2{font-size:22px}h3{font-size:18px;margin:28px 0 10px;color:#00A651}h4{font-size:16px;margin:22px 0 8px}code{font-size:13px;background:#eee;padding:1px 4px;border-radius:3px}ul{max-width:1100px}table{margin-bottom:8px}
+</style></head><body><main>
+<div class="card"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1700 1418" width="100%" font-family="'Open Sans','Segoe UI',Arial,sans-serif">
+<rect width="1700" height="1418" fill="#fff"/>
+<text x="850.0" y="34.0" font-size="22" font-weight="600" text-anchor="middle" fill="#222">Votaciones (espivota) · Vista de descomposición (Prototipo 2)</text>
+<rect x="30" y="50" width="1640" height="1184.0" rx="6" fill="none" stroke="#00A651" stroke-width="3"/>
+<text x="42.0" y="66.0" font-size="12" font-weight="600" text-anchor="start" fill="#00A651">Sistema Votaciones</text>
+<rect x="48" y="78.0" width="1604" height="212.0" rx="5" fill="#F7F7F7" stroke="#B0B0B0" stroke-width="1.5" stroke-dasharray="8 5"/>
+<text x="62.0" y="98.0" font-size="13" font-weight="600" text-anchor="start" fill="#555">Subsistema de presentación</text>
+<rect x="62.0" y="108.0" width="774.0" height="176.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="72.0" y="128.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">Web SSR</text>
+<text x="72.0" y="143.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">platform/ · Next.js · TypeScript</text>
+<rect x="72.0" y="148.0" width="242.0" height="122.0" rx="3" fill="#FAFAFA" stroke="#A0A0A0" stroke-width="1.5"/>
+<text x="80.0" y="164.0" font-size="12" font-weight="600" text-anchor="start" fill="#222">Servidor SSR</text>
+<rect x="80.0" y="172.0" width="226.0" height="24" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="87.0" y="188.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">app/ (páginas y rutas)</text>
+<rect x="80.0" y="202.0" width="226.0" height="24" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="87.0" y="218.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">app/api/[...path] (proxy)</text>
+<rect x="80.0" y="232.0" width="226.0" height="24" rx="3" fill="#E0F7FA" stroke="#00ACC1" stroke-width="1.3"/>
+<text x="87.0" y="248.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">lib/server/gateway.ts</text>
+<rect x="322.0" y="148.0" width="302.5" height="122.0" rx="3" fill="#FAFAFA" stroke="#A0A0A0" stroke-width="1.5"/>
+<text x="330.0" y="164.0" font-size="12" font-weight="600" text-anchor="start" fill="#222">Cliente navegador</text>
+<rect x="330.0" y="172.0" width="286.5" height="24" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="337.0" y="188.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">components/ (auth, admin, election…)</text>
+<rect x="330.0" y="202.0" width="286.5" height="24" rx="3" fill="#E0F7FA" stroke="#00ACC1" stroke-width="1.3"/>
+<text x="337.0" y="218.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">lib/api.ts</text>
+<rect x="330.0" y="232.0" width="286.5" height="24" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="337.0" y="248.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">lib/m4/ (blind, token, receipt…)</text>
+<rect x="632.4" y="148.0" width="193.6" height="122.0" rx="3" fill="#FAFAFA" stroke="#A0A0A0" stroke-width="1.5"/>
+<text x="640.4" y="164.0" font-size="12" font-weight="600" text-anchor="start" fill="#222">Compartido</text>
+<rect x="640.4" y="172.0" width="177.6" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="647.4" y="188.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">lib/types/</text>
+<rect x="640.4" y="202.0" width="177.6" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="647.4" y="218.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">lib/election-status · format</text>
+<rect x="640.4" y="232.0" width="177.6" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="647.4" y="248.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">lib/mock-api (modo mock)</text>
+<rect x="850.0" y="108.0" width="387.0" height="176.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="860.0" y="128.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">App móvil</text>
+<text x="860.0" y="143.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">mobile/ · Flutter · Dart</text>
+<rect x="860.0" y="148.0" width="180.5" height="24" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="867.0" y="164.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">main.dart (pantallas)</text>
+<rect x="1046.5" y="148.0" width="180.5" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="1053.5" y="164.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">vote.dart (flujo de voto)</text>
+<rect x="860.0" y="178.0" width="180.5" height="24" rx="3" fill="#E0F7FA" stroke="#00ACC1" stroke-width="1.3"/>
+<text x="867.0" y="194.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">gateway.dart</text>
+<rect x="1046.5" y="178.0" width="180.5" height="24" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="1053.5" y="194.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">protocol/blind</text>
+<rect x="860.0" y="208.0" width="180.5" height="24" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="867.0" y="224.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">protocol/token</text>
+<rect x="1046.5" y="208.0" width="180.5" height="24" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="1053.5" y="224.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">protocol/encrypt</text>
+<rect x="860.0" y="238.0" width="180.5" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="867.0" y="254.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">protocol/codec</text>
+<rect x="1251.0" y="108.0" width="387.0" height="176.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="1261.0" y="128.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">CLI administración</text>
+<text x="1261.0" y="143.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">admin-cli/ · Java · picocli</text>
+<rect x="1261.0" y="148.0" width="180.5" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="1268.0" y="164.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">AdminCli (arranque)</text>
+<rect x="1447.5" y="148.0" width="180.5" height="24" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="1454.5" y="164.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">commands/login · logout</text>
+<rect x="1261.0" y="178.0" width="180.5" height="24" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="1268.0" y="194.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">commands/users · whoami</text>
+<rect x="1447.5" y="178.0" width="180.5" height="24" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="1454.5" y="194.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">commands/voters</text>
+<rect x="1261.0" y="208.0" width="180.5" height="24" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="1268.0" y="224.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">commands/elections</text>
+<rect x="1447.5" y="208.0" width="180.5" height="24" rx="3" fill="#E0F7FA" stroke="#00ACC1" stroke-width="1.3"/>
+<text x="1454.5" y="224.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">ApiClient</text>
+<rect x="1261.0" y="238.0" width="180.5" height="24" rx="3" fill="#FFF3E0" stroke="#FB8C00" stroke-width="1.3"/>
+<text x="1268.0" y="254.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">SessionStore</text>
+<rect x="1447.5" y="238.0" width="180.5" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="1454.5" y="254.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">ApiException</text>
+<rect x="48" y="312.0" width="1604" height="114.0" rx="5" fill="#F7F7F7" stroke="#B0B0B0" stroke-width="1.5" stroke-dasharray="8 5"/>
+<text x="62.0" y="332.0" font-size="13" font-weight="600" text-anchor="start" fill="#555">Subsistema de comunicación</text>
+<rect x="62.0" y="342.0" width="1576.0" height="78.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="72.0" y="362.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">API Gateway</text>
+<text x="72.0" y="377.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">gateway/ · Node.js · TypeScript</text>
+<rect x="72.0" y="382.0" width="217.1" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="79.0" y="398.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">server.ts (arranque)</text>
+<rect x="295.1" y="382.0" width="217.1" height="24" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="302.1" y="398.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">app.ts (cadena HTTP y proxy)</text>
+<rect x="518.3" y="382.0" width="217.1" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="525.3" y="398.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">routes.ts (catálogo)</text>
+<rect x="741.4" y="382.0" width="217.1" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="748.4" y="398.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">router.ts (enrutamiento)</text>
+<rect x="964.6" y="382.0" width="217.1" height="24" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="971.6" y="398.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">jwt.ts (RS256 + JWKS)</text>
+<rect x="1187.7" y="382.0" width="217.1" height="24" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="1194.7" y="398.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">rateLimit.ts</text>
+<rect x="1410.9" y="382.0" width="217.1" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="1417.9" y="398.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">config.ts</text>
+<rect x="48" y="448.0" width="1604" height="318.0" rx="5" fill="#F7F7F7" stroke="#B0B0B0" stroke-width="1.5" stroke-dasharray="8 5"/>
+<text x="62.0" y="468.0" font-size="13" font-weight="600" text-anchor="start" fill="#555">Subsistema de lógica · identidad y elecciones</text>
+<rect x="62.0" y="478.0" width="823.4" height="282.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="72.0" y="498.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">identity/  (Auth + Identity)</text>
+<text x="72.0" y="513.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">identity/ · Python · FastAPI · un solo despliegue</text>
+<rect x="72.0" y="518.0" width="235.0" height="212.0" rx="3" fill="#FAFAFA" stroke="#A0A0A0" stroke-width="1.5"/>
+<text x="80.0" y="534.0" font-size="12" font-weight="600" text-anchor="start" fill="#222">Auth</text>
+<rect x="80.0" y="542.0" width="219.0" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="87.0" y="558.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">services/login</text>
+<rect x="80.0" y="572.0" width="219.0" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="87.0" y="588.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">services/sessions</text>
+<rect x="80.0" y="602.0" width="219.0" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="87.0" y="618.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">services/users</text>
+<rect x="80.0" y="632.0" width="219.0" height="24" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="87.0" y="648.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">core/jwt_tokens</text>
+<rect x="80.0" y="662.0" width="219.0" height="24" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="87.0" y="678.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">core/security (hash)</text>
+<rect x="80.0" y="692.0" width="219.0" height="24" rx="3" fill="#FFF3E0" stroke="#FB8C00" stroke-width="1.3"/>
+<text x="87.0" y="708.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">db/models → Auth DB</text>
+<rect x="315.0" y="518.0" width="317.3" height="212.0" rx="3" fill="#FAFAFA" stroke="#A0A0A0" stroke-width="1.5"/>
+<text x="323.0" y="534.0" font-size="12" font-weight="600" text-anchor="start" fill="#222">Identity</text>
+<rect x="323.0" y="542.0" width="147.7" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="330.0" y="558.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">services/voter_roll</text>
+<rect x="476.7" y="542.0" width="147.7" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="483.7" y="558.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">services/tokens</text>
+<rect x="323.0" y="572.0" width="147.7" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="330.0" y="588.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">services/elections*</text>
+<rect x="476.7" y="572.0" width="147.7" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="483.7" y="588.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">services/parameters</text>
+<rect x="323.0" y="602.0" width="147.7" height="24" rx="3" fill="#FFF3E0" stroke="#FB8C00" stroke-width="1.3"/>
+<text x="330.0" y="618.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">db/census → Census</text>
+<rect x="476.7" y="602.0" width="147.7" height="24" rx="3" fill="#E0F7FA" stroke="#00ACC1" stroke-width="1.3"/>
+<text x="483.7" y="618.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">clients/blind_signature</text>
+<rect x="323.0" y="632.0" width="147.7" height="24" rx="3" fill="#E0F7FA" stroke="#00ACC1" stroke-width="1.3"/>
+<text x="330.0" y="648.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">clients/ballot_client</text>
+<rect x="476.7" y="632.0" width="147.7" height="24" rx="3" fill="#E0F7FA" stroke="#00ACC1" stroke-width="1.3"/>
+<text x="483.7" y="648.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">pb/ (gRPC)</text>
+<rect x="640.4" y="518.0" width="235.0" height="212.0" rx="3" fill="#FAFAFA" stroke="#A0A0A0" stroke-width="1.5"/>
+<text x="648.4" y="534.0" font-size="12" font-weight="600" text-anchor="start" fill="#222">Compartido</text>
+<rect x="648.4" y="542.0" width="219.0" height="24" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="655.4" y="558.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">api/routes</text>
+<rect x="648.4" y="572.0" width="219.0" height="24" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="655.4" y="588.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">core/auth</text>
+<rect x="648.4" y="602.0" width="219.0" height="24" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="655.4" y="618.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">core/keys</text>
+<rect x="648.4" y="632.0" width="219.0" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="655.4" y="648.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">core/config · errors</text>
+<rect x="648.4" y="662.0" width="219.0" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="655.4" y="678.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">core/encoding</text>
+<rect x="648.4" y="692.0" width="219.0" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="655.4" y="708.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">main.py</text>
+<text x="72.0" y="746.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#666" font-style="italic">* Urnas del P1; el servicio Election las reemplaza (el Gateway aún enruta /elections a identity).</text>
+<rect x="899.4" y="478.0" width="296.4" height="282.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="909.4" y="498.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">Blind Signature</text>
+<text x="909.4" y="513.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">blind-signature/ · Python · FastAPI</text>
+<rect x="909.4" y="518.0" width="276.4" height="24" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="916.4" y="534.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">main.py (API /v1/sign, /v1/keys)</text>
+<rect x="909.4" y="548.0" width="276.4" height="24" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="916.4" y="564.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">blind_rsa.py (RFC 9474)</text>
+<rect x="909.4" y="578.0" width="276.4" height="24" rx="3" fill="#FFF3E0" stroke="#FB8C00" stroke-width="1.3"/>
+<text x="916.4" y="594.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">key_store.py (claves por urna)</text>
+<rect x="909.4" y="608.0" width="276.4" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="916.4" y="624.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">config.py</text>
+<rect x="1209.8" y="478.0" width="428.2" height="282.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="1219.8" y="498.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">Election</text>
+<text x="1219.8" y="513.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">election/ · Python · FastAPI</text>
+<rect x="1219.8" y="518.0" width="201.1" height="24" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="1226.8" y="534.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">api.py</text>
+<rect x="1426.9" y="518.0" width="201.1" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="1433.9" y="534.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">service.py</text>
+<rect x="1219.8" y="548.0" width="201.1" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="1226.8" y="564.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">rules.py</text>
+<rect x="1426.9" y="548.0" width="201.1" height="24" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="1433.9" y="564.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">parameters.py</text>
+<rect x="1219.8" y="578.0" width="201.1" height="24" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="1226.8" y="594.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">keys.py (llave de urna)</text>
+<rect x="1426.9" y="578.0" width="201.1" height="24" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="1433.9" y="594.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">auth.py</text>
+<rect x="1219.8" y="608.0" width="201.1" height="24" rx="3" fill="#FFF3E0" stroke="#FB8C00" stroke-width="1.3"/>
+<text x="1226.8" y="624.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">models.py → Elections</text>
+<rect x="1426.9" y="608.0" width="201.1" height="24" rx="3" fill="#F3E5F5" stroke="#8E24AA" stroke-width="1.3"/>
+<text x="1433.9" y="624.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">events.py (productor)</text>
+<rect x="1219.8" y="638.0" width="201.1" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="1226.8" y="654.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">main · config · errors</text>
+<rect x="1426.9" y="638.0" width="201.1" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="1433.9" y="654.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">encoding.py</text>
+<rect x="48" y="788.0" width="1604" height="264.0" rx="5" fill="#F7F7F7" stroke="#B0B0B0" stroke-width="1.5" stroke-dasharray="8 5"/>
+<text x="62.0" y="808.0" font-size="13" font-weight="600" text-anchor="start" fill="#555">Subsistema de lógica · voto, escrutinio y consumidores de eventos</text>
+<rect x="62.0" y="818.0" width="408.0" height="228.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="72.0" y="838.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">Ballot</text>
+<text x="72.0" y="853.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">ballot/ · Go</text>
+<rect x="72.0" y="858.0" width="191.0" height="24" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="79.0" y="874.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">httpapi (voto anónimo)</text>
+<rect x="269.0" y="858.0" width="191.0" height="24" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="276.0" y="874.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">server (gRPC admin)</text>
+<rect x="72.0" y="888.0" width="191.0" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="79.0" y="904.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">ballot (acceptor, proof)</text>
+<rect x="269.0" y="888.0" width="191.0" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="276.0" y="904.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">election (store)</text>
+<rect x="72.0" y="918.0" width="191.0" height="24" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="79.0" y="934.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">token (token, spent)</text>
+<rect x="269.0" y="918.0" width="191.0" height="24" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="276.0" y="934.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">token (receipt Ed25519)</text>
+<rect x="72.0" y="948.0" width="191.0" height="24" rx="3" fill="#FFF3E0" stroke="#FB8C00" stroke-width="1.3"/>
+<text x="79.0" y="964.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">mongostore → Votes</text>
+<rect x="269.0" y="948.0" width="191.0" height="24" rx="3" fill="#F3E5F5" stroke="#8E24AA" stroke-width="1.3"/>
+<text x="276.0" y="964.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">events (votes.cast)</text>
+<rect x="72.0" y="978.0" width="191.0" height="24" rx="3" fill="#F3E5F5" stroke="#8E24AA" stroke-width="1.3"/>
+<text x="79.0" y="994.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">events (consume)</text>
+<rect x="269.0" y="978.0" width="191.0" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="276.0" y="994.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">pb (gRPC)</text>
+<rect x="72.0" y="1008.0" width="191.0" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="79.0" y="1024.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">main.go</text>
+<rect x="484.0" y="818.0" width="326.4" height="228.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="494.0" y="838.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">Tally</text>
+<text x="494.0" y="853.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">tally/ · Go</text>
+<rect x="494.0" y="858.0" width="150.2" height="24" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="501.0" y="874.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">httpapi</text>
+<rect x="650.2" y="858.0" width="150.2" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="657.2" y="874.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">tally (orquestador)</text>
+<rect x="494.0" y="888.0" width="150.2" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="501.0" y="904.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">count</text>
+<rect x="650.2" y="888.0" width="150.2" height="24" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="657.2" y="904.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">decrypt</text>
+<rect x="494.0" y="918.0" width="150.2" height="24" rx="3" fill="#E0F7FA" stroke="#00ACC1" stroke-width="1.3"/>
+<text x="501.0" y="934.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">ballotclient</text>
+<rect x="650.2" y="918.0" width="150.2" height="24" rx="3" fill="#F3E5F5" stroke="#8E24AA" stroke-width="1.3"/>
+<text x="657.2" y="934.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">publisher</text>
+<rect x="494.0" y="948.0" width="150.2" height="24" rx="3" fill="#F3E5F5" stroke="#8E24AA" stroke-width="1.3"/>
+<text x="501.0" y="964.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">events (contrato)</text>
+<rect x="650.2" y="948.0" width="150.2" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="657.2" y="964.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">config · main.go</text>
+<rect x="824.4" y="818.0" width="326.4" height="228.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="834.4" y="838.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">Analytics</text>
+<text x="834.4" y="853.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">analytics/ · Rust · axum</text>
+<rect x="834.4" y="858.0" width="150.2" height="24" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="841.4" y="874.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">http.rs</text>
+<rect x="990.6" y="858.0" width="150.2" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="997.6" y="874.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">report.rs (cálculo puro)</text>
+<rect x="834.4" y="888.0" width="150.2" height="24" rx="3" fill="#FFF3E0" stroke="#FB8C00" stroke-width="1.3"/>
+<text x="841.4" y="904.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">store.rs → Results</text>
+<rect x="990.6" y="888.0" width="150.2" height="24" rx="3" fill="#F3E5F5" stroke="#8E24AA" stroke-width="1.3"/>
+<text x="997.6" y="904.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">consumer.rs</text>
+<rect x="834.4" y="918.0" width="150.2" height="24" rx="3" fill="#F3E5F5" stroke="#8E24AA" stroke-width="1.3"/>
+<text x="841.4" y="934.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">events.rs (contratos)</text>
+<rect x="990.6" y="918.0" width="150.2" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="997.6" y="934.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">main.rs</text>
+<rect x="834.4" y="948.0" width="150.2" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="841.4" y="964.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">bin/publish_sample</text>
+<rect x="1164.7" y="818.0" width="473.3" height="228.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="1174.7" y="838.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">Notifications</text>
+<text x="1174.7" y="853.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">notification/ · Node.js · TypeScript</text>
+<rect x="1174.7" y="858.0" width="124.9" height="152.0" rx="3" fill="#FAFAFA" stroke="#A0A0A0" stroke-width="1.5"/>
+<text x="1182.7" y="874.0" font-size="12" font-weight="600" text-anchor="start" fill="#222">domain</text>
+<rect x="1182.7" y="882.0" width="108.9" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="1189.7" y="898.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">event.ts</text>
+<rect x="1182.7" y="912.0" width="108.9" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="1189.7" y="928.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">notification.ts</text>
+<rect x="1307.7" y="858.0" width="124.9" height="152.0" rx="3" fill="#FAFAFA" stroke="#A0A0A0" stroke-width="1.5"/>
+<text x="1315.7" y="874.0" font-size="12" font-weight="600" text-anchor="start" fill="#222">application</text>
+<rect x="1315.7" y="882.0" width="108.9" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="1322.7" y="898.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">notification-service</text>
+<rect x="1440.6" y="858.0" width="187.4" height="152.0" rx="3" fill="#FAFAFA" stroke="#A0A0A0" stroke-width="1.5"/>
+<text x="1448.6" y="874.0" font-size="12" font-weight="600" text-anchor="start" fill="#222">infrastructure</text>
+<rect x="1448.6" y="882.0" width="171.4" height="24" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="1455.6" y="898.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">http.ts</text>
+<rect x="1448.6" y="912.0" width="171.4" height="24" rx="3" fill="#F3E5F5" stroke="#8E24AA" stroke-width="1.3"/>
+<text x="1455.6" y="928.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">rabbit-consumer.ts</text>
+<rect x="1448.6" y="942.0" width="171.4" height="24" rx="3" fill="#FFF3E0" stroke="#FB8C00" stroke-width="1.3"/>
+<text x="1455.6" y="958.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">mongo-…-repository → Notif.</text>
+<rect x="1448.6" y="972.0" width="171.4" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="1455.6" y="988.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">config.ts</text>
+<text x="1174.7" y="1026.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#666" font-style="italic">index.ts compone las capas (arranque).</text>
+<rect x="48" y="1074.0" width="1604" height="144.0" rx="5" fill="#F7F7F7" stroke="#B0B0B0" stroke-width="1.5" stroke-dasharray="8 5"/>
+<text x="62.0" y="1094.0" font-size="13" font-weight="600" text-anchor="start" fill="#555">Contratos e infraestructura</text>
+<rect x="62.0" y="1104.0" width="1576.0" height="108.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="72.0" y="1124.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">Contratos e infraestructura compartida</text>
+<text x="72.0" y="1139.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">raíz del repositorio</text>
+<rect x="72.0" y="1144.0" width="254.3" height="24" rx="3" fill="#E0F7FA" stroke="#00ACC1" stroke-width="1.3"/>
+<text x="79.0" y="1160.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">proto/ballot.proto</text>
+<rect x="332.3" y="1144.0" width="254.3" height="24" rx="3" fill="#F3E5F5" stroke="#8E24AA" stroke-width="1.3"/>
+<text x="339.3" y="1160.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">rabbitmq/definitions.json</text>
+<rect x="592.7" y="1144.0" width="254.3" height="24" rx="3" fill="#F3E5F5" stroke="#8E24AA" stroke-width="1.3"/>
+<text x="599.7" y="1160.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">rabbitmq/rabbitmq.conf</text>
+<rect x="853.0" y="1144.0" width="254.3" height="24" rx="3" fill="#FFF3E0" stroke="#FB8C00" stroke-width="1.3"/>
+<text x="860.0" y="1160.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">identity/schema.sql · seed</text>
+<rect x="1113.3" y="1144.0" width="254.3" height="24" rx="3" fill="#FFF3E0" stroke="#FB8C00" stroke-width="1.3"/>
+<text x="1120.3" y="1160.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">census/schema.sql</text>
+<rect x="1373.7" y="1144.0" width="254.3" height="24" rx="3" fill="#FFF3E0" stroke="#FB8C00" stroke-width="1.3"/>
+<text x="1380.7" y="1160.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">election/schema.sql</text>
+<rect x="72.0" y="1174.0" width="254.3" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="79.0" y="1190.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">docker-compose.yml</text>
+<rect x="332.3" y="1174.0" width="254.3" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="339.3" y="1190.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">*/Dockerfile</text>
+<rect x="592.7" y="1174.0" width="254.3" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="599.7" y="1190.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">*/cloudbuild.yaml</text>
+<rect x="853.0" y="1174.0" width="254.3" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="860.0" y="1190.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">*/docs (contratos HTTP y eventos)</text>
+<rect x="30" y="1252.0" width="1640" height="148" rx="5" fill="#fff" stroke="#ddd"/>
+<text x="44.0" y="1272.0" font-size="14" font-weight="600" text-anchor="start" fill="#222">Notación</text>
+<rect x="44" y="1288" width="74" height="44" rx="4" fill="#fff" stroke="#808080" stroke-width="2"/>
+<rect x="54" y="1306" width="54" height="18" rx="3" fill="#E8F5E9" stroke="#00A651"/>
+<text x="130.0" y="1304.0" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Contención = relación «es parte de»</text>
+<text x="130.0" y="1320.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">(el módulo interior es parte del exterior)</text>
+<rect x="44" y="1344" width="74" height="28" rx="4" fill="#F7F7F7" stroke="#B0B0B0" stroke-width="1.5" stroke-dasharray="8 5"/>
+<text x="130.0" y="1358.0" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Subsistema: agrupación lógica de módulos</text>
+<text x="130.0" y="1372.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">Recuadro gris sólido: componente o submódulo</text>
+<text x="450.0" y="1280.0" font-size="12" font-weight="600" text-anchor="start" fill="#222">Color del módulo hoja = responsabilidad principal</text>
+<rect x="450" y="1288" width="22" height="16" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="480.0" y="1300.5" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Interfaz: API, UI o CLI</text>
+<rect x="450" y="1312" width="22" height="16" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="480.0" y="1324.5" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Dominio y casos de uso</text>
+<rect x="450" y="1336" width="22" height="16" rx="3" fill="#FFF3E0" stroke="#FB8C00" stroke-width="1.3"/>
+<text x="480.0" y="1348.5" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Acceso a datos</text>
+<rect x="450" y="1360" width="22" height="16" rx="3" fill="#F3E5F5" stroke="#8E24AA" stroke-width="1.3"/>
+<text x="480.0" y="1372.5" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Mensajería AMQP</text>
+<rect x="780" y="1288" width="22" height="16" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="810.0" y="1300.5" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Seguridad y criptografía</text>
+<rect x="780" y="1312" width="22" height="16" rx="3" fill="#E0F7FA" stroke="#00ACC1" stroke-width="1.3"/>
+<text x="810.0" y="1324.5" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Cliente de otro servicio</text>
+<rect x="780" y="1336" width="22" height="16" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="810.0" y="1348.5" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Arranque, configuración y soporte</text>
+<text x="450.0" y="1394.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">Las flechas «→ BD» indican el almacén de datos que el módulo encapsula; los conectores en ejecución están en la vista C&amp;C.</text>
+</svg>
+</div>
+<p>La vista de descomposición muestra cómo se divide el sistema en <strong>módulos</strong> (unidades de implementación) y qué responsabilidad tiene cada uno. Es una vista estática: no muestra procesos ni conectores en ejecución (eso es la vista C&amp;C), sino cómo está organizado el código del repositorio. Los nombres de los componentes coinciden con los de la vista C&amp;C para poder cruzar las dos vistas.</p>
+<p>La jerarquía tiene cuatro niveles:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Nivel</th>
+<th>Elemento</th>
+<th>En el repositorio</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0</td>
+<td>Sistema Votaciones (espivota)</td>
+<td>El repositorio completo</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>Subsistema</td>
+<td>Agrupación lógica de componentes (presentación, comunicación, lógica, contratos)</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>Componente</td>
+<td>Una carpeta de primer nivel con su propio <code>Dockerfile</code> (<code>ballot/</code>, <code>gateway/</code>, …)</td>
+</tr>
+<tr class="even">
+<td>3</td>
+<td>Módulo y submódulo</td>
+<td>Paquete o archivo de código (<code>internal/token</code>, <code>app/services/login.py</code>, …)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="descripción-de-las-relaciones">Descripción de las relaciones</h3>
+<ul>
+<li><strong>Es parte de (contención).</strong> Es la única relación de la vista: cada módulo pertenece exactamente a un módulo padre, así que la descomposición forma un árbol. En el diagrama se representa anidando un recuadro dentro de otro.</li>
+<li><strong>Responsabilidad del módulo hoja (color).</strong> No es una relación entre módulos. Indica la responsabilidad principal del módulo: interfaz, dominio, acceso a datos, mensajería, seguridad y criptografía, cliente de otro servicio o arranque y soporte. Así se ve en cada componente la división API → lógica → persistencia → eventos que pide el plan del prototipo.</li>
+<li><strong>Encapsula un almacén (<code>→ BD</code>).</strong> Señala el único módulo de cada componente que accede a su base de datos. Ningún otro módulo, ni de otro componente, conoce esa base.</li>
+<li><strong>Usa.</strong> En las tablas de abajo, la columna <em>Usa</em> indica de qué módulos del mismo componente depende cada uno (según sus <code>import</code>). Las dependencias entre componentes no pasan por código compartido: ocurren en ejecución por HTTP o AMQP y se documentan en la vista C&amp;C.</li>
+</ul>
+<h3 id="descripción-de-los-elementos">Descripción de los elementos</h3>
+<h4 id="nivel-1-subsistemas">Nivel 1: subsistemas</h4>
+<table>
+<thead>
+<tr class="header">
+<th>Subsistema</th>
+<th>Componentes</th>
+<th>Responsabilidad</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Presentación</td>
+<td>Web SSR, App móvil, CLI administración</td>
+<td>Interfaces de votante y administrador. Ciegan el token y cifran el voto en el cliente</td>
+</tr>
+<tr class="even">
+<td>Comunicación</td>
+<td>API Gateway</td>
+<td>Punto de entrada único: enrutamiento, validación de JWT, CORS y límites de tasa</td>
+</tr>
+<tr class="odd">
+<td>Lógica: identidad y elecciones</td>
+<td>identity (Auth + Identity), Blind Signature, Election</td>
+<td>Usuarios y sesiones, padrón y elegibilidad, firma ciega de credenciales, ciclo de vida de las urnas</td>
+</tr>
+<tr class="even">
+<td>Lógica: voto, escrutinio y consumidores</td>
+<td>Ballot, Tally, Analytics, Notifications</td>
+<td>Recepción anónima del voto, escrutinio, analíticas y notificaciones a partir de eventos</td>
+</tr>
+<tr class="odd">
+<td>Contratos e infraestructura</td>
+<td><code>proto/</code>, <code>rabbitmq/</code>, esquemas SQL, <code>docker-compose.yml</code></td>
+<td>Contratos compartidos entre componentes y su configuración de ejecución</td>
+</tr>
+</tbody>
+</table>
+<h4 id="nivel-2-y-3-componentes-y-módulos">Nivel 2 y 3: componentes y módulos</h4>
+<p><strong>Web SSR</strong> (<code>platform/</code>, Next.js · TypeScript). Se divide igual que en la vista C&amp;C.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Submódulo</th>
+<th>Módulo</th>
+<th>Responsabilidad</th>
+<th>Usa</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Servidor SSR</td>
+<td><code>app/</code></td>
+<td>Páginas y rutas: login, registro, panel de administración, votación y recibo</td>
+<td><code>components/</code>, <code>lib/server</code></td>
+</tr>
+<tr class="even">
+<td>Servidor SSR</td>
+<td><code>app/api/[...path]/route.ts</code></td>
+<td>Proxy del navegador hacia el Gateway. Guarda la sesión en una cookie <code>httpOnly</code> y no reenvía la sesión en <code>/ballots</code></td>
+<td><code>lib/server</code></td>
+</tr>
+<tr class="odd">
+<td>Servidor SSR</td>
+<td><code>lib/server/gateway.ts</code></td>
+<td>Cliente del API Gateway que solo se ejecuta en el servidor</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td>Cliente navegador</td>
+<td><code>components/</code></td>
+<td>Componentes de UI por funcionalidad: <code>auth</code>, <code>admin</code>, <code>election</code>, <code>layout</code>, <code>m4</code>, <code>ui</code></td>
+<td><code>lib/api.ts</code>, <code>lib/m4</code></td>
+</tr>
+<tr class="odd">
+<td>Cliente navegador</td>
+<td><code>lib/api.ts</code></td>
+<td>Cliente HTTP del navegador. Solo habla con el Servidor SSR</td>
+<td><code>lib/types</code></td>
+</tr>
+<tr class="even">
+<td>Cliente navegador</td>
+<td><code>lib/m4/</code></td>
+<td>Protocolo de voto: <code>token</code> (sobre del token), <code>blind</code> (RSABSSA), <code>encryptor</code> (cifrado del voto), <code>receipt</code> (verificación del recibo), <code>tokenStore</code> (token en memoria), <code>api</code> (envío a Ballot)</td>
+<td>—</td>
+</tr>
+<tr class="odd">
+<td>Compartido</td>
+<td><code>lib/types/</code>, <code>lib/format.ts</code>, <code>lib/election-status.ts</code>, <code>lib/mock-api.ts</code></td>
+<td>Tipos de dominio, formato y estado de las urnas, y un modo <em>mock</em> para trabajar sin backend</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>App móvil</strong> (<code>mobile/</code>, Flutter · Dart)</p>
+<table>
+<thead>
+<tr class="header">
+<th>Módulo</th>
+<th>Responsabilidad</th>
+<th>Usa</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>lib/main.dart</code></td>
+<td>Pantallas: login, urnas abiertas, voto y recibo</td>
+<td><code>vote</code>, <code>gateway</code></td>
+</tr>
+<tr class="even">
+<td><code>lib/src/vote.dart</code></td>
+<td>Flujo del voto: pide el token con la sesión y envía la papeleta sin ella</td>
+<td><code>gateway</code>, <code>protocol</code></td>
+</tr>
+<tr class="odd">
+<td><code>lib/src/gateway.dart</code></td>
+<td>Cliente del API Gateway, con un modo anónimo para la papeleta</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td><code>lib/src/protocol/</code></td>
+<td><code>token</code> (mensaje canónico), <code>blind</code> (cegado RSA), <code>encrypt</code> (cifrado del voto), <code>codec</code> (base64url)</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>CLI administración</strong> (<code>admin-cli/</code>, Java · picocli)</p>
+<table>
+<thead>
+<tr class="header">
+<th>Módulo</th>
+<th>Responsabilidad</th>
+<th>Usa</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>AdminCli</code></td>
+<td>Punto de entrada y registro de subcomandos</td>
+<td><code>commands</code></td>
+</tr>
+<tr class="even">
+<td><code>commands/</code></td>
+<td><code>login</code>, <code>logout</code>, <code>whoami</code>, <code>users</code>, <code>voters</code>, <code>elections</code>. Comparten la base <code>AdminCommand</code></td>
+<td><code>ApiClient</code>, <code>SessionStore</code></td>
+</tr>
+<tr class="odd">
+<td><code>ApiClient</code></td>
+<td>Cliente HTTP/JSON del Gateway (o de identity y Ballot)</td>
+<td><code>ApiException</code></td>
+</tr>
+<tr class="even">
+<td><code>SessionStore</code></td>
+<td>Persiste el JWT del administrador en <code>&lt;home&gt;/session.json</code></td>
+<td>—</td>
+</tr>
+<tr class="odd">
+<td><code>ApiException</code>, <code>NotLoggedInException</code></td>
+<td>Traducción de los errores de la API a mensajes de consola</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>API Gateway</strong> (<code>gateway/</code>, Node.js · TypeScript)</p>
+<table>
+<thead>
+<tr class="header">
+<th>Módulo</th>
+<th>Responsabilidad</th>
+<th>Usa</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>server.ts</code></td>
+<td>Arranque del servidor HTTP</td>
+<td><code>app</code>, <code>config</code></td>
+</tr>
+<tr class="even">
+<td><code>app.ts</code></td>
+<td>Cadena de cada petición: CORS → resolución de la ruta → límite de tasa → validación JWT según el acceso de la ruta → reenvío al servicio</td>
+<td><code>jwt</code>, <code>rateLimit</code>, <code>router</code>, <code>routes</code>, <code>config</code></td>
+</tr>
+<tr class="odd">
+<td><code>routes.ts</code></td>
+<td>Catálogo de rutas hacia Auth, Election, Identity, Ballot, Tally, Analytics y Notifications, con su nivel de acceso (<code>public</code>, <code>user</code>, <code>admin</code> o <code>anonymous</code>) y su cuota</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td><code>router.ts</code></td>
+<td>Resuelve método y ruta contra el catálogo y sustituye los parámetros en la ruta del servicio</td>
+<td><code>routes</code></td>
+</tr>
+<tr class="odd">
+<td><code>jwt.ts</code></td>
+<td>Valida el JWT RS256 de identity con su JWKS (<code>iss</code>, <code>aud</code>, expiración)</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td><code>rateLimit.ts</code></td>
+<td>Límite de tasa en memoria con ventana fija por cliente y cuota</td>
+<td><code>routes</code></td>
+</tr>
+<tr class="odd">
+<td><code>config.ts</code></td>
+<td>Lee las URL de los servicios y las políticas de las variables de entorno</td>
+<td><code>routes</code>, <code>rateLimit</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>identity</strong> (<code>identity/</code>, Python · FastAPI). Un solo despliegue implementa los componentes <strong>Auth</strong> e <strong>Identity</strong> de la vista C&amp;C. Cada uno tiene su propia base (Auth DB y Census) y su propio módulo de acceso a datos.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Submódulo</th>
+<th>Módulo</th>
+<th>Responsabilidad</th>
+<th>Usa</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Auth</td>
+<td><code>services/login.py</code></td>
+<td>Login con contraseña y segundo factor (MFA)</td>
+<td><code>core/security</code>, <code>core/auth</code>, <code>db/models</code></td>
+</tr>
+<tr class="even">
+<td>Auth</td>
+<td><code>services/sessions.py</code></td>
+<td>Sesiones y emisión del JWT de acceso</td>
+<td><code>core/auth</code>, <code>core/keys</code>, <code>db/models</code></td>
+</tr>
+<tr class="odd">
+<td>Auth</td>
+<td><code>services/users.py</code></td>
+<td>Alta, activación y listado de usuarios por el administrador</td>
+<td><code>core/security</code>, <code>db/models</code></td>
+</tr>
+<tr class="even">
+<td>Auth</td>
+<td><code>core/jwt_tokens.py</code></td>
+<td>Firma RS256 del JWT y publicación del JWKS</td>
+<td><code>core/keys</code>, <code>core/encoding</code></td>
+</tr>
+<tr class="odd">
+<td>Auth</td>
+<td><code>core/security.py</code></td>
+<td>Hash y verificación de contraseñas</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td>Auth</td>
+<td><code>db/models.py</code></td>
+<td>Modelo relacional de Auth DB (usuarios, sesiones, roles)</td>
+<td>—</td>
+</tr>
+<tr class="odd">
+<td>Identity</td>
+<td><code>services/voter_roll.py</code></td>
+<td>Padrón electoral: inscripción y consulta de votantes</td>
+<td><code>db/census</code>, <code>services/elections</code></td>
+</tr>
+<tr class="even">
+<td>Identity</td>
+<td><code>services/tokens.py</code></td>
+<td>Emisión de la credencial anónima: comprueba la elegibilidad, reserva la emisión y pide la firma ciega</td>
+<td><code>clients/blind_signature</code>, <code>db/census</code>, <code>services/elections</code></td>
+</tr>
+<tr class="odd">
+<td>Identity</td>
+<td><code>services/elections.py</code></td>
+<td>Urnas del prototipo 1 (alta, apertura, cierre, estado)*</td>
+<td><code>clients/*</code>, <code>db/models</code></td>
+</tr>
+<tr class="even">
+<td>Identity</td>
+<td><code>services/parameters.py</code></td>
+<td>Parámetros públicos de la elección y su firma Ed25519</td>
+<td><code>clients/ballot_client</code></td>
+</tr>
+<tr class="odd">
+<td>Identity</td>
+<td><code>db/census.py</code></td>
+<td>Modelo de la base Census, separada de Auth DB</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td>Identity</td>
+<td><code>clients/blind_signature.py</code></td>
+<td>Cliente REST de Blind Signature, con el secreto <code>X-Internal-Token</code></td>
+<td><code>core/encoding</code></td>
+</tr>
+<tr class="odd">
+<td>Identity</td>
+<td><code>clients/ballot_client.py</code>, <code>pb/</code></td>
+<td>Cliente gRPC de la administración de Ballot (código generado desde <code>proto/</code>)</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td>Compartido</td>
+<td><code>api/routes.py</code></td>
+<td>API REST/JSON: <code>/login</code>, <code>/tokens/blind</code>, <code>/users</code>, <code>/elections/*/voters</code>, <code>/.well-known/jwks.json</code>, …</td>
+<td><code>services/*</code>, <code>core/*</code></td>
+</tr>
+<tr class="odd">
+<td>Compartido</td>
+<td><code>core/auth.py</code>, <code>core/keys.py</code></td>
+<td>Autenticación de cada petición, y claves privadas (JWT y parámetros)</td>
+<td><code>core/errors</code></td>
+</tr>
+<tr class="even">
+<td>Compartido</td>
+<td><code>core/config.py</code>, <code>core/errors.py</code>, <code>core/encoding.py</code>, <code>main.py</code></td>
+<td>Configuración, errores uniformes, base64url y arranque</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>* El servicio Election reemplaza a <code>services/elections.py</code>. Mientras el Gateway siga enrutando <code>/elections</code> a identity, conviven los dos.</p>
+<p><strong>Blind Signature</strong> (<code>blind-signature/</code>, Python · FastAPI)</p>
+<table>
+<thead>
+<tr class="header">
+<th>Módulo</th>
+<th>Responsabilidad</th>
+<th>Usa</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>main.py</code></td>
+<td>API interna: <code>POST /v1/sign</code>, <code>GET /v1/keys/{election_id}</code> (con <code>X-Internal-Token</code>) y <code>GET /health</code></td>
+<td><code>key_store</code>, <code>blind_rsa</code>, <code>config</code></td>
+</tr>
+<tr class="even">
+<td><code>blind_rsa.py</code></td>
+<td>Lado servidor de la firma ciega RSA (RFC 9474, RSABSSA)</td>
+<td>—</td>
+</tr>
+<tr class="odd">
+<td><code>key_store.py</code></td>
+<td>Una clave RSA por elección, creada la primera vez y guardada en el volumen de claves. La privada nunca sale del servicio</td>
+<td><code>blind_rsa</code></td>
+</tr>
+<tr class="even">
+<td><code>config.py</code></td>
+<td>Variables <code>BLINDSIG_*</code>. El secreto es obligatorio</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Election</strong> (<code>election/</code>, Python · FastAPI)</p>
+<table>
+<thead>
+<tr class="header">
+<th>Módulo</th>
+<th>Responsabilidad</th>
+<th>Usa</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>api.py</code></td>
+<td>API REST/JSON: CRUD de urnas, <code>open</code>, <code>close</code>, parámetros y entrega de la llave privada de la urna a Tally</td>
+<td><code>service</code>, <code>auth</code>, <code>models</code>, <code>keys</code></td>
+</tr>
+<tr class="even">
+<td><code>service.py</code></td>
+<td>Casos de uso de la elección</td>
+<td><code>rules</code>, <code>models</code>, <code>keys</code>, <code>parameters</code></td>
+</tr>
+<tr class="odd">
+<td><code>rules.py</code></td>
+<td>Reglas de negocio y ciclo de vida <code>draft → open → closed</code> con fases derivadas de la ventana de tiempo</td>
+<td><code>models</code>, <code>errors</code></td>
+</tr>
+<tr class="even">
+<td><code>parameters.py</code></td>
+<td>Parámetros públicos en JSON canónico firmados con Ed25519</td>
+<td><code>encoding</code></td>
+</tr>
+<tr class="odd">
+<td><code>keys.py</code></td>
+<td>Llave de la urna (RSA-OAEP-256 + A256GCM), cuya privada se cifra bajo una llave maestra, y llave de firma de los parámetros</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td><code>auth.py</code></td>
+<td>Permisos por rol (JWT, o cabeceras <code>X-Dev-*</code> en desarrollo)</td>
+<td><code>config</code>, <code>errors</code></td>
+</tr>
+<tr class="odd">
+<td><code>models.py</code></td>
+<td>Modelo relacional de la base Elections</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td><code>events.py</code></td>
+<td>Productor de <code>election.created</code>, <code>election.opened</code> y <code>election.closed</code></td>
+<td><code>models</code>, <code>encoding</code></td>
+</tr>
+<tr class="odd">
+<td><code>main.py</code>, <code>config.py</code>, <code>errors.py</code>, <code>encoding.py</code></td>
+<td>Arranque, configuración, errores uniformes y codificación</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Ballot</strong> (<code>ballot/</code>, Go)</p>
+<table>
+<thead>
+<tr class="header">
+<th>Módulo</th>
+<th>Responsabilidad</th>
+<th>Usa</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>internal/httpapi</code></td>
+<td>API pública y anónima: <code>POST /v1/ballots</code>, parámetros, resultados y papeletas selladas para Tally</td>
+<td><code>ballot</code>, <code>election</code>, <code>token</code></td>
+</tr>
+<tr class="even">
+<td><code>internal/server</code></td>
+<td>API gRPC privada de administración: registrar, cerrar y consultar urnas</td>
+<td><code>election</code>, <code>token</code></td>
+</tr>
+<tr class="odd">
+<td><code>internal/ballot</code></td>
+<td>Lógica del voto: <code>acceptor</code> (valida y acepta la papeleta), <code>proof</code> (prueba de validez), <code>hash</code> (cadena de <em>hashes</em>), <code>tally</code> (conteo de resultados)</td>
+<td><code>token</code></td>
+</tr>
+<tr class="even">
+<td><code>internal/token</code></td>
+<td><code>token</code> (verifica el token RFC 9474 de la urna), <code>spent</code> (gasto atómico, un voto por token), <code>receipt</code> (recibo Ed25519)</td>
+<td>—</td>
+</tr>
+<tr class="odd">
+<td><code>internal/election</code></td>
+<td>Configuración y ciclo de vida de cada urna en Ballot</td>
+<td><code>token</code></td>
+</tr>
+<tr class="even">
+<td><code>internal/mongostore</code></td>
+<td>Adaptador MongoDB de la base Votes: papeletas anonimizadas y urnas</td>
+<td><code>ballot</code>, <code>election</code>, <code>token</code></td>
+</tr>
+<tr class="odd">
+<td><code>internal/events</code></td>
+<td>Publica <code>votes.cast</code> y consume <code>election.created</code> y <code>election.closed</code></td>
+<td><code>election</code></td>
+</tr>
+<tr class="even">
+<td><code>internal/pb</code>, <code>main.go</code></td>
+<td>Código gRPC generado. Arranque y cableado de los adaptadores (Mongo o memoria)</td>
+<td>todos</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Tally</strong> (<code>tally/</code>, Go)</p>
+<table>
+<thead>
+<tr class="header">
+<th>Módulo</th>
+<th>Responsabilidad</th>
+<th>Usa</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>internal/httpapi</code></td>
+<td>API interna: <code>POST</code> y <code>GET /v1/tally/elections/{id}</code></td>
+<td><code>tally</code></td>
+</tr>
+<tr class="even">
+<td><code>internal/tally</code></td>
+<td>Orquesta un escrutinio: lee la urna cerrada → descifra → cuenta → publica, una sola vez por contenido</td>
+<td><code>ballotclient</code>, <code>decrypt</code>, <code>count</code>, <code>publisher</code>, <code>events</code></td>
+</tr>
+<tr class="odd">
+<td><code>internal/ballotclient</code></td>
+<td>Cliente REST de Ballot: parámetros y papeletas cifradas</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td><code>internal/decrypt</code></td>
+<td>Descifra las papeletas con la llave privada de la urna</td>
+<td>—</td>
+</tr>
+<tr class="odd">
+<td><code>internal/count</code></td>
+<td>Aplica las reglas de conteo y separa los votos nulos</td>
+<td><code>decrypt</code></td>
+</tr>
+<tr class="even">
+<td><code>internal/events</code>, <code>internal/publisher</code></td>
+<td>Contrato de <code>tally.completed</code> y publicación con confirmación del <em>broker</em></td>
+<td><code>events</code></td>
+</tr>
+<tr class="odd">
+<td><code>internal/config</code>, <code>main.go</code></td>
+<td>Configuración y arranque</td>
+<td>todos</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Analytics</strong> (<code>analytics/</code>, Rust · axum)</p>
+<table>
+<thead>
+<tr class="header">
+<th>Módulo</th>
+<th>Responsabilidad</th>
+<th>Usa</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>http.rs</code></td>
+<td>API REST/JSON: <code>/v1/analytics/summary</code>, <code>/v1/analytics/elections</code>, …</td>
+<td><code>report</code>, <code>store</code></td>
+</tr>
+<tr class="even">
+<td><code>consumer.rs</code></td>
+<td>Consumidor RabbitMQ: declara la cola <code>analytics.events</code> con su DLQ y aplica cada evento</td>
+<td><code>events</code>, <code>store</code></td>
+</tr>
+<tr class="odd">
+<td><code>events.rs</code></td>
+<td>Contratos de los eventos consumidos (<code>election.*</code>, <code>census.updated</code>, <code>votes.cast</code>, <code>tally.completed</code>)</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td><code>report.rs</code></td>
+<td>Cálculo puro de las analíticas de una elección cerrada, sin E/S</td>
+<td><code>events</code></td>
+</tr>
+<tr class="odd">
+<td><code>store.rs</code></td>
+<td>Persistencia en la base MongoDB Results</td>
+<td><code>events</code>, <code>report</code></td>
+</tr>
+<tr class="even">
+<td><code>main.rs</code>, <code>bin/publish_sample.rs</code></td>
+<td>Arranque, y una herramienta que publica eventos de ejemplo</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Notifications</strong> (<code>notification/</code>, Node.js · TypeScript)</p>
+<table>
+<thead>
+<tr class="header">
+<th>Submódulo</th>
+<th>Módulo</th>
+<th>Responsabilidad</th>
+<th>Usa</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>domain</code></td>
+<td><code>event.ts</code>, <code>notification.ts</code></td>
+<td>Eventos de entrada, la entidad notificación y el puerto <code>NotificationRepository</code></td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td><code>application</code></td>
+<td><code>notification-service.ts</code></td>
+<td>Convierte cada evento en una notificación mediante <em>handlers</em> por tipo de evento</td>
+<td><code>domain</code></td>
+</tr>
+<tr class="odd">
+<td><code>infrastructure</code></td>
+<td><code>rabbit-consumer.ts</code></td>
+<td>Consumidores por <em>exchange</em> (<code>election</code>, <code>identity</code>, <code>votes</code>, <code>tally</code>) con DLQ</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td><code>infrastructure</code></td>
+<td><code>mongo-notification-repository.ts</code></td>
+<td>Adaptador MongoDB de la base Notif. record</td>
+<td><code>domain</code></td>
+</tr>
+<tr class="odd">
+<td><code>infrastructure</code></td>
+<td><code>http.ts</code>, <code>config.ts</code></td>
+<td>API REST de consulta y configuración</td>
+<td><code>domain</code></td>
+</tr>
+<tr class="even">
+<td>—</td>
+<td><code>index.ts</code></td>
+<td>Raíz de composición: conecta la infraestructura con la aplicación</td>
+<td>todos</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Contratos e infraestructura compartida</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Módulo</th>
+<th>Responsabilidad</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>proto/ballot.proto</code></td>
+<td>Contrato gRPC <code>BallotAdminService</code> entre identity y Ballot</td>
+</tr>
+<tr class="even">
+<td><code>rabbitmq/definitions.json</code>, <code>rabbitmq.conf</code></td>
+<td>Topología del <em>broker</em>: <em>exchanges</em> duraderos, colas, DLQ y <em>bindings</em></td>
+</tr>
+<tr class="odd">
+<td><code>identity/schema.sql</code>, <code>census/schema.sql</code>, <code>election/schema.sql</code></td>
+<td>Esquemas de Auth DB, Census y Elections. Los carga PostgreSQL al iniciar</td>
+</tr>
+<tr class="even">
+<td><code>docker-compose.yml</code>, <code>*/Dockerfile</code>, <code>*/cloudbuild.yaml</code></td>
+<td>Construcción y ejecución de cada componente</td>
+</tr>
+<tr class="odd">
+<td><code>*/docs/</code>, <code>analytics/CONTRACTS.md</code></td>
+<td>Contratos HTTP y de eventos de cada componente</td>
+</tr>
+</tbody>
+</table>
+<h3 id="descripción-de-los-patrones-arquitectónicos">Descripción de los patrones arquitectónicos</h3>
+<ul>
+<li><strong>Descomposición por capacidad de negocio (microservicios).</strong> Cada componente de nivel 2 corresponde a una capacidad (autenticar, emitir credenciales, firmar a ciegas, administrar urnas, recibir votos, escrutar, analizar, notificar). Es una carpeta independiente, con su lenguaje, sus pruebas y su imagen de contenedor, así que se construye y despliega sin tocar las demás.</li>
+<li><strong>Base de datos por servicio y ocultamiento de información.</strong> Solo un módulo por componente accede a su almacén (<code>db/models</code>, <code>db/census</code>, <code>models.py</code>, <code>mongostore</code>, <code>store.rs</code>, <code>mongo-notification-repository</code>). El esquema queda oculto detrás de ese módulo y ningún otro componente lo importa.</li>
+<li><strong>Capas dentro de cada servicio.</strong> Los servicios Python separan API (<code>api/routes.py</code>, <code>api.py</code>) → casos de uso (<code>services/</code>, <code>service.py</code>, <code>rules.py</code>) → acceso a datos (<code>db/</code>, <code>models.py</code>). Las dependencias van siempre hacia abajo.</li>
+<li><strong>Puertos y adaptadores (hexagonal).</strong> El dominio define interfaces y la infraestructura las implementa. En Notifications, <code>domain</code>, <code>application</code> e <code>infrastructure</code> están separados y <code>index.ts</code> hace de raíz de composición. En Ballot, <code>ballot.CommitStore</code>, <code>ballot.VoteReader</code> y <code>ballot.SealedBallotReader</code> son puertos que implementan <code>mongostore</code> o un adaptador en memoria para las pruebas.</li>
+<li><strong>API Gateway y Backend for Frontend.</strong> El Gateway es el único módulo con política transversal (<code>jwt.ts</code>, <code>rateLimit.ts</code>). El <em>route handler</em> <code>app/api/[...path]</code> del Servidor SSR es el BFF de la web: el navegador nunca conoce la URL del Gateway ni ve el token de sesión.</li>
+<li><strong>Publicar-suscribir.</strong> La mensajería vive en módulos propios (<code>events.py</code>, <code>internal/events</code>, <code>internal/publisher</code>, <code>consumer.rs</code>, <code>rabbit-consumer.ts</code>), separados de la lógica, y los contratos de eventos se versionan junto al código (<code>docs/</code>, <code>CONTRACTS.md</code>, <code>events.rs</code>).</li>
+<li><strong>Orquestador y tubería en Tally.</strong> <code>internal/tally</code> coordina pasos que no se conocen entre sí: <code>ballotclient</code> → <code>decrypt</code> → <code>count</code> → <code>publisher</code>.</li>
+<li><strong>Separación entre identidad y voto.</strong> Los módulos que conocen al votante (<code>db/census</code>, <code>services/tokens</code>) y los que reciben el voto (<code>internal/token</code>, <code>internal/ballot</code>) están en componentes distintos. La criptografía de la credencial se reparte entre el cliente (<code>lib/m4</code>, <code>protocol/</code>), Blind Signature (<code>blind_rsa</code>, <code>key_store</code>) y Ballot (<code>token</code>, <code>receipt</code>), de modo que ningún módulo puede unir un voto con un votante.</li>
+</ul>
+<h3 id="coherencia-con-el-código-actual">Coherencia con el código actual</h3>
+<ul>
+<li>Auth e Identity son componentes separados en la vista C&amp;C, pero hoy se despliegan juntos en <code>identity/</code>. La descomposición en submódulos (<code>Auth</code>, <code>Identity</code>) y sus bases separadas permite extraer Auth a otro servicio sin reorganizar el código.</li>
+<li>La vista C&amp;C del prototipo 2 solo usa REST y AMQP, pero <code>proto/</code> y los módulos <code>pb/</code>, <code>clients/ballot_client.py</code> e <code>internal/server</code> mantienen todavía el canal gRPC de administración entre identity y Ballot.</li>
+</ul>
+
+</main></body></html>
