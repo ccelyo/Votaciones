@@ -1,1100 +1,757 @@
-# Distribución del trabajo --- Prototipo 2 de Votaciones
-
-## 1. Objetivo
-
-Este documento define la distribución del trabajo entre los ocho
-integrantes del equipo para implementar el prototipo 2 del sistema de
-votaciones, con base en la vista de componentes y conectores acordada.
-
-La propuesta contempla los componentes de presentación, los servicios
-lógicos, las bases de datos, la comunicación asíncrona mediante RabbitMQ
-y el despliegue. Cada integrante tendrá responsabilidades concretas y
-entregables verificables.
-
-## 2. Asignación de responsabilidades por integrante
-
-  -----------------------------------------------------------------------
-  Integrante        Componentes       Tecnologías       Responsabilidad
-                    asignados                           principal
-  ----------------- ----------------- ----------------- -----------------
-  **Cristhian**     API Gateway y Web TypeScript,       Implementar el
-                    SSR               Next.js           punto de entrada
-                                                        al backend y la
-                                                        interfaz web con
-                                                        renderizado del
-                                                        lado del
-                                                        servidor.
-
-  **Julian**        Auth, base de     Python,           Implementar la
-                    datos Auth y CLI  PostgreSQL, Java  autenticación de
-                    Admin                               usuarios, su
-                                                        persistencia y la
-                                                        interfaz de
-                                                        administración
-                                                        por consola.
-
-  **Fabian**        Election y base   Python,           Implementar la
-                    de datos          PostgreSQL        gestión de
-                    Elections                           elecciones y su
-                                                        persistencia.
-
-  **Kevin**         Identity, base de Python,           Gestionar la
-                    datos Census y    PostgreSQL        identidad de los
-                    Blind Signature                     votantes,
-                                                        consultar el
-                                                        censo electoral e
-                                                        implementar el
-                                                        servicio de firma
-                                                        ciega.
-
-  **Andres**        Ballot, base de   Go, MongoDB,      Implementar la
-                    datos Votes y App Flutter/Dart      recepción de
-                    móvil                               papeletas y la
-                                                        aplicación móvil
-                                                        para interactuar
-                                                        con el sistema.
-
-  **Sebastian**     Tally y Pub/Sub   Go, RabbitMQ      Implementar el
-                    RabbitMQ                            procesamiento de
-                                                        eventos y la
-                                                        coordinación de
-                                                        la comunicación
-                                                        asíncrona para
-                                                        los votos.
-
-  **Camilo**        Notifications y   TypeScript,       Implementar el
-                    base de datos     MongoDB           servicio de
-                    Notif. DB                           notificaciones,
-                                                        el consumo de
-                                                        eventos y la
-                                                        persistencia de
-                                                        sus registros.
-
-  **Sergio**        Analytics y base  Rust, MongoDB     Implementar el
-                    de datos Results                    procesamiento
-                                                        analítico de los
-                                                        votos y el
-                                                        almacenamiento de
-                                                        resultados.
-  -----------------------------------------------------------------------
-
-Esta distribución es una propuesta de trabajo. Las responsabilidades
-adicionales de integración, despliegue y documentación se especifican en
-las secciones siguientes. El componente RabbitMQ se asigna a Sebastian
-como responsable de la infraestructura de mensajería, pero cada
-productor y consumidor debe implementar su propia integración.
-
-## 3. Actividades específicas por integrante
-
-### 3.1. Cristhian --- API Gateway y Web SSR
-
-**Objetivo:** permitir que los clientes accedan al sistema a través de
-un punto de entrada común y proporcionar la interfaz web.
-
-  -----------------------------------------------------------------------
-  ID                      Actividad               Entregable
-  ----------------------- ----------------------- -----------------------
-  CR-01                   Definir las rutas HTTP  Catálogo de endpoints.
-                          para Auth, Election,
-                          Identity, Ballot,
-                          Tally, Analytics y
-                          Notifications. Blind
-                          Signature no se expone:
-                          solo es accesible desde
-                          Identity.
-
-  CR-02                   Implementar el API      Servicio ejecutable del
-                          Gateway en TypeScript,  Gateway.
-                          con CORS y límites de
-                          tasa.
-
-  CR-03                   Configurar el           Configuración de rutas.
-                          enrutamiento hacia los  
-                          servicios mediante      
-                          REST/JSON.              
-
-  CR-04                   Implementar la          Middleware de
-                          validación de JWT en el validación de tokens.
-                          Gateway para todas las
-                          rutas excepto Ballot,
-                          que es anónima y no
-                          recibe JWT ni cookies.
-
-  CR-05                   Implementar el frontend Aplicación web
-                          web en Next.js          funcional.
-                          utilizando SSR, con los
-                          subcomponentes Servidor
-                          SSR y Cliente navegador
-                          y su conector interno.
-
-  CR-06                   Desarrollar las         Flujos de usuario en la
-                          pantallas necesarias    web.
-                          para autenticación,
-                          consulta de elecciones,
-                          votación y consulta de
-                          resultados, incluyendo
-                          en el Cliente navegador
-                          el cegado del token y
-                          el cifrado del voto.
-
-  CR-07                   Integrar el frontend    Web conectada al
-                          con el Gateway y        backend.
-                          gestionar los errores
-                          de comunicación. El
-                          envío de la papeleta no
-                          debe adjuntar la sesión
-                          del votante.
-
-  CR-08                   Crear Dockerfiles para  Contenedores del
-                          los componentes         Gateway y de la web.
-                          asignados y probar su   
-                          ejecución.              
-  -----------------------------------------------------------------------
-
-**Criterio de aceptación:** el frontend web utiliza SSR y puede
-comunicarse con los servicios a través del Gateway, sin conectarse
-directamente a sus bases de datos.
-
-### 3.2. Julian --- Auth, PostgreSQL y CLI Admin
-
-**Objetivo:** gestionar la autenticación y ofrecer una interfaz
-administrativa por consola.
-
-  -----------------------------------------------------------------------
-  ID                      Actividad               Entregable
-  ----------------------- ----------------------- -----------------------
-  JU-01                   Revisar y adaptar la    Inventario de
-                          autenticación existente funcionalidades
-                          en el prototipo 1.      reutilizables.
-
-  JU-02                   Implementar el servicio API de autenticación.
-                          Auth en Python.         
-
-  JU-03                   Diseñar y configurar la Esquema y configuración
-                          base de datos Auth en   de persistencia.
-                          PostgreSQL.             
-
-  JU-04                   Implementar las         Operaciones de gestión
-                          operaciones de registro de usuarios.
-                          o gestión de usuarios   
-                          que correspondan al     
-                          alcance acordado.       
-
-  JU-05                   Implementar la          Emisión de tokens
-                          generación de JWT y     compatible con el
-                          definir sus atributos y Gateway.
-                          tiempos de expiración,  
-                          coordinándose con       
-                          Cristhian.              
-
-  JU-06                   Desarrollar la CLI      Cliente de consola
-                          administrativa en Java. ejecutable.
-
-  JU-07                   Implementar mediante    Comandos de
-                          las interfaces HTTP las administración.
-                          operaciones
-                          administrativas de la
-                          vista: crear, abrir y
-                          cerrar urnas, lanzar el
-                          escrutinio y consultar
-                          resultados.
-
-  JU-08                   Crear pruebas de        Pruebas y
-                          autenticación,          documentación.
-                          persistencia y          
-                          ejecución de la CLI.    
-  -----------------------------------------------------------------------
-
-**Criterio de aceptación:** el usuario puede autenticarse, obtener un
-token válido y utilizar la CLI para ejecutar las operaciones
-administrativas autorizadas.
-
-**Dependencia importante:** Julian y Cristhian deben acordar desde el
-principio el formato del JWT, el secreto o mecanismo de firma y las
-reglas de validación.
-
-### 3.3. Fabian --- Election y PostgreSQL
-
-**Objetivo:** administrar las elecciones y proporcionar los datos
-necesarios para que los clientes consulten las opciones disponibles.
-
-  -----------------------------------------------------------------------
-  ID                      Actividad               Entregable
-  ----------------------- ----------------------- -----------------------
-  FA-01                   Definir el modelo de    Modelo
-                          datos de las            entidad-relación.
-                          elecciones.             
-
-  FA-02                   Diseñar y configurar la Esquema de base de
-                          base de datos Elections datos.
-                          en PostgreSQL.          
-
-  FA-03                   Implementar el servicio Servicio de gestión de
-                          Election en Python.     elecciones.
-
-  FA-04                   Implementar las         Endpoints HTTP.
-                          operaciones para crear, 
-                          consultar, actualizar y 
-                          cerrar elecciones,      
-                          según los permisos      
-                          establecidos.           
-
-  FA-05                   Definir los estados de  Reglas de negocio
-                          una elección, sus       documentadas.
-                          ventanas de tiempo y
-                          las validaciones
-                          correspondientes.
-
-  FA-06                   Implementar la          Productor de
-                          publicación de eventos  `election.events`.
-                          de elección en          
-                          RabbitMQ, en            
-                          coordinación con        
-                          Sebastian.              
-
-  FA-07                   Probar las operaciones  Pruebas automatizadas.
-                          del servicio y la       
-                          persistencia.           
-
-  FA-08                   Preparar el contenedor  Dockerfile y
-                          y la configuración de   configuración del
-                          conexión a PostgreSQL.  servicio.
-
-  FA-09                   Generar y custodiar las Gestión de llaves de la
-                          llaves de la urna: la   urna.
-                          pública para cifrar el
-                          voto en los clientes y
-                          la privada para el
-                          descifrado en Tally.
-  -----------------------------------------------------------------------
-
-**Criterio de aceptación:** las elecciones pueden administrarse y
-consultarse mediante HTTP, y los eventos acordados se publican
-correctamente.
-
-### 3.4. Kevin --- Identity, Census y Blind Signature
-
-**Objetivo:** gestionar la identidad electoral y separar la verificación
-de los votantes de la emisión de firmas ciegas.
-
-  -----------------------------------------------------------------------
-  ID                      Actividad               Entregable
-  ----------------------- ----------------------- -----------------------
-  KE-01                   Analizar la lógica de   Inventario de código
-                          identidad y firma ciega reutilizable.
-                          del prototipo 1.        
-
-  KE-02                   Diseñar la estructura   Esquema de Census.
-                          del censo electoral en  
-                          PostgreSQL.             
-
-  KE-03                   Implementar el servicio API de identidad.
-                          Identity en Python.     
-
-  KE-04                   Implementar las         Endpoints y reglas de
-                          operaciones de consulta elegibilidad.
-                          y validación de la      
-                          elegibilidad electoral. 
-
-  KE-05                   Separar la              Servicio independiente
-                          implementación          de firma ciega.
-                          criptográfica en el
-                          servicio Blind
-                          Signature, accesible
-                          solo desde Identity.
-
-  KE-06                   Definir el contrato de  Interfaz documentada.
-                          comunicación entre      
-                          Identity y Blind        
-                          Signature.              
-
-  KE-07                   Implementar las         Pruebas del protocolo.
-                          validaciones            
-                          criptográficas y las    
-                          pruebas                 
-                          correspondientes.       
-
-  KE-08                   Coordinar con Sebastian Integración con
-                          la publicación de los   `identity.events`.
-                          eventos de identidad    
-                          que sean necesarios.    
-
-  KE-09                   Crear los contenedores  Servicios ejecutables.
-                          y probar las conexiones
-                          con PostgreSQL. Blind
-                          Signature solo debe
-                          estar en la red interna
-                          compartida con
-                          Identity.
-  -----------------------------------------------------------------------
-
-**Criterio de aceptación:** el sistema puede validar la elegibilidad
-electoral y ejecutar el flujo de firma ciega sin introducir una
-asociación indebida entre la identidad del votante y su voto.
-
-**Precaución:** Identity y Blind Signature son dos componentes
-independientes en la vista C&C. Deben mantenerse separados en el
-despliegue y en sus contratos, aunque compartan lenguaje y responsable.
-
-### 3.5. Andres --- Ballot, Votes y App móvil
-
-**Objetivo:** implementar la recepción de votos y la aplicación móvil
-que permita a los usuarios interactuar con el sistema.
-
-  -----------------------------------------------------------------------
-  ID                      Actividad               Entregable
-  ----------------------- ----------------------- -----------------------
-  AN-01                   Definir el modelo de    Esquema de la papeleta.
-                          una papeleta            
-                          electrónica.            
-
-  AN-02                   Implementar el servicio API de recepción de
-                          Ballot en Go.           votos.
-
-  AN-03                   Configurar la           Colección Votes.
-                          persistencia de votos   
-                          en MongoDB.             
-
-  AN-04                   Implementar la          Flujo de recepción
-                          recepción y validación  funcional.
-                          de papeletas, incluida
-                          la verificación de la
-                          firma ciega del token.
-
-  AN-05                   Definir las reglas de   Validaciones y pruebas.
-                          aceptación y prevención 
-                          de duplicados.          
-
-  AN-06                   Implementar la          Productor de
-                          publicación de eventos  `votes.events`.
-                          de voto en RabbitMQ.    
-
-  AN-07                   Desarrollar la          Aplicación móvil
-                          aplicación móvil en     funcional.
-                          Flutter/Dart, con el
-                          mismo protocolo de
-                          cegado del token y
-                          cifrado del voto que la
-                          web.
-
-  AN-08                   Integrar la aplicación  Cliente móvil conectado
-                          móvil con el API        al backend.
-                          Gateway. El envío de la
-                          papeleta se hace por la
-                          ruta anónima, sin JWT.
-
-  AN-09                   Crear los contenedores  Configuración de
-                          necesarios para los     ejecución.
-                          componentes que lo      
-                          requieran y documentar  
-                          cómo ejecutar la        
-                          aplicación móvil.       
-
-  AN-10                   Consumir                Consumidor de eventos
-                          `election.events`       de elección.
-                          (apertura, cierre y
-                          parámetros de la urna)
-                          para aceptar o rechazar
-                          papeletas.
-
-  AN-11                   Exponer un endpoint     API de papeletas para
-                          REST para que Tally     escrutinio.
-                          obtenga las papeletas
-                          cifradas de una urna
-                          cerrada.
-  -----------------------------------------------------------------------
-
-**Criterio de aceptación:** un usuario puede utilizar la aplicación
-móvil para interactuar con el sistema y enviar una papeleta válida, que
-se procesa y persiste correctamente.
-
-**Importante:** la aplicación móvil no debe conectarse directamente a
-MongoDB. Todas las operaciones deben pasar por las interfaces HTTP
-definidas.
-
-### 3.6. Sebastian --- Tally y RabbitMQ
-
-**Objetivo:** implementar el procesamiento de los votos y proporcionar
-la infraestructura de comunicación asíncrona.
-
-  -----------------------------------------------------------------------
-  ID                      Actividad               Entregable
-  ----------------------- ----------------------- -----------------------
-  SE-01                   Configurar RabbitMQ     Broker operativo.
-                          para ejecutarse dentro  
-                          de la red Docker.       
-
-  SE-02                   Definir las colas,      Configuración de
-                          exchanges, routing keys mensajería.
-                          y reglas de             
-                          enrutamiento            
-                          necesarias.             
-
-  SE-03                   Documentar los          Esquemas de eventos.
-                          contratos de
-                          `identity.events`,
-                          `election.events`,
-                          `votes.events` y de
-                          `tally.completed`,
-                          definiendo si este va
-                          en `votes.events` o en
-                          un exchange
-                          `tally.events`.
-
-  SE-04                   Implementar el servicio Servicio de conteo de
-                          Tally en Go.            votos.
-
-  SE-05                   Implementar el cliente  Contrato de entrada de
-                          REST Tally → Ballot     Tally.
-                          para obtener las
-                          papeletas cifradas al
-                          cierre de la urna.
-
-  SE-06                   Implementar el          Lógica de conteo.
-                          descifrado de las
-                          papeletas, las reglas
-                          de conteo y las
-                          validaciones
-                          necesarias.
-
-  SE-07                   Coordinar con Andres la Integración entre
-                          publicación de votos y  componentes.
-                          con Sergio la entrega   
-                          de información para     
-                          Analytics.              
-
-  SE-08                   Configurar reintentos,  Procesamiento robusto
-                          confirmaciones de       de mensajes.
-                          mensajes y manejo de
-                          errores en el broker, y
-                          hacer el escrutinio
-                          idempotente por
-                          elección.
-
-  SE-09                   Implementar pruebas de  Pruebas de mensajería y
-                          publicación, consumo y  conteo.
-                          procesamiento de votos. 
-
-  SE-10                   Publicar el evento      Productor de eventos de
-                          `tally.completed` con   Tally.
-                          el resultado oficial
-                          del escrutinio.
-  -----------------------------------------------------------------------
-
-**Criterio de aceptación:** RabbitMQ permite distribuir eventos entre
-los componentes y Tally cuenta las papeletas sin contabilizar dos veces
-la misma urna si el escrutinio se lanza de nuevo.
-
-**Decisión arquitectónica definida en la vista C&C:** Tally obtiene las
-papeletas cifradas de Ballot mediante REST al cierre de la urna, las
-descifra y las cuenta; no se suscribe al broker ni tiene base de datos
-propia, y publica `tally.completed`. Ballot (colección Votes) es la
-fuente de verdad de las papeletas y Tally la del conteo oficial.
-
-**Decisión de implementación (P2):** la llave privada de la urna se entrega
-al lanzar el escrutinio desde la CLI/administración:
-`POST /v1/tally/elections/{id}` acepta `private_key` en el cuerpo (PEM, DER o
-base64); como alternativa para automatización, `TALLY_PRIVATE_KEY(_FILE)`.
-Tally compara la clave con `encryption_public_key` de Ballot, rechaza una
-clave que no corresponda y no la persiste. Queda pendiente que Fabian
-confirme esta variante y se refleje en la vista C&C; si se prefiere un
-conector REST Tally → Election, solo cambia la fuente de la llave.
-
-### 3.7. Camilo --- Notifications y MongoDB
-
-**Objetivo:** implementar las notificaciones generadas a partir de los
-eventos del sistema.
-
-  -----------------------------------------------------------------------
-  ID                      Actividad               Entregable
-  ----------------------- ----------------------- -----------------------
-  CA-01                   Definir cuáles de los   Catálogo de eventos
-                          eventos del broker      notificables.
-                          (`identity.*`,
-                          `election.*`,
-                          `tally.completed`)
-                          deben generar
-                          notificaciones.
-
-  CA-02                   Implementar el servicio Servicio de
-                          Notifications en        notificaciones.
-                          TypeScript.             
-
-  CA-03                   Configurar MongoDB para Colección de
-                          almacenar los registros notificaciones.
-                          de notificaciones.      
-
-  CA-04                   Implementar el          Consumidor de mensajes.
-                          consumidor de eventos   
-                          de RabbitMQ.            
-
-  CA-05                   Implementar la lógica   Flujo de notificación
-                          para generar y          funcional.
-                          registrar               
-                          notificaciones.         
-
-  CA-06                   Definir el contenido de Plantillas y reglas de
-                          las notificaciones y    seguridad.
-                          evitar incluir datos    
-                          sensibles innecesarios. 
-
-  CA-07                   Implementar un endpoint API de consulta.
-                          HTTP, expuesto a través
-                          del Gateway, para
-                          consultar el historial
-                          de notificaciones.
-
-  CA-08                   Probar el procesamiento Pruebas automatizadas.
-                          de eventos repetidos y  
-                          el registro de          
-                          notificaciones.         
-
-  CA-09                   Preparar el contenedor  Dockerfile y
-                          del servicio y          documentación.
-                          documentar su           
-                          configuración.          
-  -----------------------------------------------------------------------
-
-**Criterio de aceptación:** los eventos definidos generan los registros
-de notificación esperados, que quedan almacenados en MongoDB.
-
-**Aclaración:** el diagrama contempla el servicio Notifications y su
-base de datos, pero no especifica un proveedor externo de correo
-electrónico, SMS o notificaciones push. Esas integraciones no deberían
-considerarse obligatorias sin un acuerdo explícito del equipo.
-
-### 3.8. Sergio --- Analytics y Results en Rust
-
-**Objetivo:** implementar el componente analítico encargado de procesar
-información de los votos y generar los resultados de las elecciones.
-
-  -----------------------------------------------------------------------
-  ID                      Actividad               Entregable
-  ----------------------- ----------------------- -----------------------
-  SR-01                   Definir las métricas y  Especificación de
-                          los resultados que se   resultados.
-                          deben producir.         
-
-  SR-02                   Diseñar la estructura   Modelo de persistencia.
-                          de los documentos de    
-                          Results en MongoDB.     
-
-  SR-03                   Implementar el servicio Servicio ejecutable.
-                          Analytics en Rust.      
-
-  SR-04                   Implementar el          Consumidor integrado
-                          consumidor de           con RabbitMQ.
-                          `votes.cast`
-                          (participación en
-                          tiempo real) y de
-                          `tally.completed`
-                          (resultados finales).
-
-  SR-05                   Desarrollar la lógica   Algoritmo de cálculo de
-                          de agregación de los    resultados.
-                          votos.                  
-
-  SR-06                   Implementar la          Operaciones de
-                          persistencia de         almacenamiento y
-                          resultados en MongoDB.  consulta.
-
-  SR-07                   Definir un endpoint     API de consulta de
-                          HTTP para consultar los resultados.
-                          resultados.             
-
-  SR-08                   Implementar pruebas con Pruebas de exactitud
-                          conjuntos de votos      del conteo.
-                          conocidos.              
-
-  SR-09                   Verificar el            Pruebas de
-                          tratamiento de mensajes consistencia.
-                          repetidos y de          
-                          resultados parciales.   
-
-  SR-10                   Preparar el contenedor  Dockerfile y
-                          de Analytics y          documentación.
-                          documentar su           
-                          configuración.          
-  -----------------------------------------------------------------------
-
-**Criterio de aceptación:** Analytics procesa la información acordada,
-calcula los resultados correctamente y los persiste en MongoDB.
-
-**Dependencia crítica:** Sergio debe coordinar con Sebastian y Andres el
-formato de los datos de entrada. Además, debe acordar con Cristhian la
-respuesta HTTP que consumirá el frontend.
-
-## 4. Responsabilidades compartidas de integración
-
-  -----------------------------------------------------------------------
-  Actividad         Responsable       Colaboradores     Fecha objetivo
-  transversal       principal                           
-  ----------------- ----------------- ----------------- -----------------
-  Definición de     Cristhian         Todos los         28 de octubre
-  contratos HTTP                      responsables de   
-                                      servicios         
-
-  Definición de     Sebastian         Fabian, Kevin,    28 de octubre
-  contratos de                        Andres, Camilo y  
-  eventos                             Sergio            
-
-  Configuración de  Sebastian         Fabian, Kevin,    29 de octubre
-  RabbitMQ                            Andres, Camilo y  
-                                      Sergio            
-
-  Configuración de  Responsable de    Integrante        29 de octubre
-  bases de datos    cada servicio     responsable del   
-                                      despliegue        
-
-  Dockerfile de     Cada integrante   ---               30 de octubre
-  cada componente                                       
-
-  Integración de    Cristhian         Julian y Andres   30 de octubre
-  clientes con el                                       
-  Gateway                                               
-
-  Integración de    Sebastian         Andres y Sergio   31 de octubre
-  votos, Tally y                                        
-  Analytics                                             
-
-  Integración de    Sebastian         Kevin y Fabian    31 de octubre
-  eventos de                                            
-  identidad y                                           
-  elecciones                                            
-
-  Integración de    Camilo            Sebastian         31 de octubre
-  Notifications                                         
-
-  Pruebas de        Todo el equipo    Coordinación de   1 de noviembre
-  extremo a extremo                   Cristhian         
-
-  Vista C&C y       Cristhian         Todo el equipo    1 de noviembre
-  patrones                                              
-
-  Vista de          Sebastian         Todo el equipo    1 de noviembre
-  despliegue                                            
-
-  Vista por capas   Julian            Cristhian y Kevin 1 de noviembre
-
-  Vista de          Fabian            Responsables de   1 de noviembre
-  descomposición                      los servicios     
-
-  Consolidación del Todo el equipo    Un integrante     2 de noviembre
-  PDF y las                           designado para    
-  instrucciones de                    consolidar la     
-  ejecución                           entrega           
-  -----------------------------------------------------------------------
-
-Las fechas corresponden al cronograma propuesto para llegar a la entrega
-del 2 de noviembre de 2026.
-
-## 5. Dependencias entre integrantes
-
-  -----------------------------------------------------------------------
-  Integrante              Debe coordinarse con    Motivo
-  ----------------------- ----------------------- -----------------------
-  Cristhian               Julian                  Compatibilidad del JWT
-                                                  entre Auth y API
-                                                  Gateway.
-
-  Cristhian               Fabian, Kevin, Andres,  Definición de rutas y
-                          Sebastian, Camilo y     contratos HTTP.
-                          Sergio                  
-
-  Julian                  Cristhian               Autenticación y
-                                                  validación de tokens.
-
-  Julian                  Fabian, Sebastian y     Operaciones de la CLI
-                          Sergio                  sobre urnas, escrutinio
-                                                  y resultados.
-
-  Fabian                  Sebastian               Publicación de eventos
-                                                  de elecciones.
-
-  Fabian                  Sebastian               Acceso de Tally a la
-                                                  llave privada de la
-                                                  urna.
-
-  Kevin                   Sebastian               Publicación y consumo
-                                                  de eventos de
-                                                  identidad.
-
-  Kevin                   Andres                  Flujo de firma ciega y
-                                                  envío de papeletas.
-
-  Kevin                   Julian                  Identificador del
-                                                  usuario en el JWT y su
-                                                  relación con el padrón.
-
-  Andres                  Kevin y Cristhian       Mismo protocolo de
-                                                  cegado y cifrado en la
-                                                  app móvil y en la web.
-
-  Andres                  Sebastian               Publicación y
-                                                  procesamiento de
-                                                  eventos de votos.
-
-  Sebastian               Sergio                  Contrato de eventos y
-                                                  datos que consume
-                                                  Analytics.
-
-  Sebastian               Camilo                  Configuración de colas
-                                                  y eventos de
-                                                  notificaciones.
-
-  Sergio                  Cristhian               Contrato de consulta de
-                                                  resultados para el
-                                                  frontend.
-
-  Todos                   Responsable de          Integración de las
-                          consolidación           cuatro vistas y
-                          documental              preparación de la
-                                                  entrega.
-  -----------------------------------------------------------------------
-
-## 6. Criterios comunes para dar por terminado un componente
-
-Cada integrante debe entregar su componente con estos elementos mínimos:
-
-1.  **Código funcional** en la tecnología asignada.
-2.  **Contrato de comunicación** documentado.
-3.  **Persistencia o integración externa** operativa, cuando
-    corresponda.
-4.  **Pruebas básicas** que demuestren su funcionamiento.
-5.  **Dockerfile** y configuración de variables de entorno, cuando el
-    componente se ejecute en contenedor.
-6.  **README breve** con las instrucciones para instalar, configurar y
-    ejecutar el componente.
-7.  **Pull request** con los cambios y la descripción de las pruebas
-    realizadas.
-
-## 7. Cronograma de implementación
-
-  --------------------------------------------------------------------------
-  Fecha             Fase              Actividades        Resultado esperado
-                                      principales        
-  ----------------- ----------------- ------------------ -------------------
-  27 de octubre     Análisis y        Revisar el         Inventario de
-                    acuerdos          prototipo 1,       funcionalidades,
-                                      definir el         responsabilidades y
-                                      alcance, validar   contratos
-                                      la arquitectura y  iniciales.
-                                      repartir tareas.   
-
-  28 de octubre     Diseño detallado  Definir endpoints, Contratos de
-                                      esquemas de datos, integración
-                                      eventos y          acordados.
-                                      estructura de los  
-                                      proyectos.         
-
-  29 de octubre     Desarrollo de     Implementar las    Primera versión
-                    componentes       funcionalidades    ejecutable de cada
-                                      principales de los componente.
-                                      ocho componentes   
-                                      lógicos.           
-
-  30 de octubre     Persistencia e    Integrar bases de  Flujos parciales
-                    interfaces        datos, clientes y  funcionales.
-                                      servicios HTTP.    
-
-  31 de octubre     Integración y     Integrar           Primera versión
-                    despliegue        servicios,         integrada del
-                                      configurar         prototipo.
-                                      mensajería y       
-                                      Docker Compose.    
-
-  1 de noviembre    Pruebas y         Corregir errores,  Versión candidata
-                    documentación     ejecutar pruebas   para entrega.
-                                      de extremo a       
-                                      extremo y          
-                                      completar las      
-                                      vistas             
-                                      arquitectónicas.   
-
-  2 de noviembre    Entrega           Verificar el PDF,  Entrega del
-                                      probar las         prototipo 2.
-                                      instrucciones y    
-                                      entregar el        
-                                      artefacto en       
-                                      MiCampus UNAL.     
-
-  3 de noviembre    Presentación      Demostrar el       Presentación del
-                                      funcionamiento y   proyecto.
-                                      explicar las       
-                                      decisiones         
-                                      arquitectónicas.   
-  --------------------------------------------------------------------------
+# Prototipo 2 — Sistema de Votaciones (espivota)
+## Plan de construcción y reparto de tareas
+
+**Curso:** Software Architecture 2026-II · Universidad Nacional de Colombia
+**Enunciado:** *Prototype 2 — Advanced Architectural Structure*
+**Entrega del artefacto (`p2_2c.pdf`):** martes 3 de noviembre de 2026, antes de las 23:59 (MiCampus UNAL)
+**Presentación:** martes 3 de noviembre de 2026 (video de 10 a 15 minutos)
+**Equipo:** 2c · 8 integrantes
+
+> Este documento es el plan **interno** del equipo (qué construir, quién lo construye y cuándo). El artefacto que se entrega al profesor (`p2_2c.pdf`) se arma a partir de las secciones 2, 5, 12 y 13, y se escribe en `docs/entregables/P2/p2_2c.md`.
+
+---
+
+## 1. Objetivo y alcance
+
+El enunciado pide **rediseñar la arquitectura** del prototipo 1 y construir un segundo prototipo. El P1 tenía 3 procesos (web, identity, ballot) y 2 bases de datos; el P2 lo descompone en **ocho componentes lógicos** (uno por integrante), agrega un **API Gateway**, un **broker de mensajería** para procesos asíncronos, dos clientes nuevos (móvil y CLI) y completa el ciclo electoral con **escrutinio y resultados**.
+
+### 1.1 Alcance funcional del prototipo (dentro)
+
+| # | Funcionalidad | Servicio principal |
+|---|---|---|
+| F1 | Login con usuario, contraseña y MFA; JWT RS256 con rol (`admin`, `votante`) | Auth |
+| F2 | Gestión de usuarios y roles | Auth |
+| F3 | Crear, editar, abrir y cerrar elecciones con sus opciones y ventana de tiempo | Election |
+| F4 | Generar y custodiar el par de llaves de la urna (pública para cifrar, privada para escrutar) | Election |
+| F5 | Padrón electoral: inscribir votantes y validar su elegibilidad | Identity + Census |
+| F6 | Emisión de **token anónimo con firma ciega** RSA (RFC 9474) | Identity → Blind Signature |
+| F7 | Cifrado híbrido del voto en el cliente (RSA-OAEP + AES-GCM), en web y móvil | Web SSR / App móvil |
+| F8 | Recepción anónima de la papeleta, verificación de la firma ciega, antidoble voto y recibo Ed25519 | Ballot |
+| F9 | Escrutinio oficial: descifrar y contar las papeletas de una urna cerrada | Tally |
+| F10 | Participación en tiempo real y resultados finales | Analytics |
+| F11 | Notificaciones generadas por los eventos del sistema | Notifications |
+| F12 | Administración por consola (urnas, escrutinio, resultados) | CLI Admin |
+
+### 1.2 Fuera del alcance de P2
+
+- Proveedores externos de correo, SMS o *push* (las notificaciones solo se registran en su base de datos).
+- Alta disponibilidad, réplicas, balanceo de carga y orquestación (Kubernetes).
+- Pruebas de conocimiento cero completas sobre la validez de la papeleta (el campo `proof` existe, pero la verificación es básica).
+- Recuperación de contraseña y MFA real (el código MFA de desarrollo es fijo).
+
+---
+
+## 2. Arquitectura (estructura de Componentes y Conectores)
+
+El diagrama oficial está en `docs/entregables/P2/cc-view-p2.svg` (fuente en `cc-view-p2.html`). La versión en Mermaid sirve como referencia interna.
+
+![Vista C&C](../entregables/P2/cc-view-p2.svg)
+
+```mermaid
+flowchart TD
+    subgraph Presentación
+      WEB["Web SSR<br/>Next.js (TypeScript)"]
+      MOB["App móvil<br/>Flutter (Dart)"]
+      CLI["CLI Admin<br/>Java"]
+    end
+
+    GW["API Gateway<br/>TypeScript"]
+
+    subgraph Lógica
+      AUTH["Auth<br/>Python"]
+      ELE["Election<br/>Python"]
+      IDT["Identity<br/>Python"]
+      BS["Blind Signature<br/>Python"]
+      BAL["Ballot<br/>Go"]
+      TAL["Tally<br/>Go"]
+      ANA["Analytics<br/>Rust"]
+      NOT["Notifications<br/>TypeScript"]
+    end
+
+    MQ{{"RabbitMQ<br/>(AMQP)"}}
+
+    subgraph Datos
+      PGA[("Auth DB<br/>PostgreSQL")]
+      PGE[("Elections DB<br/>PostgreSQL")]
+      PGC[("Census DB<br/>PostgreSQL")]
+      MGV[("Votes DB<br/>MongoDB")]
+      MGR[("Results DB<br/>MongoDB")]
+      MGN[("Notif. DB<br/>MongoDB")]
+    end
+
+    WEB -- REST/JSON --> GW
+    MOB -- REST/JSON --> GW
+    CLI -- REST/JSON --> GW
+
+    GW -- REST --> AUTH
+    GW -- REST --> ELE
+    GW -- REST --> IDT
+    GW -- "REST (anónimo)" --> BAL
+    GW -- REST --> TAL
+    GW -- REST --> ANA
+    GW -- REST --> NOT
+
+    IDT -- REST --> BS
+    IDT -. "gRPC (HTTP/2)" .-> BAL
+    TAL -- REST --> BAL
+
+    ELE -- "election.events" --> MQ
+    IDT -- "identity.events" --> MQ
+    BAL -- "votes.events" --> MQ
+    TAL -- "tally.events" --> MQ
+    MQ -- "election.*" --> BAL
+    MQ --> ANA
+    MQ --> NOT
+
+    AUTH --> PGA
+    ELE --> PGE
+    IDT --> PGC
+    BAL --> MGV
+    ANA --> MGR
+    NOT --> MGN
+```
+
+### 2.1 Cumplimiento de los requisitos no funcionales
+
+| Requisito (enunciado) | Cómo se cumple |
+|---|---|
+| Arquitectura **distribuida** | 9 procesos de aplicación, 6 bases de datos y 1 broker, cada uno en su contenedor y comunicados por red. |
+| ≥ 2 componentes de **presentación** distintos (uno web) | **Web** (Next.js), **App móvil** (Flutter) y **CLI Admin** (Java). |
+| El front-end web sigue una subarquitectura **SSR** | Next.js App Router: el *Servidor SSR* renderiza las páginas y hace de proxy de sesión hacia el Gateway; el *Cliente navegador* cifra el voto y ciega el token. |
+| Componentes de **lógica** ≥ número de integrantes (8) | Auth, Election, Identity, Blind Signature, Ballot, Tally, Analytics y Notifications (8), más el API Gateway. |
+| ≥ 1 componente de **comunicación/orquestación** entre componentes lógicos | **API Gateway** (TypeScript): punto de entrada único, enrutamiento, validación de JWT, CORS y límites de tasa. |
+| ≥ 4 componentes de **datos** (relacional + NoSQL) | PostgreSQL: Auth, Elections, Census. MongoDB: Votes, Results, Notif. (6 en total). |
+| ≥ 1 componente para procesos **asíncronos** | **RabbitMQ** con exchanges `topic` (`identity.events`, `election.events`, `votes.events`, `tally.events`), colas con DLQ y *publisher confirms*. |
+| Conjunto de **conectores HTTP** | REST/JSON sobre HTTP/1.1 (clientes → Gateway → servicios, Identity → Blind Signature, Tally → Ballot) y gRPC sobre HTTP/2 (Identity → Ballot). |
+| ≥ 5 lenguajes de propósito general | **TypeScript, Python, Go, Rust, Java y Dart** (6). |
+| Despliegue orientado a **contenedores** | Un `Dockerfile` por componente y un `docker-compose.yml` en la raíz que levanta todo. |
+
+### 2.2 Estilos y patrones arquitectónicos
+
+- **Cliente-Servidor** entre los tres clientes y el backend.
+- **Microservicios**: ocho servicios con responsabilidades separadas, desplegables por separado.
+- **API Gateway**: los clientes solo conocen el Gateway; ningún cliente habla con un servicio ni con una base de datos directamente.
+- **Base de datos por servicio**: cada base de datos tiene un solo dueño (Auth DB → Auth, Elections DB → Election, Census → Identity, Votes → Ballot, Results → Analytics, Notif. DB → Notifications).
+- **Publicar-Suscribir (event-driven)**: productores y consumidores desacoplados por RabbitMQ; la *routing key* es igual a `event_type`.
+- **Outbox transaccional** en Election: el evento se guarda en la misma transacción que el cambio de estado y un *relay* lo publica.
+- **Consumidor idempotente** en Analytics y Notifications (deduplicación por `event_id`) y escrutinio idempotente en Tally.
+- **SSR** en el front-end web.
+- **Separación de identidad y voto** como decisión de diseño: Identity sabe *quién eres*; Ballot sabe *qué se votó*, pero no quién. La ruta de Ballot en el Gateway es anónima (no reenvía JWT, cookies, IP ni User-Agent).
+
+### 2.3 Elementos y relaciones
+
+| Elemento | Tipo | Tecnología | Responsabilidad |
+|---|---|---|---|
+| `platform` (Web SSR) | Presentación | Next.js + TypeScript | UI de votante y administrador; SSR; cifrado del voto y cegado del token en el navegador. |
+| `mobile` | Presentación | Flutter / Dart | App de votante con el mismo protocolo criptográfico que la web. |
+| `admin-cli` | Presentación | Java | Operaciones administrativas por consola. |
+| `gateway` | Comunicación | TypeScript (Node) | Catálogo de rutas `/api/*`, validación JWT (JWKS), CORS, límites de tasa. |
+| Auth | Lógica | Python (FastAPI) | Login + MFA, emisión de JWT RS256, usuarios y roles. |
+| `election` | Lógica | Python (FastAPI) | Ciclo de vida de elecciones, llaves de la urna, parámetros firmados, `election.events`. |
+| `identity` | Lógica | Python (FastAPI) | Padrón, elegibilidad, solicitud de firma ciega, registro de la urna en Ballot. |
+| `blind-signature` | Lógica | Python (FastAPI) | Firma ciega RSA; solo accesible desde Identity (sin puerto publicado). |
+| `ballot` | Lógica | Go | Recepción anónima de papeletas, verificación del token, recibos, `votes.events`. |
+| `tally` | Lógica | Go | Escrutinio oficial al cierre de la urna; publica `tally.completed`. Sin base de datos. |
+| `analytics` | Lógica | Rust | Participación en tiempo real y resultados finales. |
+| `notification` | Lógica | TypeScript | Consume eventos y registra notificaciones. |
+| `rabbitmq` | Asíncrono | RabbitMQ 4 | Broker de eventos. |
+| `postgres`, `postgres-elections`, `postgres-census` | Datos (relacional) | PostgreSQL 16 | Auth DB, Elections DB, Census DB. |
+| `mongo`, `mongo-results`, `notifications-mongo` | Datos (NoSQL) | MongoDB 8 | Votes DB (replica set), Results DB, Notif. DB. |
+
+| Conector | Origen → Destino | Protocolo | Datos que viajan |
+|---|---|---|---|
+| C1 | Web / Móvil / CLI → Gateway | REST/JSON, HTTP/1.1 | Credenciales, JWT, elecciones, papeletas, resultados. |
+| C2 | Gateway → servicios | REST/JSON, HTTP/1.1 | Peticiones reenviadas según el catálogo de rutas. |
+| C3 | Identity → Blind Signature | REST/JSON + API key | Token cegado → firma ciega. |
+| C4 | Identity → Ballot | gRPC, HTTP/2 | Registro de la urna y llaves de verificación del token. |
+| C5 | Tally → Ballot | REST/JSON + token interno | Volcado de papeletas cifradas de una urna cerrada. |
+| C6 | Productores → RabbitMQ | AMQP 0-9-1 | `election.*`, `census.updated`, `votes.cast`, `tally.completed`. |
+| C7 | RabbitMQ → consumidores | AMQP 0-9-1 | Ballot, Analytics, Notifications. |
+| C8 | Servicio → su base de datos | Driver SQL / Mongo wire | Datos de cada servicio. |
+
+---
+
+## 3. Diseño del flujo de voto (decisiones que el equipo debe respetar)
+
+### 3.1 Secuencia
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor A as Admin
+    actor V as Votante
+    participant C as Web / Móvil
+    participant GW as Gateway
+    participant E as Election
+    participant I as Identity
+    participant BS as Blind Signature
+    participant B as Ballot
+    participant MQ as RabbitMQ
+    participant T as Tally
+    participant AN as Analytics
+
+    A->>GW: POST /api/elections (JWT admin)
+    GW->>E: crea elección (draft)
+    A->>GW: abrir elección
+    E->>E: genera llaves de la urna y firma parámetros
+    E->>MQ: election.created / election.opened
+    MQ->>B: election.created (abre la urna)
+    V->>C: usuario + contraseña + MFA
+    C->>GW: /api/auth/login → /api/auth/login/mfa
+    GW-->>C: JWT RS256
+    C->>GW: GET /api/elections/{id}/parameters
+    C->>GW: GET /api/identity/elections/{id}/eligibility
+    C->>C: genera token y lo ciega
+    C->>GW: POST /api/identity/tokens/blind (JWT)
+    GW->>I: verifica padrón y que no haya pedido token
+    I->>BS: firma ciega
+    BS-->>I: firma
+    I-->>C: firma ciega
+    C->>C: quita el cegado y cifra el voto (RSA-OAEP + AES-GCM)
+    C->>GW: POST /api/ballots (SIN JWT ni cookies)
+    GW->>B: papeleta + token
+    B->>B: verifica firma, urna abierta, token no gastado
+    B-->>C: 201 {ballot_hash, receipt}
+    B->>MQ: votes.cast {election_id, cast_at}
+    MQ->>AN: participación en tiempo real
+    A->>GW: cerrar elección
+    E->>MQ: election.closed
+    A->>GW: POST /api/tally/elections/{id} {private_key}
+    GW->>T: lanza escrutinio
+    T->>B: GET papeletas cifradas
+    T->>T: descifra y cuenta
+    T->>MQ: tally.completed
+    MQ->>AN: resultados oficiales (Results DB)
+```
+
+### 3.2 Reglas de diseño
+
+1. **Firma ciega:** Identity nunca ve el token sin cegar; Ballot nunca ve la identidad. Identity solo marca que el votante ya pidió su token.
+2. **Ruta anónima:** `POST /api/ballots` tiene acceso `anonymous` en el Gateway. El cliente usa `credentials: "omit"` y el Gateway descarta `Authorization`, cookies, IP y User-Agent.
+3. **Un voto por token:** Ballot rechaza un token ya gastado con `409 token_already_spent`; un reintento idéntico devuelve el mismo recibo (`200`, `replayed: true`).
+4. **Llaves de la urna:** las genera y custodia Election (privada envuelta con AES-256-GCM bajo una KEK). La privada solo se libera a un admin (`POST /elections/{id}/urn-key/private`) para lanzar el escrutinio; Tally la recibe en el cuerpo, la compara con la llave pública y **no la persiste**.
+5. **Eventos sin datos sensibles:** `votes.cast` lleva solo `election_id` y `cast_at`; `identity.credential.issued` nunca lleva `user_id`, documento, token ni firma.
+6. **Idempotencia:** el `event_id` de `tally.completed` es un UUIDv5 determinista del digest de las papeletas; relanzar el escrutinio no duplica resultados.
+7. **Fuente de verdad:** Ballot para las papeletas, Tally para el conteo oficial, Analytics para la consulta de resultados.
+8. **Aislamiento:** Blind Signature y Tally no publican puertos al host; las bases de datos no se exponen a los clientes.
+
+> **Limitación a mencionar en el video:** la correlación temporal entre la emisión del token y `votes.cast` podría ayudar a desanonimizar votantes en elecciones pequeñas. Se mitiga con eventos que solo llevan la hora del voto, sin token ni recibo.
+
+---
+
+## 4. Contratos
+
+Los contratos se congelan antes de implementar para que los frentes trabajen en paralelo.
+
+### 4.1 API Gateway — REST/JSON (puerto 8088)
+
+Catálogo completo en `gateway/src/routes.ts` y en `GET /api`.
+
+| Método | Ruta pública | Servicio | Acceso |
+|---|---|---|---|
+| POST | `/api/auth/login`, `/api/auth/login/mfa` | Auth | público |
+| GET / POST | `/api/auth/me`, `/api/auth/logout` | Auth | usuario |
+| GET | `/api/auth/users` | Auth | admin |
+| GET | `/api/elections/open` | Election | público |
+| GET / POST | `/api/elections` | Election | admin |
+| GET | `/api/elections/{id}/parameters` | Election | usuario |
+| GET / POST | `/api/elections/{id}/status`, `/api/elections/{id}/close` | Election | admin |
+| GET | `/api/identity/elections/{id}/eligibility` | Identity | usuario |
+| POST | `/api/identity/tokens/blind` | Identity | usuario |
+| GET / POST / PATCH | `/api/identity/elections/{id}/voters[/{userId}]` | Identity | admin |
+| POST | `/api/ballots` | Ballot | **anónimo** |
+| GET | `/api/ballots/elections/{id}/parameters` | Ballot | anónimo |
+| POST / GET | `/api/tally/elections/{id}` | Tally | admin / usuario |
+| GET | `/api/analytics/summary`, `/api/analytics/elections/{id}[/results\|/participation\|/turnout]` | Analytics | usuario |
+| GET | `/api/notifications` | Notifications | usuario |
+
+### 4.2 Eventos — RabbitMQ
+
+Contrato completo en `tally/docs/events.md`; topología en `rabbitmq/definitions.json`. Sobre común: `event_id`, `event_type`, `occurred_at`, `producer`, `schema_version`, `data`.
+
+| Exchange | Evento | Productor | Consumidores |
+|---|---|---|---|
+| `election.events` | `election.created`, `election.opened`, `election.closed` | Election | Ballot, Analytics, Notifications |
+| `identity.events` | `census.updated`, `identity.credential.issued` | Identity | Analytics, Notifications |
+| `votes.events` | `votes.cast` | Ballot | Analytics, Notifications |
+| `tally.events` | `tally.completed` | Tally | Analytics, Notifications |
+
+Cada cola de consumidor tiene su DLX y DLQ (`analytics.events.dlq`, `notifications.*.dlq`).
+
+### 4.3 Identity → Ballot — gRPC (puerto 9091, solo red interna)
+
+`proto/ballot.proto`, servicio `BallotAdminService`: `RegisterElection`, `AddTokenVerificationKey`, `CloseElection`, `CountBallots`, `GetElectionStatus`.
+
+### 4.4 Modelo de datos
+
+**Elections DB (PostgreSQL, Election)** — detalle en `election/docs/modelo-datos.md`
+
+```
+elections(id, name, description, status draft|open|closed, opens_at, closes_at, created_by, opened_at, closed_at)
+election_options(election_id, position, label, is_blank)
+urn_keys(election_id, algorithm, public_key_der, wrapped_private_key, wrap_nonce, kek_id, release_count)
+election_parameters(election_id, signed_parameters, signing_key_id, signature_algorithm, signature)
+election_audit(id, election_id, action, actor, occurred_at)
+outbox_events(id, event_id UNIQUE, event_type, payload, published_at)
+```
+
+**Auth DB y Census DB (PostgreSQL)** — `identity/schema.sql`, `census/schema.sql`: usuarios, roles, sesiones, padrón y marca de token emitido.
+
+**Votes DB (MongoDB, Ballot)** — elecciones registradas, tokens gastados (índice único) y papeletas cifradas con su recibo.
+
+**Results DB (MongoDB, Analytics)** — informes por elección, participación por hora, resultados y `processed_events`.
+
+**Notif. DB (MongoDB, Notifications)** — notificaciones con índice único en `eventId`.
+
+---
+
+## 5. Estructuras arquitectónicas que exige el enunciado
+
+El P1 solo pedía la vista C&C. El P2 pide **cuatro estructuras**, cada una con su vista, la descripción de elementos y relaciones y la descripción de los patrones usados.
+
+### 5.1 Estructura C&C
+
+Sección 2 de este plan. Debe diferenciar conectores HTTP (síncronos) de mensajes AMQP (asíncronos) y mostrar el lenguaje de cada componente, incluido el Gateway.
+
+### 5.2 Estructura de despliegue
+
+Debe mostrar **dónde corre** cada componente, no repetir el diagrama lógico:
+
+- Nodo: máquina anfitriona con Docker Engine y Docker Compose.
+- Un contenedor por componente (17 en total) en la red de Compose.
+- Puertos publicados al host: 3000 (web), 8088 (gateway), 8000 (identity), 8001 (election), 8080 (ballot), 8090 (analytics), 8091 (notifications), 8092 (móvil en navegador), 15672 (consola de RabbitMQ).
+- Sin puerto publicado: Blind Signature, Tally y las bases de datos.
+- Volúmenes persistentes: uno por base de datos y los de llaves (`identity-keys`, `election-keys`, `blind-signature-keys`).
+- La app móvil también se compila para Android/iOS y se ejecuta fuera de Docker.
+- Patrones: **un servicio por contenedor**, **base de datos por servicio**, *health checks* y orden de arranque con `depends_on`.
+
+### 5.3 Estructura por capas
+
+| Capa | Elementos | Puede usar |
+|---|---|---|
+| Presentación | Web SSR, App móvil, CLI Admin | Comunicación |
+| Comunicación | API Gateway | Lógica |
+| Lógica | Auth, Election, Identity, Blind Signature, Ballot, Tally, Analytics, Notifications | Lógica (vía REST/gRPC), Mensajería, Datos propios |
+| Mensajería | RabbitMQ | — |
+| Datos | 3 PostgreSQL + 3 MongoDB | — |
+
+Patrón: **capas estrictas hacia abajo** (ningún cliente salta al servicio o a la base de datos). Dentro de cada servicio se repite una arquitectura en capas: API → aplicación/dominio → infraestructura (persistencia, mensajería).
+
+### 5.4 Estructura de descomposición
+
+Módulos internos de los componentes principales (verificar contra el código de cada carpeta):
+
+| Componente | Módulos |
+|---|---|
+| Election | `api.py` (HTTP), `service.py` (casos de uso), `rules.py` (estados y ventanas), `models.py` (persistencia), llaves de la urna, *outbox relay* (publicación) |
+| Ballot | `cmd/`, `internal/httpapi` (API), validación del token, repositorio Mongo, servidor gRPC, consumidor `election.events`, publicador `votes.events` |
+| Tally | cliente de Ballot (`internal/ballotclient`), descifrado, conteo, publicador `tally.events` |
+| Identity | `app/api` (rutas), padrón/elegibilidad, cliente Blind Signature, cliente gRPC de Ballot (`app/clients`) |
+| Analytics | `http.rs`, `consumer.rs`, `events.rs`, `report.rs`, `store.rs` |
+| Notifications | `domain`, `application`, `infrastructure` (arquitectura hexagonal) |
+| Gateway | `routes.ts` (catálogo), `router.ts`, `jwt.ts`, `rateLimit.ts`, `server.ts` |
+| Web SSR | `app/` (páginas y rutas SSR), `components/`, `lib/` (cliente API y criptografía) |
+
+Patrones: **descomposición por dominio** entre servicios y **arquitectura hexagonal / puertos y adaptadores** dentro de los servicios.
+
+---
+
+## 6. Stack tecnológico
+
+| Componente | Tecnología |
+|---|---|
+| Web SSR | Next.js (App Router) + TypeScript, Web Crypto API |
+| App móvil | Flutter / Dart (Android, iOS y web vía nginx) |
+| CLI Admin | Java + Maven |
+| API Gateway | TypeScript (Node.js), pnpm |
+| Auth, Election, Identity, Blind Signature | Python 3.12, FastAPI, SQLAlchemy, `uv`, `pytest` |
+| Ballot, Tally | Go, `net/http`, `mongo-driver`, `grpc-go`, `amqp091-go` |
+| Analytics | Rust, Cargo |
+| Notifications | TypeScript (Node.js), pnpm |
+| Datos | PostgreSQL 16, MongoDB 8 |
+| Mensajería | RabbitMQ 4 (management) |
+| Contenedores | Docker + Docker Compose |
+
+---
+
+## 7. Estructura del repositorio
+
+```
+Votaciones/
+├── docker-compose.yml          # stack completo
+├── assets/logo.png
+├── platform/                   # Web SSR (Next.js)
+├── mobile/                     # App Flutter
+├── admin-cli/                  # CLI Java
+├── gateway/                    # API Gateway (TypeScript)
+├── identity/                   # Auth + Identity (Python)
+├── election/                   # Election (Python)
+├── blind-signature/            # Firma ciega (Python)
+├── census/                     # esquema de Census DB
+├── ballot/                     # Ballot (Go)
+├── tally/                      # Tally (Go) + contratos de eventos
+├── analytics/                  # Analytics (Rust)
+├── notification/               # Notifications (TypeScript)
+├── rabbitmq/                   # definitions.json, rabbitmq.conf
+├── proto/                      # ballot.proto (gRPC Identity → Ballot)
+└── docs/
+    ├── plan-prototipos/
+    ├── demo/e2e_vote.py        # flujo E2E por el Gateway
+    └── entregables/P2/         # p2_2c.md → p2_2c.pdf, cc-view-p2.svg
+```
+
+---
+
+## 8. Reparto de tareas (8 integrantes)
+
+| Integrante | Componentes | Tecnologías | Revisor cruzado |
+|---|---|---|---|
+| **Cristhian** Cely | API Gateway y Web SSR | TypeScript, Next.js | Andres |
+| **Julian** Pira | Auth, Auth DB y CLI Admin | Python, PostgreSQL, Java | Kevin |
+| **Fabian** Espitia | Election y Elections DB | Python, PostgreSQL | Sebastian |
+| **Kevin** Rodriguez | Identity, Census DB y Blind Signature | Python, PostgreSQL | Julian |
+| **Andres** Rosada | Ballot, Votes DB y App móvil | Go, MongoDB, Flutter | Cristhian |
+| **Sebastian** Moya | Tally y RabbitMQ | Go, RabbitMQ | Fabian |
+| **Camilo** Camargo | Notifications y Notif. DB | TypeScript, MongoDB | Sergio |
+| **Sergio** Rey | Analytics y Results DB | Rust, MongoDB | Camilo |
+
+RabbitMQ (infraestructura) es de Sebastian, pero cada productor y consumidor implementa su propia integración.
+
+### Cristhian — API Gateway y Web SSR
+
+| ID | Tarea | Entregable / criterio de aceptación |
+|---|---|---|
+| CR-01 | Catálogo de rutas para Auth, Election, Identity, Ballot, Tally, Analytics y Notifications (Blind Signature no se expone) | `gateway/src/routes.ts` y `GET /api` |
+| CR-02 | Gateway en TypeScript con CORS y límites de tasa | Servicio en `:8088` y en contenedor |
+| CR-03 | Enrutamiento REST/JSON hacia cada servicio por variables `GATEWAY_*_URL` | Cada ruta llega a su servicio |
+| CR-04 | Validación de JWT RS256 por JWKS en todas las rutas salvo Ballot (anónima) | `401`/`403` correctos; Ballot no recibe JWT ni cookies |
+| CR-05 | Web en Next.js con SSR (Servidor SSR + Cliente navegador) | Páginas renderizadas en servidor; proxy de sesión |
+| CR-06 | Pantallas de login, elecciones, votación y resultados; cegado del token y cifrado del voto en el navegador | El voto en claro nunca sale del navegador (pestaña Red) |
+| CR-07 | Integración con el Gateway y manejo de errores; la papeleta se envía sin sesión | Flujo completo desde la web |
+| CR-08 | Dockerfiles del Gateway y la web | Contenedores sanos en Compose |
+| CR-09 | Vista C&C y descripción de patrones del artefacto | Secciones 2.2 y 2.3 pulidas |
+
+### Julian — Auth, Auth DB y CLI Admin
+
+| ID | Tarea | Entregable / criterio de aceptación |
+|---|---|---|
+| JU-01 | Revisar la autenticación del P1 | Inventario de lo reutilizable |
+| JU-02 | Servicio Auth en Python | Login + MFA operativos |
+| JU-03 | Esquema de Auth DB en PostgreSQL | `identity/schema.sql` + *seed* de usuarios |
+| JU-04 | Gestión de usuarios y roles | `GET/POST/PATCH /users` |
+| JU-05 | JWT RS256 con JWKS, `iss`/`aud` y expiración acordados con Cristhian | El Gateway valida sin secreto compartido |
+| JU-06 | CLI administrativa en Java | Ejecutable con instrucciones |
+| JU-07 | Comandos de la CLI: crear, abrir y cerrar urnas, lanzar escrutinio y consultar resultados (todo vía Gateway) | Ciclo administrativo completo por consola |
+| JU-08 | Pruebas de autenticación, persistencia y CLI | Pruebas pasando |
+| JU-09 | Vista por capas del artefacto | Sección 5.3 pulida |
+
+### Fabian — Election y Elections DB
+
+| ID | Tarea | Entregable / criterio de aceptación |
+|---|---|---|
+| FA-01 | Modelo de datos de las elecciones | `election/docs/modelo-datos.md` |
+| FA-02 | Elections DB en PostgreSQL | `election/schema.sql` cargado al levantar `postgres-elections` |
+| FA-03 | Servicio Election en Python | Servicio en `:8001` y en contenedor |
+| FA-04 | Crear, consultar, editar, abrir, cerrar y borrar (en `draft`) elecciones, con permisos por rol | Endpoints HTTP con `403` para votantes |
+| FA-05 | Estados, fases y ventanas de tiempo | `election/docs/reglas-negocio.md` y `app/rules.py` |
+| FA-06 | Publicación de `election.events` con outbox transaccional y *publisher confirms* | Analytics, Notifications y Ballot reciben los eventos |
+| FA-07 | Pruebas del servicio y la persistencia | `pytest` pasando |
+| FA-08 | Dockerfile y configuración de conexión | Servicio sano en Compose |
+| FA-09 | Generar y custodiar las llaves de la urna; liberar la privada al admin para el escrutinio | Tally descifra con la llave liberada |
+| FA-10 | Conectar el Gateway al servicio Election (`GATEWAY_ELECTION_URL`) | Las rutas `/api/elections*` llegan a `election`, no a `identity` |
+| FA-11 | Vista de descomposición del artefacto | Sección 5.4 pulida |
+
+### Kevin — Identity, Census DB y Blind Signature
+
+| ID | Tarea | Entregable / criterio de aceptación |
+|---|---|---|
+| KE-01 | Revisar la lógica de identidad y firma ciega del P1 | Inventario de lo reutilizable |
+| KE-02 | Esquema de Census DB | `census/schema.sql` |
+| KE-03 | Servicio Identity en Python | Servicio en `:8000` y en contenedor |
+| KE-04 | Consulta del padrón y elegibilidad | `GET /elections/{id}/eligibility` |
+| KE-05 | Blind Signature como servicio aparte, accesible solo desde Identity | Sin puerto publicado; protegido con API key |
+| KE-06 | Contrato Identity ↔ Blind Signature | Interfaz documentada en el README |
+| KE-07 | Validaciones criptográficas y pruebas del protocolo | Pruebas pasando |
+| KE-08 | Publicación de `census.updated` (y, si se confirma, `identity.credential.issued`) | Analytics calcula participación |
+| KE-09 | Contenedores y conexiones con PostgreSQL | Servicios sanos en Compose |
+
+### Andres — Ballot, Votes DB y App móvil
+
+| ID | Tarea | Entregable / criterio de aceptación |
+|---|---|---|
+| AN-01 | Modelo de la papeleta electrónica | `ballot/docs/http-api.md` |
+| AN-02 | Servicio Ballot en Go | Servicio en `:8080` y en contenedor |
+| AN-03 | Persistencia en MongoDB (replica set) | Papeletas y tokens gastados guardados |
+| AN-04 | Recepción y validación, incluida la firma ciega del token | Códigos `201/200/400/403/409/422` según el contrato |
+| AN-05 | Antidoble voto y reintentos idempotentes | Segundo uso del token → `409` |
+| AN-06 | Publicación de `votes.cast` | Analytics actualiza la participación |
+| AN-07 | App móvil en Flutter con el mismo cegado y cifrado que la web | Voto emitido desde el móvil |
+| AN-08 | Integración de la app con el Gateway; papeleta por la ruta anónima | Sin JWT en el envío |
+| AN-09 | Contenedor de la app (versión web) y documentación para Android/iOS | `mobile/README.md` |
+| AN-10 | Consumir `election.events` para abrir y cerrar la urna | La urna acepta/rechaza según el evento |
+| AN-11 | Endpoint interno para que Tally obtenga las papeletas cifradas | Protegido con token interno |
+
+### Sebastian — Tally y RabbitMQ
+
+| ID | Tarea | Entregable / criterio de aceptación |
+|---|---|---|
+| SE-01 | RabbitMQ en la red Docker | Broker sano; consola en `:15672` |
+| SE-02 | Exchanges, colas, routing keys y DLQ | `rabbitmq/definitions.json` |
+| SE-03 | Contratos de `identity.events`, `election.events`, `votes.events` y `tally.events` | `tally/docs/events.md` |
+| SE-04 | Servicio Tally en Go | Servicio sano en Compose (sin puerto publicado) |
+| SE-05 | Cliente REST Tally → Ballot | Papeletas obtenidas al cierre |
+| SE-06 | Descifrado y reglas de conteo | `sum(results) + invalid == total` |
+| SE-07 | Coordinar con Andres (votos) y Sergio (Analytics) | Contratos aceptados por ambos |
+| SE-08 | Reintentos, confirmaciones y escrutinio idempotente | Relanzar no duplica resultados |
+| SE-09 | Pruebas de publicación, consumo y conteo | `integration_test.go` pasando |
+| SE-10 | Publicar `tally.completed` | Analytics y Notifications lo reciben |
+| SE-11 | Vista de despliegue del artefacto | Sección 5.2 pulida |
+
+### Camilo — Notifications y Notif. DB
+
+| ID | Tarea | Entregable / criterio de aceptación |
+|---|---|---|
+| CA-01 | Catálogo de eventos notificables | Lista acordada |
+| CA-02 | Servicio Notifications en TypeScript | Servicio en `:8091` y en contenedor |
+| CA-03 | Colección de notificaciones en MongoDB | Índice único en `eventId` |
+| CA-04 | Consumidores de RabbitMQ | Colas `notifications.*` consumidas |
+| CA-05 | Generación y registro de notificaciones | Un evento → un registro |
+| CA-06 | Plantillas sin datos sensibles | Revisado por Kevin |
+| CA-07 | `GET /v1/notifications` expuesto por el Gateway | Historial consultable |
+| CA-08 | Pruebas con eventos repetidos | Sin duplicados |
+| CA-09 | Dockerfile y README | Servicio sano en Compose |
+
+### Sergio — Analytics y Results DB
+
+| ID | Tarea | Entregable / criterio de aceptación |
+|---|---|---|
+| SR-01 | Métricas y resultados a producir | `analytics/CONTRACTS.md` |
+| SR-02 | Documentos de Results DB | Modelo documentado |
+| SR-03 | Servicio Analytics en Rust | Servicio en `:8090` y en contenedor |
+| SR-04 | Consumir `votes.cast` (tiempo real) y `tally.completed` (resultados finales) | Informe actualizado por eventos |
+| SR-05 | Agregación de votos y participación | Cálculo correcto |
+| SR-06 | Persistencia y consulta en MongoDB | Datos sobreviven reinicios |
+| SR-07 | Endpoints HTTP de resultados | Consumidos por la web |
+| SR-08 | Pruebas con conjuntos de votos conocidos | Resultados exactos |
+| SR-09 | Mensajes repetidos y recuentos | Duplicado descartado; recuento reemplaza |
+| SR-10 | Dockerfile y README | Servicio sano en Compose |
+| SR-11 | Script E2E de la demo (`docs/demo/e2e_vote.py`) | Flujo completo en verde |
+
+### 8.1 Responsabilidades compartidas
+
+| Actividad | Responsable | Colaboradores | Fecha |
+|---|---|---|---|
+| Contratos HTTP | Cristhian | Responsables de servicios | 28 oct |
+| Contratos de eventos | Sebastian | Fabian, Kevin, Andres, Camilo, Sergio | 28 oct |
+| Configuración de RabbitMQ | Sebastian | Productores y consumidores | 29 oct |
+| Dockerfile de cada componente | Cada integrante | — | 30 oct |
+| Clientes ↔ Gateway | Cristhian | Julian, Andres | 30 oct |
+| Votos → Tally → Analytics | Sebastian | Andres, Sergio | 31 oct |
+| Eventos de identidad y elecciones | Sebastian | Kevin, Fabian | 31 oct |
+| Notifications | Camilo | Sebastian | 31 oct |
+| Pruebas E2E | Todo el equipo | Coordina Cristhian | 1 nov |
+| Las cuatro vistas | Cristhian, Sebastian, Julian, Fabian | Todo el equipo | 1 nov |
+| Consolidar `p2_2c.md` → PDF | Un integrante designado | Todo el equipo | 3 nov |
+| Grabar y editar el video | Un integrante designado | Todo el equipo | 3 nov |
+
+### 8.2 Dependencias críticas
+
+| Integrante | Con | Motivo |
+|---|---|---|
+| Cristhian | Julian | Formato del JWT, JWKS, `iss`/`aud` |
+| Cristhian | Todos los servicios | Rutas y contratos HTTP |
+| Julian | Fabian, Sebastian, Sergio | Comandos de la CLI sobre urnas, escrutinio y resultados |
+| Fabian | Sebastian, Andres | `election.events` y apertura/cierre de la urna en Ballot |
+| Fabian | Sebastian | Entrega de la llave privada de la urna a Tally |
+| Kevin | Andres | Firma ciega y verificación del token |
+| Kevin | Julian | Identificador del usuario en el JWT y su relación con el padrón |
+| Andres | Kevin, Cristhian | Mismo protocolo criptográfico en web y móvil |
+| Sebastian | Sergio, Camilo | Eventos que consumen Analytics y Notifications |
+| Sergio | Cristhian | Respuesta HTTP de resultados para la web |
+
+---
+
+## 9. Cronograma
+
+| Fecha | Hito | Qué se espera al final del día |
+|---|---|---|
+| **Lun 27 oct** | Análisis y acuerdos | Revisión del P1, alcance, arquitectura validada y reparto de tareas. |
+| **Mar 28 oct** | Contratos | Rutas del Gateway, contratos de eventos, esquemas de datos y estructura de carpetas congelados. |
+| **Mié 29 oct** | Desarrollo | Primera versión ejecutable de cada componente; RabbitMQ con su topología. |
+| **Jue 30 oct** | Persistencia e interfaces | Bases de datos integradas; clientes contra el Gateway; Dockerfiles listos. |
+| **Vie 31 oct** | **Primera integración** | `docker compose up --build` levanta todo; votos → Tally → Analytics; eventos de elecciones. |
+| **Sáb 1 nov** | Pruebas y vistas | E2E (`docs/demo/e2e_vote.py`) en verde; las cuatro vistas en borrador. |
+| **Dom 2 nov** | **Congelamiento de código** | Solo correcciones. Artefacto `p2_2c.md` casi final; guion del video. |
+| **Mar 3 nov** | **Entrega** | Video grabado y subido; `p2_2c.pdf` exportado; un solo integrante lo sube a MiCampus antes de las 23:59. |
 
 ### Reglas para cumplir el cronograma
 
-1.  **No esperar a que termine el backend para empezar el frontend.**
-    Los contratos HTTP deben estar definidos el 28 de octubre. A partir
-    de ellos, los clientes pueden avanzar con respuestas simuladas
-    mientras los servicios se implementan.
-2.  **No dejar Docker para el último día.** Desde el 29 de octubre, cada
-    componente debe poder construirse y ejecutarse en su propio
-    contenedor. La integración se realiza progresivamente.
-3.  **Congelar las funcionalidades antes de ampliar el alcance.** Es
-    preferible entregar un flujo de votación pequeño pero funcional,
-    acompañado de una arquitectura bien documentada, que intentar
-    implementar muchas funcionalidades sin integrar los componentes.
+1. **No esperar al backend para empezar los clientes:** con los contratos del 28 de octubre se trabaja con respuestas simuladas.
+2. **No dejar Docker para el final:** desde el 29 de octubre cada componente corre en su contenedor.
+3. **Congelar funcionalidades antes de ampliar el alcance:** un flujo pequeño pero integrado vale más que muchas piezas sueltas.
 
-## 8. Organización sugerida del repositorio
+---
 
-``` text
-Votaciones/
-├── clients/
-│   ├── cli-java/
-│   ├── web-nextjs/
-│   └── mobile-flutter/
-│
-├── services/
-│   ├── api-gateway/
-│   ├── auth-python/
-│   ├── election-python/
-│   ├── identity-python/
-│   ├── blind-signature-python/
-│   ├── ballot-go/
-│   ├── tally-go/
-│   ├── analytics-rust/
-│   └── notifications-typescript/
-│
-├── infrastructure/
-│   ├── docker-compose.yml
-│   ├── postgres/
-│   ├── mongodb/
-│   └── rabbitmq/
-│
-├── contracts/
-│   ├── openapi/
-│   └── events/
-│
-├── docs/
-│   ├── c-and-c.md
-│   ├── deployment.md
-│   ├── layered.md
-│   ├── decomposition.md
-│   └── sequences.md
-│
-├── tests/
-│   ├── integration/
-│   └── end-to-end/
-│
-└── README.md
+## 10. Convenciones de trabajo
+
+- **Ramas:** `main` (protegida, siempre demostrable) y ramas `feat/<área>-<descripción>` o `fix/...`; fusión por PR con aprobación del revisor cruzado.
+- **Commits:** *Conventional Commits* (`feat:`, `fix:`, `docs:`, `chore:`).
+- **Cambios de contrato:** cualquier cambio en `gateway/src/routes.ts`, `tally/docs/events.md`, `rabbitmq/definitions.json` o `proto/` se avisa al equipo.
+- **Definición de "terminado":**
+  1. Funciona dentro de su contenedor en el `docker-compose.yml` de la raíz.
+  2. Contrato de comunicación documentado.
+  3. Al menos una prueba automatizada o un paso en el E2E.
+  4. README con instalación, variables de entorno y ejecución.
+  5. PR revisado con la descripción de las pruebas realizadas.
+- **Secretos:** las credenciales del `docker-compose.yml` son solo de desarrollo; las llaves privadas viven en volúmenes, nunca en el repositorio.
+
+---
+
+## 11. Contenido del artefacto final `p2_2c.pdf`
+
+El enunciado pide que el artefacto se cree en `.md`, se exporte a `.pdf` y se llame `p2_X.pdf` (X = nombre del equipo). Fuente: `docs/entregables/P2/p2_2c.md`.
+
+**Equipo**
+
+- [ ] Nombre del equipo: **2c**.
+- [ ] Nombres completos: Fabián Espitia Sotelo, Juan Sebastian Moya Alvarez, Sergio Nicolas Rey Mora, Kevin David Rodriguez Riveros, José Julián Pira Naranjo, Juan Camilo Camargo Prieto, Andrés Felipe Rosada Mosquera, Cristhian Yamith Cely Oliveros.
+
+**Sistema de software**
+
+- [ ] Nombre: **espivota**.
+- [ ] Logo (`assets/logo.png`).
+- [ ] Descripción (actualizar la del P1 con Gateway, mensajería, escrutinio, móvil y CLI).
+
+**Estructuras arquitectónicas** (cada una con vista + elementos y relaciones + patrones)
+
+- [ ] **C&C:** vista, elementos y relaciones, estilos y patrones (secciones 2 y 3).
+- [ ] **Despliegue:** vista, elementos y relaciones, patrones (sección 5.2).
+- [ ] **Por capas:** vista, elementos y relaciones, patrones (sección 5.3).
+- [ ] **Descomposición:** vista, elementos y relaciones, patrones (sección 5.4).
+
+**Prototipo**
+
+- [ ] Comandos para descargar y ejecutar el sistema (sección 12).
+- [ ] Enlace al video de presentación (10–15 min).
+
+**Entrega**
+
+- [ ] Exportado a `.pdf` y nombrado `p2_2c.pdf`.
+- [ ] Subido a MiCampus UNAL por **un solo** integrante antes del martes 3 de noviembre a las 23:59.
+
+---
+
+## 12. Comandos de ejecución (borrador para el artefacto)
+
+Requisitos: Git y Docker con Docker Compose.
+
+```bash
+# 1. Descargar el proyecto
+git clone https://github.com/ccelyo/Votaciones.git
+cd Votaciones
+
+# 2. Construir y levantar todos los contenedores
+docker compose up --build -d
+
+# 3. Verificar que los servicios estén sanos
+docker compose ps
+
+# 4. (Opcional) Ejecutar el flujo E2E por el Gateway
+#    crea urna, inscribe votante, token ciego, voto cifrado, cierre y escrutinio
+identity/.venv/bin/python docs/demo/e2e_vote.py http://localhost:8088
+
+# 5. Empezar de cero (borra usuarios, elecciones, votos y llaves)
+docker compose down -v
 ```
 
-Esta estructura es una sugerencia y puede adaptarse a la organización
-existente del repositorio, que hoy tiene `platform/`, `identity/`,
-`ballot/` y `proto/`. Como la vista C&C del prototipo 2 no usa gRPC
-(solo REST/JSON y AMQP), debe decidirse qué pasa con `proto/`.
+| Servicio | URL |
+|---|---|
+| Web SSR | http://localhost:3000 |
+| App móvil (versión web) | http://localhost:8092 |
+| API Gateway (catálogo en `/api`) | http://localhost:8088 |
+| Identity / Auth | http://localhost:8000 |
+| Election | http://localhost:8001 |
+| Ballot | http://localhost:8080 |
+| Analytics | http://localhost:8090 |
+| Notifications | http://localhost:8091 |
+| Consola de RabbitMQ | http://localhost:15672 (`guest` / `guest`) |
 
-### Flujo de trabajo con GitHub
+Credenciales de prueba (`identity/seed_dev_users.sql`): `admin1`…`admin4` y `votante1`…`votante10`, contraseña `prueba123`, código MFA `123456`.
 
-1.  Crear una rama por componente o tarea.
-2.  Acordar convenciones de nombres, formato y pruebas.
-3.  Desarrollar de manera independiente.
-4.  Abrir pull requests pequeños.
-5.  Revisar que los cambios no rompan los contratos de integración.
-6.  Integrar periódicamente en la rama principal.
-7.  Ejecutar las pruebas y la construcción de los componentes afectados.
+CLI Admin: ver `admin-cli/README.md`. App móvil nativa: ver `mobile/README.md`.
 
-Cada pull request debe incluir una descripción del cambio, las
-instrucciones de ejecución y las pruebas realizadas.
+---
 
-## 9. Documentación de las estructuras arquitectónicas
+## 13. Guion del video (10–15 minutos)
 
-La entrega no consiste únicamente en desarrollar el software. También
-requiere documentar las estructuras arquitectónicas solicitadas para el
-prototipo 2.
+El enunciado pide: diseño arquitectónico de las cuatro estructuras, sistema en ejecución desde el punto de vista **funcional** y de los **componentes desplegados**, y la **consistencia** entre diseño y sistema construido.
 
-  --------------------------------------------------------------------------
-  Artefacto         Responsable       Colaboradores     Contenido
-                    principal                           
-  ----------------- ----------------- ----------------- --------------------
-  C&C: componentes  Cristhian         Personas          Componentes,
-  y conectores                        responsables de   interfaces,
-                                      los servicios     conexiones HTTP y
-                                                        eventos asíncronos,
-                                                        estilos y patrones.
+| Bloque | Duración | Contenido | Responsable sugerido |
+|---|---|---|---|
+| 1. Introducción | 1 min | Equipo, espivota y qué cambió respecto al P1. | Fabian |
+| 2. Estructura C&C | 2 min | Componentes, lenguajes, conectores HTTP vs. AMQP, estilos y patrones. | Cristhian |
+| 3. Estructura de despliegue | 1,5 min | Contenedores, puertos publicados y ocultos, volúmenes. | Sebastian |
+| 4. Estructura por capas | 1,5 min | Capas del sistema y capas internas de un servicio. | Julian |
+| 5. Estructura de descomposición | 1,5 min | Módulos de Election, Ballot y Analytics. | Fabian |
+| 6. Componentes desplegados | 1,5 min | `docker compose ps`, consola de RabbitMQ con exchanges y colas, `GET /api` del Gateway. | Sebastian |
+| 7. Flujo funcional | 4 min | Admin crea y abre la elección (web o CLI) → votante entra con MFA → token ciego → voto cifrado (pestaña Red) → recibo → voto desde el móvil → doble voto `409` → cierre → escrutinio → resultados y participación en Analytics → notificaciones. | Andres, Kevin, Camilo, Sergio |
+| 8. Consistencia y cierre | 1 min | Cada caja del diagrama corresponde a un contenedor en ejecución; limitaciones conocidas. | Fabian |
 
-  Despliegue        Sebastian         Todo el equipo    Contenedores, redes,
-                                                        bases de datos,
-                                                        broker y relaciones
-                                                        de despliegue.
+**Plan B:** grabar por bloques y unirlos; tener el stack levantado y el E2E ejecutado antes de grabar.
 
-  Estructura por    Julian            Cristhian y Kevin Capas de
-  capas                                                 presentación,
-                                                        lógica, acceso a
-                                                        datos y sus
-                                                        dependencias.
+---
 
-  Descomposición    Fabian            Responsables de   Descomposición de
-                                      los servicios     los principales
-                                                        componentes en
-                                                        módulos y
-                                                        responsabilidades.
+## 14. Riesgos, mitigaciones y decisiones pendientes
 
-  Descripción de    Cristhian         Todo el equipo    Justificación de los
-  patrones                                              patrones y estilos
-                                                        arquitectónicos
-                                                        empleados.
+| Riesgo | Probabilidad | Mitigación |
+|---|---|---|
+| Integración tardía de 17 contenedores | Alta | Compose único desde el 31 de octubre; E2E automatizado (`docs/demo/e2e_vote.py`). |
+| Gateway como cuello de botella o con lógica de negocio | Media | El Gateway solo enruta, valida JWT, aplica CORS y límites; la lógica vive en los servicios. |
+| Mensajes duplicados que cuentan dos veces | Media | `event_id` determinista; deduplicación en Analytics y Notifications; Tally idempotente. |
+| Desanonimización por eventos o correlación temporal | Media | `votes.cast` sin token ni recibo; ruta anónima en el Gateway; revisión de Kevin. |
+| Arranque frágil del broker (vhost/usuario en RabbitMQ 4) | Media | `definitions.json` declara vhost, usuario y permisos; los servicios declaran la topología de forma idempotente. |
+| Escrutinio lento supera el timeout del Gateway | Baja | `GATEWAY_UPSTREAM_TIMEOUT_MS=70000`. |
+| Falla de MiCampus el día de la entrega | Baja | Subir el PDF temprano y conservar copia local. |
 
-  Documento final   Todo el equipo    Integrante        Integración de las
-                                      designado para    vistas, descripción
-                                      consolidar la     del sistema,
-                                      entrega           instrucciones de
-                                                        ejecución y
-                                                        exportación a PDF.
-  --------------------------------------------------------------------------
+### Decisiones pendientes (resolver antes de cerrar el artefacto)
 
-### Contenido de cada vista
+1. **Election detrás del Gateway:** hoy `GATEWAY_ELECTION_URL` y `GATEWAY_AUTH_URL` apuntan a `identity:8000`. El servicio `election` ya corre en `:8001`; falta apuntar el Gateway a `http://election:8000` y comprobar que la web y la CLI siguen funcionando (FA-10).
+2. **Auth como proceso separado:** Auth vive hoy dentro del contenedor `identity`. O se separa, o el artefacto debe explicar que son dos componentes lógicos desplegados en el mismo contenedor.
+3. **Conector gRPC Identity → Ballot:** sigue activo (`proto/ballot.proto`). Decidir si se documenta como conector HTTP/2 adicional (recomendado: suma un segundo tipo de conector HTTP) o si se reemplaza por `election.events`.
+4. **Fuente de la llave privada para Tally:** el admin la obtiene de Election (`/urn-key/private`) y la envía a Tally en el cuerpo del `POST`. Reflejarlo en la vista C&C como flujo mediado por el admin, no como conector Tally → Election.
+5. **Eventos previstos sin consumidor:** `election.opened` e `identity.credential.issued`. Mantenerlos en la vista como previstos o quitarlos.
+6. **Ruta de Notifications provisional** en el Gateway: confirmar el contrato de `GET /v1/notifications`.
 
--   **Vista C&C:** debe representar los componentes de la arquitectura,
-    sus responsabilidades y los conectores que los unen. Debe
-    diferenciar las llamadas HTTP de los mensajes asíncronos.
--   **Vista de despliegue:** debe mostrar dónde se ejecuta cada
-    componente: contenedores, redes, bases de datos y broker de
-    mensajería. No basta con repetir el diagrama lógico.
--   **Vista por capas:** debe explicar cómo se organizan las
-    responsabilidades y qué dependencias existen entre presentación,
-    lógica y datos. No es necesario forzar todos los servicios
-    distribuidos a una única estructura física por capas.
--   **Vista de descomposición:** debe mostrar cómo se divide cada
-    componente relevante en módulos internos. Por ejemplo, Ballot podría
-    dividirse en API, validación, lógica de negocio, persistencia y
-    publicación de eventos.
+---
 
-Cada vista debe acompañarse de una descripción de los elementos, las
-relaciones y los patrones utilizados.
-
-## 10. Riesgos y decisiones arquitectónicas pendientes
-
-### 10.1. API Gateway como cuello de botella
-
-El Gateway debe enrutar las peticiones y aplicar las políticas
-transversales que correspondan, pero no debería absorber la lógica de
-votación, identidad o análisis.
-
-**Acción:** acordar qué responsabilidades pertenecen al Gateway y cuáles
-a los servicios.
-
-### 10.2. Mecanismo de mensajería
-
-La vista C&C identifica RabbitMQ, pero deben especificarse los
-exchanges, las colas, las routing keys y el protocolo de comunicación
-entre productores y consumidores.
-
-**Acción:** seleccionar y documentar la configuración de mensajería
-antes de implementar las integraciones.
-
-### 10.3. Conteo duplicado de votos
-
-Los sistemas asíncronos pueden recibir mensajes repetidos, por lo que
-Tally y Analytics deben manejar correctamente los reintentos.
-
-**Acción:** definir un mecanismo de deduplicación y criterios claros de
-aceptación de votos, de modo que un evento repetido no incremente dos
-veces los resultados.
-
-### 10.4. Seguridad criptográfica
-
-La firma ciega y la separación entre identidad y voto son sensibles a
-cambios en el flujo de información.
-
-**Acción:** revisar las propiedades de seguridad del protocolo existente
-y comprobar que los nuevos contratos no introduzcan asociaciones
-indebidas entre votantes y papeletas. En particular, `votes.cast` no
-debe incluir el contenido del voto ni datos del votante, y debe evitarse
-que la correlación temporal entre `identity.credential.issued` y
-`votes.cast` permita desanonimizar a los votantes.
-
-### 10.5. Sobrecarga de trabajo en interfaces y despliegue
-
-La distribución de interfaces, servicios y documentación puede generar
-sobrecarga si se deja toda la integración para una sola persona.
-
-**Acción:** reutilizar los clientes existentes y solicitar ayuda puntual
-a los responsables de los servicios para las tareas de despliegue y
-documentación.
-
-### 10.6. Responsabilidad sobre Tally y Analytics
-
-Tally y Analytics tienen responsabilidades cercanas, por lo que debe
-quedar claro qué componente realiza el conteo oficial y cuál calcula
-estadísticas o resultados derivados.
-
-**Definición según la vista C&C:** Tally realiza el conteo oficial y
-publica `tally.completed`; Analytics calcula la participación en tiempo
-real a partir de `votes.cast` y almacena en Results los resultados
-finales recibidos en `tally.completed`.
-
-**Acción:** documentar el formato de estos eventos y mantener Tally como
-fuente de verdad de los resultados.
-
-## 11. Checklist final de aceptación
+## 15. Checklist final de aceptación
 
 ### Arquitectura
 
--   [ ] Existen al menos ocho componentes lógicos identificables.
--   [ ] Hay al menos dos componentes de presentación diferentes.
--   [ ] El frontend web implementa SSR.
--   [ ] El API Gateway conecta los clientes con los servicios
-    correspondientes.
--   [ ] Existen al menos cuatro componentes de datos, incluyendo bases
-    relacionales y NoSQL.
--   [ ] Hay un componente funcional para procesamiento asíncrono.
--   [ ] Los conectores HTTP están documentados.
--   [ ] Se utilizan al menos cinco lenguajes de propósito general, y la
-    vista C&C indica el lenguaje del API Gateway.
--   [ ] La arquitectura se despliega mediante contenedores.
+- [ ] Al menos ocho componentes lógicos identificables.
+- [ ] Al menos dos componentes de presentación distintos (web, móvil, CLI).
+- [ ] El front-end web implementa SSR.
+- [ ] El API Gateway comunica los clientes con los servicios.
+- [ ] Al menos cuatro componentes de datos, relacionales y NoSQL.
+- [ ] Un componente funcional para procesos asíncronos (RabbitMQ).
+- [ ] Conectores HTTP documentados.
+- [ ] Al menos cinco lenguajes, y la vista C&C indica el lenguaje del Gateway.
+- [ ] Despliegue mediante contenedores.
 
 ### Funcionamiento
 
--   [ ] Los servicios principales arrancan correctamente.
--   [ ] Las conexiones a las bases de datos funcionan.
--   [ ] La mensajería asíncrona está operativa.
--   [ ] Los clientes se comunican con el Gateway.
--   [ ] Se puede demostrar un flujo de votación de principio a fin.
--   [ ] Los resultados corresponden a los votos procesados.
--   [ ] Se han probado los errores principales.
+- [ ] `docker compose up --build` deja todos los servicios sanos.
+- [ ] Las conexiones a las bases de datos funcionan.
+- [ ] La mensajería asíncrona está operativa (eventos visibles en la consola de RabbitMQ).
+- [ ] Web, móvil y CLI se comunican con el Gateway.
+- [ ] El flujo de votación funciona de principio a fin.
+- [ ] Los resultados de Tally y Analytics corresponden a los votos emitidos.
+- [ ] Se probaron los errores principales (doble voto, urna cerrada, token inválido, rol sin permiso).
 
 ### Documentación
 
--   [ ] Está documentada la estructura C&C.
--   [ ] Está documentada la estructura de despliegue.
--   [ ] Está documentada la estructura por capas.
--   [ ] Está documentada la estructura de descomposición.
--   [ ] Se describen los elementos, relaciones, estilos y patrones.
--   [ ] El README contiene las instrucciones para ejecutar el sistema.
--   [ ] Se incluyen el nombre del equipo (2c) y los nombres completos de
-    los integrantes.
--   [ ] Se incluyen el nombre, el logo y la descripción del sistema.
--   [ ] El documento se encuentra en Markdown
-    (`docs/entregables/P2/p2_2c.md`) y ha sido exportado a PDF.
--   [ ] El PDF tiene el nombre `p2_2c.pdf`.
--   [ ] Se ha comprobado que el archivo está listo para su entrega en
-    MiCampus UNAL.
-
-## 12. Recomendación final
-
-La asignación queda organizada en ocho responsables, con Sergio dedicado
-a Rust y Analytics. El mayor riesgo está en la integración de los
-servicios y en la definición del flujo de votos entre Ballot, RabbitMQ,
-Tally y Analytics.
-
-El equipo debería priorizar tres hitos:
-
--   **28 de octubre:** contratos HTTP y eventos acordados.
--   **31 de octubre:** servicios integrados y ejecutándose mediante
-    contenedores.
--   **1 de noviembre:** flujo de votación probado y documentación
-    arquitectónica consolidada.
-
-Así, el último día se reserva para verificar y entregar el artefacto, en
-lugar de intentar resolver problemas estructurales de integración a
-última hora.
-
-La condición de éxito es que todos los integrantes trabajen con
-contratos compartidos, una misma definición del alcance funcional y una
-estrategia de integración continua. Ningún componente debería
-considerarse terminado hasta que esté integrado, probado y documentado.
+- [ ] Las cuatro estructuras documentadas, con elementos, relaciones y patrones.
+- [ ] Instrucciones de ejecución verificadas en una máquina limpia.
+- [ ] Equipo, nombres completos, nombre, logo y descripción del sistema.
+- [ ] `docs/entregables/P2/p2_2c.md` exportado a `p2_2c.pdf`.
+- [ ] Enlace al video (10–15 min) incluido en el PDF.
