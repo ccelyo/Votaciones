@@ -1,0 +1,190 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1700 547" width="100%" font-family="'Open Sans','Segoe UI',Arial,sans-serif">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#444"/></marker><marker id="arrRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#D32F2F"/></marker><marker id="arrGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9E9E9E"/></marker><marker id="arrPur" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8E24AA"/></marker></defs>
+<rect width="1700" height="547" fill="#fff"/>
+<text x="850.0" y="34.0" font-size="22" font-weight="600" text-anchor="middle" fill="#222">Votaciones (espivota) · Capas internas de cada componente (Prototipo 2)</text>
+<rect x="230.0" y="60.0" width="388.4" height="24.0" rx="4" fill="#1E88E5" stroke="#1E88E5" stroke-width="2"/>
+<text x="424.2" y="77.0" font-size="12.5" font-weight="600" text-anchor="middle" fill="#fff">Presentación</text>
+<rect x="624.4" y="60.0" width="125.5" height="24.0" rx="4" fill="#F9A825" stroke="#F9A825" stroke-width="2"/>
+<text x="687.1" y="77.0" font-size="12.5" font-weight="600" text-anchor="middle" fill="#fff">Comunicación</text>
+<rect x="755.8" y="60.0" width="914.2" height="24.0" rx="4" fill="#00A651" stroke="#00A651" stroke-width="2"/>
+<text x="1212.9" y="77.0" font-size="12.5" font-weight="600" text-anchor="middle" fill="#fff">Lógica de negocio</text>
+<rect x="230.0" y="90.0" width="125.5" height="40.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2"/>
+<text x="292.7" y="108.0" font-size="12.5" font-weight="600" text-anchor="middle" fill="#222">Web SSR</text>
+<text x="292.7" y="123.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">Next.js</text>
+<rect x="361.5" y="90.0" width="125.5" height="40.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2"/>
+<text x="424.2" y="108.0" font-size="12.5" font-weight="600" text-anchor="middle" fill="#222">App móvil</text>
+<text x="424.2" y="123.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">Flutter</text>
+<rect x="492.9" y="90.0" width="125.5" height="40.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2"/>
+<text x="555.6" y="108.0" font-size="12.5" font-weight="600" text-anchor="middle" fill="#222">CLI admin.</text>
+<text x="555.6" y="123.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">Java</text>
+<rect x="624.4" y="90.0" width="125.5" height="40.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2"/>
+<text x="687.1" y="108.0" font-size="12.5" font-weight="600" text-anchor="middle" fill="#222">API Gateway</text>
+<text x="687.1" y="123.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">TypeScript</text>
+<rect x="755.8" y="90.0" width="125.5" height="40.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2"/>
+<text x="818.5" y="108.0" font-size="12.5" font-weight="600" text-anchor="middle" fill="#222">identity</text>
+<text x="818.5" y="123.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">Python</text>
+<rect x="887.3" y="90.0" width="125.5" height="40.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2"/>
+<text x="950.0" y="108.0" font-size="12.5" font-weight="600" text-anchor="middle" fill="#222">Blind Sig.</text>
+<text x="950.0" y="123.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">Python</text>
+<rect x="1018.7" y="90.0" width="125.5" height="40.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2"/>
+<text x="1081.5" y="108.0" font-size="12.5" font-weight="600" text-anchor="middle" fill="#222">Election</text>
+<text x="1081.5" y="123.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">Python</text>
+<rect x="1150.2" y="90.0" width="125.5" height="40.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2"/>
+<text x="1212.9" y="108.0" font-size="12.5" font-weight="600" text-anchor="middle" fill="#222">Ballot</text>
+<text x="1212.9" y="123.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">Go</text>
+<rect x="1281.6" y="90.0" width="125.5" height="40.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2"/>
+<text x="1344.4" y="108.0" font-size="12.5" font-weight="600" text-anchor="middle" fill="#222">Tally</text>
+<text x="1344.4" y="123.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">Go</text>
+<rect x="1413.1" y="90.0" width="125.5" height="40.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2"/>
+<text x="1475.8" y="108.0" font-size="12.5" font-weight="600" text-anchor="middle" fill="#222">Analytics</text>
+<text x="1475.8" y="123.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">Rust</text>
+<rect x="1544.5" y="90.0" width="125.5" height="40.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2"/>
+<text x="1607.3" y="108.0" font-size="12.5" font-weight="600" text-anchor="middle" fill="#222">Notifications</text>
+<text x="1607.3" y="123.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">TypeScript</text>
+<rect x="30.0" y="140.0" width="1640.0" height="52.0" rx="5" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.8"/>
+<text x="42.0" y="162.0" font-size="14" font-weight="600" text-anchor="start" fill="#222">Interfaz</text>
+<text x="42.0" y="179.0" font-size="10" font-weight="normal" text-anchor="start" fill="#555">API, UI, CLI y consumidores</text>
+<rect x="234.0" y="147.0" width="117.5" height="38.0" rx="3" fill="#fff" stroke="#1E88E5" stroke-width="1.2"/>
+<text x="240.0" y="162.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">app/ (páginas)</text>
+<text x="240.0" y="177.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">components/</text>
+<rect x="365.5" y="147.0" width="117.5" height="38.0" rx="3" fill="#fff" stroke="#1E88E5" stroke-width="1.2"/>
+<text x="371.5" y="162.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">main.dart</text>
+<rect x="496.9" y="147.0" width="117.5" height="38.0" rx="3" fill="#fff" stroke="#1E88E5" stroke-width="1.2"/>
+<text x="502.9" y="162.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">AdminCli</text>
+<text x="502.9" y="177.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">commands/*</text>
+<rect x="628.4" y="147.0" width="117.5" height="38.0" rx="3" fill="#fff" stroke="#1E88E5" stroke-width="1.2"/>
+<text x="634.4" y="162.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">server.ts</text>
+<rect x="759.8" y="147.0" width="117.5" height="38.0" rx="3" fill="#fff" stroke="#1E88E5" stroke-width="1.2"/>
+<text x="765.8" y="162.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">api/routes.py</text>
+<text x="765.8" y="177.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">core/auth.py</text>
+<rect x="891.3" y="147.0" width="117.5" height="38.0" rx="3" fill="#fff" stroke="#1E88E5" stroke-width="1.2"/>
+<text x="897.3" y="162.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">main.py</text>
+<rect x="1022.7" y="147.0" width="117.5" height="38.0" rx="3" fill="#fff" stroke="#1E88E5" stroke-width="1.2"/>
+<text x="1028.7" y="162.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">api.py</text>
+<text x="1028.7" y="177.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">auth.py</text>
+<rect x="1154.2" y="147.0" width="117.5" height="38.0" rx="3" fill="#fff" stroke="#1E88E5" stroke-width="1.2"/>
+<text x="1160.2" y="162.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">httpapi</text>
+<text x="1160.2" y="177.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">server (gRPC)</text>
+<rect x="1285.6" y="147.0" width="117.5" height="38.0" rx="3" fill="#fff" stroke="#1E88E5" stroke-width="1.2"/>
+<text x="1291.6" y="162.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">httpapi</text>
+<rect x="1417.1" y="147.0" width="117.5" height="38.0" rx="3" fill="#fff" stroke="#1E88E5" stroke-width="1.2"/>
+<text x="1423.1" y="162.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">http.rs</text>
+<text x="1423.1" y="177.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">consumer.rs</text>
+<rect x="1548.5" y="147.0" width="117.5" height="38.0" rx="3" fill="#fff" stroke="#1E88E5" stroke-width="1.2"/>
+<text x="1554.5" y="162.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">infrastructure/http</text>
+<text x="1554.5" y="177.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">rabbit-consumer</text>
+<line x1="125.0" y1="192.0" x2="125.0" y2="210.0" stroke="#444" stroke-width="2" marker-end="url(#arr)"/>
+<text x="133.0" y="205.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#444">usa</text>
+<rect x="30.0" y="210.0" width="1640.0" height="67.0" rx="5" fill="#E8F5E9" stroke="#00A651" stroke-width="1.8"/>
+<text x="42.0" y="239.5" font-size="14" font-weight="600" text-anchor="start" fill="#222">Aplicación</text>
+<text x="42.0" y="256.5" font-size="10" font-weight="normal" text-anchor="start" fill="#555">Casos de uso y orquestación</text>
+<rect x="234.0" y="217.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#00A651" stroke-width="1.2"/>
+<text x="240.0" y="232.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">app/api/[...path]</text>
+<text x="240.0" y="247.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">lib/api.ts</text>
+<rect x="365.5" y="217.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#00A651" stroke-width="1.2"/>
+<text x="371.5" y="232.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">vote.dart</text>
+<rect x="496.9" y="217.0" width="117.5" height="53.0" rx="3" fill="none" stroke="#BDBDBD" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="555.6" y="247.5" font-size="10" font-weight="normal" text-anchor="middle" fill="#888" font-style="italic">— fusionada</text>
+<rect x="628.4" y="217.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#00A651" stroke-width="1.2"/>
+<text x="634.4" y="232.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">app.ts (cadena</text>
+<text x="634.4" y="247.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">de la petición)</text>
+<rect x="759.8" y="217.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#00A651" stroke-width="1.2"/>
+<text x="765.8" y="232.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">services/ (login,</text>
+<text x="765.8" y="247.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">sessions, users, voter_</text>
+<text x="765.8" y="262.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">roll, tokens, …)</text>
+<rect x="891.3" y="217.0" width="117.5" height="53.0" rx="3" fill="none" stroke="#BDBDBD" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="950.0" y="247.5" font-size="10" font-weight="normal" text-anchor="middle" fill="#888" font-style="italic">— fusionada</text>
+<rect x="1022.7" y="217.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#00A651" stroke-width="1.2"/>
+<text x="1028.7" y="232.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">service.py</text>
+<rect x="1154.2" y="217.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#00A651" stroke-width="1.2"/>
+<text x="1160.2" y="232.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">ballot/acceptor</text>
+<rect x="1285.6" y="217.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#00A651" stroke-width="1.2"/>
+<text x="1291.6" y="232.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">tally (orquestador)</text>
+<rect x="1417.1" y="217.0" width="117.5" height="53.0" rx="3" fill="none" stroke="#BDBDBD" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="1475.8" y="247.5" font-size="10" font-weight="normal" text-anchor="middle" fill="#888" font-style="italic">— fusionada</text>
+<rect x="1548.5" y="217.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#00A651" stroke-width="1.2"/>
+<text x="1554.5" y="232.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">application/</text>
+<text x="1554.5" y="247.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">notification-service</text>
+<line x1="125.0" y1="277.0" x2="125.0" y2="295.0" stroke="#444" stroke-width="2" marker-end="url(#arr)"/>
+<text x="133.0" y="290.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#444">usa</text>
+<rect x="30.0" y="295.0" width="1640.0" height="67.0" rx="5" fill="#FFFDE7" stroke="#F9A825" stroke-width="1.8"/>
+<text x="42.0" y="324.5" font-size="14" font-weight="600" text-anchor="start" fill="#222">Dominio</text>
+<text x="42.0" y="341.5" font-size="10" font-weight="normal" text-anchor="start" fill="#555">Reglas, entidades, criptografía pura</text>
+<rect x="234.0" y="302.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#F9A825" stroke-width="1.2"/>
+<text x="240.0" y="317.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">lib/m4/ (token, blind,</text>
+<text x="240.0" y="332.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">encryptor, receipt)</text>
+<text x="240.0" y="347.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">lib/types/</text>
+<rect x="365.5" y="302.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#F9A825" stroke-width="1.2"/>
+<text x="371.5" y="317.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">protocol/ (token,</text>
+<text x="371.5" y="332.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">blind, encrypt)</text>
+<rect x="496.9" y="302.0" width="117.5" height="53.0" rx="3" fill="none" stroke="#BDBDBD" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="555.6" y="332.5" font-size="10" font-weight="normal" text-anchor="middle" fill="#888" font-style="italic">— fusionada</text>
+<rect x="628.4" y="302.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#F9A825" stroke-width="1.2"/>
+<text x="634.4" y="317.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">routes.ts</text>
+<text x="634.4" y="332.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">router.ts</text>
+<text x="634.4" y="347.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">rateLimit.ts</text>
+<rect x="759.8" y="302.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#F9A825" stroke-width="1.2"/>
+<text x="765.8" y="317.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">core/security</text>
+<text x="765.8" y="332.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">core/jwt_tokens</text>
+<text x="765.8" y="347.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">core/keys</text>
+<rect x="891.3" y="302.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#F9A825" stroke-width="1.2"/>
+<text x="897.3" y="317.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">blind_rsa.py</text>
+<rect x="1022.7" y="302.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#F9A825" stroke-width="1.2"/>
+<text x="1028.7" y="317.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">rules.py</text>
+<text x="1028.7" y="332.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">parameters.py</text>
+<text x="1028.7" y="347.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">keys.py</text>
+<rect x="1154.2" y="302.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#F9A825" stroke-width="1.2"/>
+<text x="1160.2" y="317.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">token</text>
+<text x="1160.2" y="332.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">ballot (proof, hash)</text>
+<text x="1160.2" y="347.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">election</text>
+<rect x="1285.6" y="302.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#F9A825" stroke-width="1.2"/>
+<text x="1291.6" y="317.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">decrypt</text>
+<text x="1291.6" y="332.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">count</text>
+<text x="1291.6" y="347.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">events (contrato)</text>
+<rect x="1417.1" y="302.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#F9A825" stroke-width="1.2"/>
+<text x="1423.1" y="317.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">report.rs</text>
+<text x="1423.1" y="332.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">events.rs</text>
+<rect x="1548.5" y="302.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#F9A825" stroke-width="1.2"/>
+<text x="1554.5" y="317.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">domain/event</text>
+<text x="1554.5" y="332.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">domain/notification</text>
+<line x1="125.0" y1="362.0" x2="125.0" y2="380.0" stroke="#444" stroke-width="2" marker-end="url(#arr)"/>
+<text x="133.0" y="375.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#444">usa</text>
+<rect x="30.0" y="380.0" width="1640.0" height="67.0" rx="5" fill="#FFF3E0" stroke="#FB8C00" stroke-width="1.8"/>
+<text x="42.0" y="409.5" font-size="14" font-weight="600" text-anchor="start" fill="#222">Infraestructura</text>
+<text x="42.0" y="426.5" font-size="10" font-weight="normal" text-anchor="start" fill="#555">Persistencia, mensajería, clientes</text>
+<rect x="234.0" y="387.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#FB8C00" stroke-width="1.2"/>
+<text x="240.0" y="402.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">lib/server/gateway.ts</text>
+<text x="240.0" y="417.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">lib/m4/tokenStore</text>
+<rect x="365.5" y="387.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#FB8C00" stroke-width="1.2"/>
+<text x="371.5" y="402.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">gateway.dart</text>
+<rect x="496.9" y="387.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#FB8C00" stroke-width="1.2"/>
+<text x="502.9" y="402.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">ApiClient</text>
+<text x="502.9" y="417.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">SessionStore</text>
+<rect x="628.4" y="387.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#FB8C00" stroke-width="1.2"/>
+<text x="634.4" y="402.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">jwt.ts (JWKS)</text>
+<text x="634.4" y="417.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">config.ts</text>
+<text x="634.4" y="432.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">proxy HTTP</text>
+<rect x="759.8" y="387.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#FB8C00" stroke-width="1.2"/>
+<text x="765.8" y="402.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">db/models · db/census</text>
+<text x="765.8" y="417.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">clients/blind_signature</text>
+<text x="765.8" y="432.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">clients/ballot_client</text>
+<rect x="891.3" y="387.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#FB8C00" stroke-width="1.2"/>
+<text x="897.3" y="402.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">key_store.py</text>
+<rect x="1022.7" y="387.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#FB8C00" stroke-width="1.2"/>
+<text x="1028.7" y="402.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">models.py</text>
+<text x="1028.7" y="417.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">events.py</text>
+<rect x="1154.2" y="387.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#FB8C00" stroke-width="1.2"/>
+<text x="1160.2" y="402.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">mongostore ▲</text>
+<text x="1160.2" y="417.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">events</text>
+<rect x="1285.6" y="387.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#FB8C00" stroke-width="1.2"/>
+<text x="1291.6" y="402.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">ballotclient</text>
+<text x="1291.6" y="417.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">publisher</text>
+<rect x="1417.1" y="387.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#FB8C00" stroke-width="1.2"/>
+<text x="1423.1" y="402.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">store.rs</text>
+<rect x="1548.5" y="387.0" width="117.5" height="53.0" rx="3" fill="#fff" stroke="#FB8C00" stroke-width="1.2"/>
+<text x="1554.5" y="402.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">mongo-…-repository ▲</text>
+<text x="1554.5" y="417.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#222">config.ts</text>
+<rect x="30.0" y="469.0" width="1640.0" height="64.0" rx="5" fill="#fff" stroke="#ddd" stroke-width="2"/>
+<text x="46.0" y="491.0" font-size="14" font-weight="600" text-anchor="start" fill="#222">Notación</text>
+<text x="46.0" y="513.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">Cada fila es una capa interna; cada capa usa solo las inferiores.  «— fusionada»: el componente no separa esa capa (su lógica vive en la capa superior).  ▲ inversión de dependencias: el módulo implementa un puerto definido en Dominio.</text>
+</svg>
