@@ -291,7 +291,9 @@ func TestSealedBallotsOnlyAfterClose(t *testing.T) {
 
 	ballots := func() *httptest.ResponseRecorder {
 		response := httptest.NewRecorder()
-		f.handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v1/elections/"+electionID+"/ballots", nil))
+		request := httptest.NewRequest(http.MethodGet, "/v1/elections/"+electionID+"/ballots", nil)
+		request.Header.Set("Authorization", "Bearer tally-secret")
+		f.handler.ServeHTTP(response, request)
 		return response
 	}
 	if open := ballots(); open.Code != http.StatusConflict || !strings.Contains(open.Body.String(), "election_not_closed") {
@@ -414,14 +416,11 @@ func TestElectionBallotsRequiresClosedUrnAndInternalToken(t *testing.T) {
 	if closed.Code != http.StatusOK {
 		t.Fatalf("closed urn status = %d body=%s", closed.Code, closed.Body)
 	}
-	var response struct {
-		ElectionID string   `json:"election_id"`
-		Ballots    []string `json:"ballots"`
-	}
+	var response ElectionBallotsResponse
 	if err := json.Unmarshal(closed.Body.Bytes(), &response); err != nil {
 		t.Fatal(err)
 	}
-	if response.ElectionID != electionID || len(response.Ballots) != 1 || response.Ballots[0] != b64("candidato-1") {
+	if response.ElectionID != electionID || len(response.Ballots) != 1 || response.Ballots[0].EncryptedVote != b64("candidato-1") {
 		t.Fatalf("unexpected ballots: %+v", response)
 	}
 

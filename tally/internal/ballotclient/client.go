@@ -88,20 +88,44 @@ func (c *Client) Ballots(ctx context.Context, electionID string) ([][]byte, erro
 		return nil, err
 	}
 	var response struct {
-		Ballots []string `json:"ballots"`
+		Ballots []sealedBallot `json:"ballots"`
 	}
 	if err := c.getJSON(ctx, "/v1/elections/"+url.PathEscape(electionID)+"/ballots", maxBallotsBytes, &response); err != nil {
 		return nil, err
 	}
 	ballots := make([][]byte, len(response.Ballots))
-	for i, encoded := range response.Ballots {
-		decoded, err := decodeBase64(encoded)
+	for i, sealed := range response.Ballots {
+		decoded, err := decodeBase64(string(sealed))
 		if err != nil {
 			return nil, fmt.Errorf("ballot %d is not valid base64url: %w", i, err)
 		}
 		ballots[i] = decoded
 	}
 	return ballots, nil
+}
+
+// sealedBallot accepts both shapes Ballot has used for one ballot: a bare
+// base64url ciphertext ("...") or an object {"encrypted_vote": "...", "proof": "..."}.
+// Only the ciphertext is needed to count; the proof is ignored.
+type sealedBallot string
+
+func (b *sealedBallot) UnmarshalJSON(data []byte) error {
+	var text string
+	if err := json.Unmarshal(data, &text); err == nil {
+		*b = sealedBallot(text)
+		return nil
+	}
+	var object struct {
+		EncryptedVote string `json:"encrypted_vote"`
+	}
+	if err := json.Unmarshal(data, &object); err != nil {
+		return err
+	}
+	if object.EncryptedVote == "" {
+		return errors.New("sealed ballot without encrypted_vote")
+	}
+	*b = sealedBallot(object.EncryptedVote)
+	return nil
 }
 
 // Health checks that Ballot is reachable. It is used by /readyz.

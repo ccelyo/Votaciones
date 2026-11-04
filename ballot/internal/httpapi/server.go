@@ -83,7 +83,6 @@ func NewHandler(config Config) http.Handler {
 	mux.HandleFunc("GET /v1/elections/{electionID}/parameters", a.electionParameters)
 	mux.HandleFunc("GET /v1/elections/{electionID}/ballots", a.electionBallots)
 	mux.HandleFunc("GET /v1/elections/{electionID}/results", a.electionResults)
-	mux.HandleFunc("GET /v1/elections/{electionID}/ballots", a.electionBallots)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
@@ -314,6 +313,10 @@ func (a *api) electionBallots(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found")
 		return
 	}
+	if a.TallyToken != "" && !validBearer(r.Header.Get("Authorization"), a.TallyToken) {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
 	electionID := r.PathValue("electionID")
 	if _, err := a.Elections.Parameters(r.Context(), electionID); errors.Is(err, election.ErrElectionNotFound) {
 		writeError(w, http.StatusNotFound, "election_not_found")
@@ -347,6 +350,14 @@ func (a *api) electionBallots(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	writeJSON(w, http.StatusOK, ElectionBallotsResponse{ElectionID: electionID, Ballots: ballots})
+}
+
+func validBearer(header, expected string) bool {
+	const prefix = "Bearer "
+	if !strings.HasPrefix(header, prefix) {
+		return false
+	}
+	return subtle.ConstantTimeCompare([]byte(strings.TrimPrefix(header, prefix)), []byte(expected)) == 1
 }
 
 func (a *api) readiness(w http.ResponseWriter, r *http.Request) {
