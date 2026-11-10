@@ -4,12 +4,18 @@
 #
 #   Frontend  http://localhost:3000   (otro puerto: WEB_PORT=3100 docker compose up --build)
 #   Gateway   http://localhost:8088   (GATEWAY_PORT; catálogo de rutas en /api)
-#   Identity  http://localhost:8000   (IDENTITY_PORT)
-#   Election  http://localhost:8001   (ELECTION_PORT)
-#   Ballot    http://localhost:8080   (BALLOT_PORT)
-#   Tally     interno (sin puerto en el host; se accede por el Gateway)
-#   Analytics http://localhost:8090   (ANALYTICS_PORT)
-#   RabbitMQ  http://localhost:15672  (RABBITMQ_UI_PORT, guest / guest)
+#   Mobile    http://localhost:8092   (MOBILE_PORT; la app web llama al Gateway desde el navegador)
+#   Election  http://127.0.0.1:8001   (ELECTION_PORT; solo loopback, para desarrollo)
+#   RabbitMQ  http://127.0.0.1:15672  (RABBITMQ_UI_PORT, guest / guest; solo loopback)
+#
+# Identity, Ballot, Tally, Analytics, Notification y todas las bases de datos
+# NO se publican en el host: solo se llega a ellos a través del Gateway.
+#
+# Segmentación de red (Laboratorio 5): cada conexión entre servicios tiene su
+# propia red (ver `networks:` al final). Un servicio solo se ve con los que
+# comparten red; las redes `internal: true` no tienen salida a Internet ni al host.
+# Docker aísla por red, no por puerto: dos servicios que comparten red se ven en
+# todos los puertos que el destino tenga abiertos.
 #
 # Usuarios de prueba (identity/seed_dev_users.sql): admin1..admin4 y votante1..votante10,
 # contraseña "prueba123", código MFA "123456".
@@ -35,6 +41,7 @@ services:
       # Solo se ejecutan la primera vez, con el volumen vacío.
       - ./identity/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./identity/seed_dev_users.sql:/docker-entrypoint-initdb.d/02-seed_dev_users.sql:ro
+    networks: [identity-data-net]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U votaciones -d votaciones"]
       interval: 3s
@@ -50,6 +57,7 @@ services:
     volumes:
       - census-data:/var/lib/postgresql/data
       - ./census/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    networks: [identity-data-net]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U census -d census"]
       interval: 3s
@@ -65,11 +73,13 @@ services:
       BLINDSIG_API_KEY: ${BLINDSIG_API_KEY:-dev-only-blindsig-token}
     volumes: ["blind-signature-keys:/app/keys"]
     expose: ["8100"]
+    networks: [signer-net]
 
   mongo:
     image: mongo:8.0
     command: ["--replSet", "rs0", "--bind_ip_all"]
     volumes: ["mongo-data:/data/db"]
+    networks: [ballot-data-net]
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "try { rs.status().ok } catch (e) { rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'mongo:27017'}]}).ok }"]
       interval: 5s
@@ -91,7 +101,15 @@ services:
       BALLOT_ALLOWED_ORIGINS: http://localhost:${WEB_PORT:-3000},http://127.0.0.1:${WEB_PORT:-3000}
       # Token compartido con Tally para el volcado interno de papeletas.
       BALLOT_TALLY_TOKEN: ${BALLOT_TALLY_TOKEN:-dev-tally-token}
-    ports: ["${BALLOT_PORT:-8080}:8080"]
+    # Sin `ports`. HTTP 8080: Gateway y Tally. gRPC 9091: Identity.
+    # El gRPC escucha en 0.0.0.0 y no tiene autenticación, así que Gateway y
+    # Tally también lo alcanzan (riesgo pendiente, ver documentación).
+    networks:
+      - gw-ballot-net
+      - vote-link-net
+      - tally-ballot-net
+      - ballot-data-net
+      - mq-ballot-net
 
   identity:
     build: ./identity
@@ -114,7 +132,11 @@ services:
       IDENTITY_ALLOWED_ORIGINS: http://localhost:${WEB_PORT:-3000},http://127.0.0.1:${WEB_PORT:-3000}
       IDENTITY_MFA_CODE: "123456"
     volumes: ["identity-keys:/app/keys"]
-    ports: ["${IDENTITY_PORT:-8000}:8000"]
+    networks:
+      - gw-identity-net
+      - identity-data-net
+      - signer-net
+      - vote-link-net
 
   # Base «Elections», exclusiva del servicio Election.
   postgres-elections:
@@ -127,6 +149,7 @@ services:
       - elections-data:/var/lib/postgresql/data
       # Solo se ejecuta la primera vez, con el volumen vacío.
       - ./election/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    networks: [election-data-net]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U elections -d elections"]
       interval: 3s
@@ -146,7 +169,12 @@ services:
       ELECTION_DEV_AUTH: "true"
       ELECTION_ALLOWED_ORIGINS: http://localhost:${WEB_PORT:-3000},http://127.0.0.1:${WEB_PORT:-3000}
     volumes: ["election-keys:/app/keys"]
-    ports: ["${ELECTION_PORT:-8001}:8000"]
+    # El Gateway aún no enruta a Election, así que su puerto queda solo en
+    # loopback (acepta X-Dev-User sin token). Va en dev-access-net para poder publicarlo.
+    ports: ["127.0.0.1:${ELECTION_PORT:-8001}:8000"]
+    networks:
+      - election-data-net
+      - dev-access-net
 
   # Punto de entrada único de los clientes (web SSR, app móvil y CLI).
   gateway:
@@ -182,7 +210,15 @@ services:
       GATEWAY_JWT_AUDIENCE: votaciones
       GATEWAY_ALLOWED_ORIGINS: http://localhost:${WEB_PORT:-3000},http://127.0.0.1:${WEB_PORT:-3000},http://localhost:${MOBILE_PORT:-8092},http://127.0.0.1:${MOBILE_PORT:-8092}
       GATEWAY_TRUST_FORWARDED_FOR: "true"
+    # Sigue publicado: la app `mobile` (en el navegador) y otros clientes lo llaman.
     ports: ["${GATEWAY_PORT:-8088}:8088"]
+    networks:
+      - frontend-net
+      - gw-identity-net
+      - gw-ballot-net
+      - gw-tally-net
+      - gw-analytics-net
+      - gw-notification-net
 
   platform:
     build:
@@ -195,6 +231,7 @@ services:
     environment:
       GATEWAY_URL: http://gateway:8088
     ports: ["${WEB_PORT:-3000}:3000"]
+    networks: [frontend-net]
 
   # La misma app Flutter, compilada para el navegador, para ver el flujo sin un teléfono.
   mobile:
@@ -203,6 +240,8 @@ services:
       args:
         GATEWAY_URL: http://localhost:${GATEWAY_PORT:-8088}
     ports: ["${MOBILE_PORT:-8092}:80"]
+    # Solo sirve archivos estáticos; no llama a ningún servicio desde el contenedor.
+    networks: [mobile-net]
 
   rabbitmq:
     image: rabbitmq:4-management-alpine
@@ -212,7 +251,13 @@ services:
     volumes:
       - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
       - ./rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
-    ports: ["${RABBITMQ_UI_PORT:-15672}:15672"]
+    # UI solo en loopback. Un contenedor solo en redes `internal` no puede
+    # publicar puertos, por eso también va en dev-access-net.
+    ports: ["127.0.0.1:${RABBITMQ_UI_PORT:-15672}:15672"]
+    networks:
+      - mq-ballot-net
+      - messaging-net
+      - dev-access-net
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 5s
@@ -239,6 +284,10 @@ services:
       # en el cuerpo del POST que lanza el escrutinio.
       TALLY_PRIVATE_KEY: ${TALLY_PRIVATE_KEY:-}
       TALLY_PRIVATE_KEY_FILE: ${TALLY_PRIVATE_KEY_FILE:-}
+    networks:
+      - gw-tally-net
+      - tally-ballot-net
+      - messaging-net
     healthcheck:
       test: ["CMD", "/tally", "-healthcheck"]
       interval: 10s
@@ -250,6 +299,7 @@ services:
   mongo-results:
     image: mongo:8.0
     volumes: ["results-data:/data/db"]
+    networks: [results-data-net]
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 5s
@@ -266,11 +316,15 @@ services:
       ANALYTICS_MONGODB_URI: mongodb://mongo-results:27017
       ANALYTICS_MONGODB_DATABASE: results
       ANALYTICS_RABBITMQ_URI: amqp://guest:guest@rabbitmq:5672/%2f
-    ports: ["${ANALYTICS_PORT:-8090}:8090"]
+    networks:
+      - gw-analytics-net
+      - results-data-net
+      - messaging-net
 
   notifications-mongo:
     image: mongo:8.0
     volumes: ["notifications-data:/data/db"]
+    networks: [notif-data-net]
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 5s
@@ -289,7 +343,41 @@ services:
       MONGO_DATABASE: notifications
       RABBIT_URL: amqp://guest:guest@rabbitmq:5672/
       RABBIT_PREFETCH: 10
-    ports: ["${NOTIFICATION_PORT:-8091}:3000"]
+    networks:
+      - gw-notification-net
+      - notif-data-net
+      - messaging-net
+
+# Redes de la segmentación (Laboratorio 5). `internal: true` = sin salida a
+# Internet ni al host; ningún servicio la necesita en ejecución.
+networks:
+  # Entrada desde el host (no internas porque publican puertos).
+  frontend-net:      # platform <-> gateway
+  mobile-net:        # mobile (solo archivos estáticos)
+  dev-access-net:    # election y UI de RabbitMQ, solo en loopback
+
+  # Gateway -> cada servicio al que enruta.
+  gw-identity-net: { internal: true }
+  gw-ballot-net: { internal: true }
+  gw-tally-net: { internal: true }
+  gw-analytics-net: { internal: true }
+  gw-notification-net: { internal: true }
+
+  # Conexiones entre servicios.
+  vote-link-net: { internal: true }     # identity -> ballot (gRPC)
+  tally-ballot-net: { internal: true }  # tally -> ballot (HTTP)
+  signer-net: { internal: true }        # identity -> blind-signature
+
+  # Cada base de datos solo la ve su dueño.
+  identity-data-net: { internal: true } # identity -> postgres, postgres-census
+  ballot-data-net: { internal: true }   # ballot -> mongo
+  election-data-net: { internal: true } # election -> postgres-elections
+  results-data-net: { internal: true }  # analytics -> mongo-results
+  notif-data-net: { internal: true }    # notification -> notifications-mongo
+
+  # RabbitMQ. Ballot va aparte: guarda los votos y su gRPC no tiene autenticación.
+  mq-ballot-net: { internal: true }     # ballot <-> rabbitmq
+  messaging-net: { internal: true }     # tally, analytics, notification <-> rabbitmq
 
 volumes:
   postgres-data:
