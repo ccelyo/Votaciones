@@ -94,6 +94,14 @@ export function handleSummary(data) {
   const total = values(data, 'http_reqs').count || 0;
   const ok = count('status_2xx');
 
+  // Sin peticiones en la fase sostenida (setup() falló o la prueba se abortó): no
+  // se escribe resumen, para que un resultado vacío no pase por una corrida válida.
+  if (total === 0) {
+    return {
+      stdout: `[${cfg.mode}] VUs=${cfg.vus}: sin peticiones en la fase sostenida; no se escribió ${cfg.summaryFile}\n`,
+    };
+  }
+
   const result = {
     mode: cfg.mode,
     vus: cfg.vus,
