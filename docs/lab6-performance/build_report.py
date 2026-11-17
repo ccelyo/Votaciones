@@ -11,7 +11,12 @@ import math
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-RES = HERE / "results"
+import sys
+
+# Uso: python3 build_report.py [carpeta_resultados] [svg_salida] [subtítulo]
+RES = HERE / (sys.argv[1] if len(sys.argv) > 1 else "results")
+SVG_OUT = HERE / (sys.argv[2] if len(sys.argv) > 2 else "curva_desempeno.svg")
+SUBTITLE = sys.argv[3] if len(sys.argv) > 3 else "Sin límites de recursos por contenedor"
 
 
 def load(path):
@@ -40,8 +45,8 @@ def runs():
                 out.setdefault(v, []).append({"src": d.name, **load(p)})
         return out
     warm = collect(sorted(RES.glob("warm*")))
-    cold = collect([RES / "main"] + sorted(RES.glob("rep*")))
-    merged = {v: warm.get(v) or cold[v] for v in set(warm) | set(cold)}
+    cold = collect([d for d in [RES / "main", RES / "high"] if d.exists()] + sorted(RES.glob("rep*")))
+    merged = {v: warm.get(v) or cold[v] for v in set(warm) | set(cold)}  # high/: niveles sin repetición
     return dict(sorted(merged.items()))
 
 
@@ -81,7 +86,8 @@ def svg(agg, data, knee):
          'font-family="Helvetica, Arial, sans-serif" font-size="12">',
          f'<rect width="{W}" height="{H}" fill="#ffffff"/>',
          f'<text x="{W/2}" y="26" text-anchor="middle" font-size="16" font-weight="bold">'
-         'Curva de desempeño – GET /api/elections/open (Gateway → Identity → PostgreSQL)</text>']
+         'Curva de desempeño – GET /api/elections/open (Gateway → Identity → PostgreSQL)</text>',
+         f'<text x="{W/2}" y="44" text-anchor="middle" font-size="12" fill="#4b5563">{SUBTITLE}</text>']
     # rejilla y ejes
     for e in range(ymin, ymax + 1):
         y = T + ph - (e - ymin) / (ymax - ymin) * ph
@@ -134,7 +140,7 @@ def main():
     clean = [v for v, a in agg.items() if a["ok"] == a["n"]]
     first_bad = min(v for v, a in agg.items() if a["ok"] < a["n"])
     knee = max(v for v in clean if v < first_bad)
-    (HERE / "curva_desempeno.svg").write_text(svg(agg, data, knee))
+    SVG_OUT.write_text(svg(agg, data, knee))
     (RES / "results.md").write_text(
         "# Resultados k6 (generado por build_report.py)\n\n"
         f"Rodilla calculada: **{knee} VUs** (último nivel con 0 % de error en todas las corridas; "

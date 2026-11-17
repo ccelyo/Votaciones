@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="560" viewBox="0 0 900 560" font-family="Helvetica, Arial, sans-serif" font-size="12">
+<rect width="900" height="560" fill="#ffffff"/>
+<text x="450.0" y="26" text-anchor="middle" font-size="16" font-weight="bold">Curva de desempeño – GET /api/elections/open (Gateway → Identity → PostgreSQL)</text>
+<text x="450.0" y="44" text-anchor="middle" font-size="12" fill="#4b5563">Con límites: 1 vCPU / 512 MiB (front-end, Gateway, Identity) · 1 vCPU / 1 GiB (PostgreSQL)</text>
+<line x1="80" x2="820" y1="490.0" y2="490.0" stroke="#e5e7eb"/>
+<text x="72" y="494.0" text-anchor="end">1 ms</text>
+<line x1="80" x2="820" y1="402.0" y2="402.0" stroke="#e5e7eb"/>
+<text x="72" y="406.0" text-anchor="end">10 ms</text>
+<line x1="80" x2="820" y1="314.0" y2="314.0" stroke="#e5e7eb"/>
+<text x="72" y="318.0" text-anchor="end">100 ms</text>
+<line x1="80" x2="820" y1="226.0" y2="226.0" stroke="#e5e7eb"/>
+<text x="72" y="230.0" text-anchor="end">1,000 ms</text>
+<line x1="80" x2="820" y1="138.0" y2="138.0" stroke="#e5e7eb"/>
+<text x="72" y="142.0" text-anchor="end">10,000 ms</text>
+<line x1="80" x2="820" y1="50.0" y2="50.0" stroke="#e5e7eb"/>
+<text x="72" y="54.0" text-anchor="end">100,000 ms</text>
+<text x="828" y="494.0" fill="#b91c1c">0 %</text>
+<text x="828" y="384.0" fill="#b91c1c">25 %</text>
+<text x="828" y="274.0" fill="#b91c1c">50 %</text>
+<text x="828" y="164.0" fill="#b91c1c">75 %</text>
+<text x="828" y="54.0" fill="#b91c1c">100 %</text>
+<line x1="80.0" x2="80.0" y1="50" y2="490" stroke="#f3f4f6"/>
+<text x="80.0" y="508" text-anchor="middle">1</text>
+<line x1="393.3796444673717" x2="393.3796444673717" y1="50" y2="490" stroke="#f3f4f6"/>
+<text x="393.3796444673717" y="522" text-anchor="middle">25</text>
+<line x1="460.86227779210725" x2="460.86227779210725" y1="50" y2="490" stroke="#f3f4f6"/>
+<text x="460.86227779210725" y="508" text-anchor="middle">50</text>
+<line x1="500.33708773699345" x2="500.33708773699345" y1="50" y2="490" stroke="#f3f4f6"/>
+<text x="500.33708773699345" y="522" text-anchor="middle">75</text>
+<line x1="528.3449111168429" x2="528.3449111168429" y1="50" y2="490" stroke="#f3f4f6"/>
+<text x="528.3449111168429" y="508" text-anchor="middle">100</text>
+<line x1="550.0694667010575" x2="550.0694667010575" y1="50" y2="490" stroke="#f3f4f6"/>
+<text x="550.0694667010575" y="522" text-anchor="middle">125</text>
+<line x1="567.8197210617291" x2="567.8197210617291" y1="50" y2="490" stroke="#f3f4f6"/>
+<text x="567.8197210617291" y="508" text-anchor="middle">150</text>
+<line x1="595.8275444415785" x2="595.8275444415785" y1="50" y2="490" stroke="#f3f4f6"/>
+<text x="595.8275444415785" y="522" text-anchor="middle">200</text>
+<line x1="635.3023543864648" x2="635.3023543864648" y1="50" y2="490" stroke="#f3f4f6"/>
+<text x="635.3023543864648" y="508" text-anchor="middle">300</text>
+<line x1="685.0347333505288" x2="685.0347333505288" y1="50" y2="490" stroke="#f3f4f6"/>
+<text x="685.0347333505288" y="522" text-anchor="middle">500</text>
+<line x1="752.5173666752644" x2="752.5173666752644" y1="50" y2="490" stroke="#f3f4f6"/>
+<text x="752.5173666752644" y="508" text-anchor="middle">1000</text>
+<line x1="820.0" x2="820.0" y1="50" y2="490" stroke="#f3f4f6"/>
+<text x="820.0" y="522" text-anchor="middle">2000</text>
+<rect x="80" y="50" width="740" height="440" fill="none" stroke="#9ca3af"/>
+<text x="450.0" y="546" text-anchor="middle">Usuarios virtuales concurrentes (VUs, escala log)</text>
+<text transform="translate(20,270.0) rotate(-90)" text-anchor="middle">http_req_duration avg (ms, escala log)</text>
+<text transform="translate(882,270.0) rotate(90)" text-anchor="middle" fill="#b91c1c">http_req_failed (%)</text>
+<line x1="500.33708773699345" x2="500.33708773699345" y1="50" y2="490" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="506.33708773699345" y="66" fill="#7c3aed" font-weight="bold">Rodilla ≈ 75 VUs</text>
+<circle cx="80.0" cy="393.42669561151297" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="80.0" cy="490.0" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="80.0" cy="387.341213136742" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="80.0" cy="490.0" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="80.0" cy="382.3367739459048" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="80.0" cy="490.0" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="393.3796444673717" cy="380.9895256733071" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="393.3796444673717" cy="490.0" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="393.3796444673717" cy="379.55857477485506" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="393.3796444673717" cy="490.0" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="393.3796444673717" cy="376.04434701237426" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="393.3796444673717" cy="490.0" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="460.86227779210725" cy="331.82621919490396" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="460.86227779210725" cy="490.0" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="460.86227779210725" cy="363.5167013168759" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="460.86227779210725" cy="490.0" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="460.86227779210725" cy="375.48251153838595" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="460.86227779210725" cy="490.0" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="500.33708773699345" cy="368.61305763074466" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="500.33708773699345" cy="490.0" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="500.33708773699345" cy="364.5453425901511" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="500.33708773699345" cy="490.0" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="500.33708773699345" cy="364.9589752417844" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="500.33708773699345" cy="490.0" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="528.3449111168429" cy="128.8459434031805" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="528.3449111168429" cy="417.2881355932203" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="528.3449111168429" cy="374.5544463127877" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="528.3449111168429" cy="490.0" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="528.3449111168429" cy="143.03460121459926" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="528.3449111168429" cy="455.16129032258067" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="550.0694667010575" cy="154.24541361891465" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="550.0694667010575" cy="445.81589958159" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="550.0694667010575" cy="142.45579345266276" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="550.0694667010575" cy="410.1860465116279" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="550.0694667010575" cy="366.6313010671262" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="550.0694667010575" cy="490.0" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="567.8197210617291" cy="127.38759651465892" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="567.8197210617291" cy="356.9767441860465" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="567.8197210617291" cy="122.01261013022332" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="567.8197210617291" cy="353.8095238095238" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="567.8197210617291" cy="123.56446492350005" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="567.8197210617291" cy="360.97744360902254" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="595.8275444415785" cy="130.95755885291027" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="595.8275444415785" cy="378.60759493670884" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="595.8275444415785" cy="131.98180937587802" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="595.8275444415785" cy="376.9724770642202" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="595.8275444415785" cy="125.93044095996817" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="595.8275444415785" cy="353.5658914728682" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="635.3023543864648" cy="136.33897336481755" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="635.3023543864648" cy="362.13675213675214" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="685.0347333505288" cy="151.73400398685607" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="685.0347333505288" cy="183.83333333333337" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="752.5173666752644" cy="107.11587536191712" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="752.5173666752644" cy="164.07407407407402" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<circle cx="820.0" cy="99.16901278414969" r="3" fill="#2563eb" fill-opacity="0.3"/>
+<circle cx="820.0" cy="234.92753623188406" r="3" fill="#dc2626" fill-opacity="0.3"/>
+<polyline points="80.0,387.434270665639 393.3796444673717,378.807218042128 460.86227779210725,352.3060370832762 500.33708773699345,365.99590023060694 528.3449111168429,150.74511501125312 550.0694667010575,163.33139885805372 567.8197210617291,124.25545255704145 595.8275444415785,129.53050779502553 635.3023543864648,136.33897336481755 685.0347333505288,151.73400398685607 752.5173666752644,107.11587536191712 820.0,99.16901278414969" fill="none" stroke="#2563eb" stroke-width="2.5"/>
+<polyline points="80.0,490.0 393.3796444673717,490.0 460.86227779210725,490.0 500.33708773699345,490.0 528.3449111168429,454.14980863860035 550.0694667010575,448.66731536440597 567.8197210617291,357.25457053486434 595.8275444415785,369.7153211579324 635.3023543864648,362.13675213675214 685.0347333505288,183.83333333333337 752.5173666752644,164.07407407407402 820.0,234.92753623188406" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="2 0"/>
+<circle cx="80.0" cy="387.434270665639" r="4.5" fill="#2563eb"/>
+<circle cx="80.0" cy="490.0" r="4.5" fill="#dc2626"/>
+<circle cx="393.3796444673717" cy="378.807218042128" r="4.5" fill="#2563eb"/>
+<circle cx="393.3796444673717" cy="490.0" r="4.5" fill="#dc2626"/>
+<circle cx="460.86227779210725" cy="352.3060370832762" r="4.5" fill="#2563eb"/>
+<circle cx="460.86227779210725" cy="490.0" r="4.5" fill="#dc2626"/>
+<circle cx="500.33708773699345" cy="365.99590023060694" r="4.5" fill="#2563eb"/>
+<circle cx="500.33708773699345" cy="490.0" r="4.5" fill="#dc2626"/>
+<circle cx="528.3449111168429" cy="150.74511501125312" r="4.5" fill="#2563eb"/>
+<circle cx="528.3449111168429" cy="454.14980863860035" r="4.5" fill="#dc2626"/>
+<circle cx="550.0694667010575" cy="163.33139885805372" r="4.5" fill="#2563eb"/>
+<circle cx="550.0694667010575" cy="448.66731536440597" r="4.5" fill="#dc2626"/>
+<circle cx="567.8197210617291" cy="124.25545255704145" r="4.5" fill="#2563eb"/>
+<circle cx="567.8197210617291" cy="357.25457053486434" r="4.5" fill="#dc2626"/>
+<circle cx="595.8275444415785" cy="129.53050779502553" r="4.5" fill="#2563eb"/>
+<circle cx="595.8275444415785" cy="369.7153211579324" r="4.5" fill="#dc2626"/>
+<circle cx="635.3023543864648" cy="136.33897336481755" r="4.5" fill="#2563eb"/>
+<circle cx="635.3023543864648" cy="362.13675213675214" r="4.5" fill="#dc2626"/>
+<circle cx="685.0347333505288" cy="151.73400398685607" r="4.5" fill="#2563eb"/>
+<circle cx="685.0347333505288" cy="183.83333333333337" r="4.5" fill="#dc2626"/>
+<circle cx="752.5173666752644" cy="107.11587536191712" r="4.5" fill="#2563eb"/>
+<circle cx="752.5173666752644" cy="164.07407407407402" r="4.5" fill="#dc2626"/>
+<circle cx="820.0" cy="99.16901278414969" r="4.5" fill="#2563eb"/>
+<circle cx="820.0" cy="234.92753623188406" r="4.5" fill="#dc2626"/>
+<rect x="88" y="52" width="300" height="48" fill="#fff" stroke="#d1d5db"/>
+<line x1="94" x2="118" y1="64" y2="64" stroke="#2563eb" stroke-width="2.5"/><text x="124" y="68">Tiempo de respuesta promedio (media de corridas)</text>
+<line x1="94" x2="118" y1="86" y2="86" stroke="#dc2626" stroke-width="2.5"/><text x="124" y="90">Tasa de error (media de corridas)</text>
+</svg>

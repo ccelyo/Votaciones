@@ -1,0 +1,17 @@
+# Override SOLO para el Laboratorio 6: limita los recursos de los componentes
+# que participan en la funcionalidad probada (Front-end -> Gateway -> Identity -> PostgreSQL).
+# Los valores imitan una instancia por defecto de Cloud Run (1 vCPU, 512 MiB),
+# donde el proyecto despliega sus servicios; PostgreSQL recibe 1 vCPU y 1 GiB.
+#
+#   WEB_PORT=3100 docker compose -f docker-compose.yml \
+#     -f docs/lab6-performance/docker-compose.perf.yml \
+#     -f docs/lab6-performance/docker-compose.limits.yml up -d platform
+services:
+  platform:
+    deploy: { resources: { limits: { cpus: "1.0", memory: 512M } } }
+  gateway:
+    deploy: { resources: { limits: { cpus: "1.0", memory: 512M } } }
+  identity:
+    deploy: { resources: { limits: { cpus: "1.0", memory: 512M } } }
+  postgres:
+    deploy: { resources: { limits: { cpus: "1.0", memory: 1G } } }
