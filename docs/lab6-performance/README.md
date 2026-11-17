@@ -57,6 +57,61 @@ Los niveles de 1 a 200 VUs, salvo 175, salen de 3 corridas **con calentamiento**
 - A 200 VUs aparecen además algunos errores de red: 60 y 18 en dos de las corridas.
 - El log del Gateway muestra mayoritariamente **504 Gateway Timeout**, junto con algunos 500 y 502.
 
+## Prueba con recursos limitados por contenedor
+
+La prueba se repitió limitando los recursos de los cuatro componentes con [`docker-compose.limits.yml`](docker-compose.limits.yml). Los valores imitan una instancia por defecto de Cloud Run, donde el proyecto despliega sus servicios:
+
+| Componente | CPU | Memoria |
+|---|---:|---:|
+| Front-end (platform) | 1 vCPU | 512 MiB |
+| API Gateway | 1 vCPU | 512 MiB |
+| Identity | 1 vCPU | 512 MiB |
+| PostgreSQL | 1 vCPU | 1 GiB |
+
+```bash
+WEB_PORT=3100 docker compose -f docker-compose.yml \
+  -f docs/lab6-performance/docker-compose.perf.yml \
+  -f docs/lab6-performance/docker-compose.limits.yml up -d platform
+cd docs/lab6-performance
+for r in 1 2 3; do OUT=results-limited/warm$r ./run_levels.sh 1 25 50 75 100 125 150 200; done
+OUT=results-limited/high ./run_levels.sh 300 500 1000 2000
+python3 build_report.py results-limited curva_desempeno_limitada.svg "Con límites: ..."
+```
+
+![Curva de desempeño con recursos limitados](curva_desempeno_limitada.svg)
+
+| VUs | Corridas | avg (ms, media) | Throughput (req/s, media) | Error % (media) | Corridas sin errores |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 3 | 15 | 1.0 | 0.0 % | 3/3 |
+| 25 | 3 | 18 | 24.5 | 0.0 % | 3/3 |
+| 50 | 3 | 37 | 47.9 | 0.0 % | 3/3 |
+| 75 | 3 | 26 | 72.6 | 0.0 % | 3/3 |
+| 100 | 3 | 7164 | 38.2 | 8.1 % | 1/3 |
+| 125 | 3 | 5154 | 42.7 | 9.4 % | 1/3 |
+| 150 | 3 | 14328 | 2.2 | 30.2 % | 0/3 |
+| 200 | 3 | 12481 | 2.2 | 27.3 % | 0/3 |
+| 300 | 1\* | 10444 | 1.9 | 29.1 % | 0/1 |
+| 500 | 1\* | 6981 | 4.0 | 69.6 % | 0/1 |
+| 1000 | 1\* | 22437 | 0.9 | 74.1 % | 0/1 |
+| 2000 | 1\* | 27622 | 1.1 | 58.0 % | 0/1 |
+
+Todas las corridas fueron con calentamiento. Los niveles marcados con \* tienen una sola corrida (`results-limited/high`). El detalle de cada corrida está en [`results-limited/results.md`](results-limited/results.md).
+
+**Rodilla con límites: ≈ 75 VUs**, que es el último nivel con 0 % de errores en 3 de 3 corridas. A partir de 100 VUs ya aparecen errores.
+
+Hasta 75 VUs el throughput crece de forma lineal (1 → 72,6 req/s) y el promedio se mantiene por debajo de 40 ms. Todos los fallos entre 100 y 2000 VUs son 5xx del sistema. La única excepción es la corrida de 500 VUs, que tuvo además 127 errores de red.
+
+### Comparación: sin límites vs. con límites
+
+| | Sin límites | Con límites (1 vCPU por servicio) |
+|---|---|---|
+| Rodilla | ≈ 50 VUs | ≈ 75 VUs |
+| 75 VUs, corridas limpias | 1/3 | 3/3 |
+| 100 VUs, corridas limpias | 1/3 | 1/3 |
+| 150+ VUs | Falla siempre | Falla siempre |
+
+**Interpretación.** Limitar los recursos **no empeoró** el desempeño. Esto respalda la causa raíz: el cuello de botella no es la CPU ni la memoria, sino el pool de 15 conexiones de Identity con un solo worker. Ese límite es idéntico en ambas configuraciones, y por eso la saturación aparece en la misma zona, entre 75 y 150 VUs. La diferencia a 75 VUs (1/3 frente a 3/3 corridas limpias) cae dentro de la zona inestable descrita arriba. Puede deberse a la variación entre corridas o a que, sin límites, todos los contenedores competían por los mismos núcleos que k6. Con estos datos no se puede separar una explicación de la otra. La conclusión práctica es que la rodilla está entre **50 y 75 VUs** en ambos casos, y que dar más CPU o memoria a Identity no la desplazaría: habría que ampliar el pool, agregar workers o hacer el endpoint asíncrono.
+
 ### ¿Por qué falla? (causa raíz)
 
 El cuello de botella es **Identity**, no el Gateway ni PostgreSQL.
@@ -142,6 +197,16 @@ python3 build_report.py                     # tabla + curva_desempeno.svg
 | `run1_sin_reinicio/` | Primer barrido, en el que Identity quedó bloqueado. Se conserva como evidencia y no se usa en la curva. |
 | `discarded/` | Corrida de 300 VUs descartada. k6 midió peticiones de 6 min cuando la iteración más larga fue de 43 s, por una pausa de la VM de Docker o del equipo. |
 | `stages.*` | Ejecución con stages (paso e.4). |
+
+## Entorno de pruebas
+
+| Recurso | Valor |
+|---|---|
+| Máquina | Apple M4: 10 núcleos (4 de rendimiento y 6 de eficiencia), 16 GB de RAM, macOS 27.2 |
+| Docker | Docker Desktop 28.3.3. Su VM tenía 10 CPUs y unos 7,7 GB de RAM asignados |
+| Contenedores | Prueba principal: sin límites por contenedor. Segunda prueba: con los límites de la tabla anterior. Los demás servicios del stack corrían sin límites, pero estaban inactivos |
+| Generador | k6 v2.4.0 nativo (darwin/arm64), en la misma máquina, con `ulimit -n 65536` |
+| Red | Loopback (`localhost:8088`), a través del reenvío de puertos de Docker Desktop |
 
 ## Limitaciones
 

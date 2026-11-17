@@ -1,6 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="900" height="560" viewBox="0 0 900 560" font-family="Helvetica, Arial, sans-serif" font-size="12">
 <rect width="900" height="560" fill="#ffffff"/>
 <text x="450.0" y="26" text-anchor="middle" font-size="16" font-weight="bold">Curva de desempeño – GET /api/elections/open (Gateway → Identity → PostgreSQL)</text>
+<text x="450.0" y="44" text-anchor="middle" font-size="12" fill="#4b5563">Sin límites de recursos por contenedor</text>
 <line x1="80" x2="820" y1="490.0" y2="490.0" stroke="#e5e7eb"/>
 <text x="72" y="494.0" text-anchor="end">1 ms</text>
 <line x1="80" x2="820" y1="402.0" y2="402.0" stroke="#e5e7eb"/>

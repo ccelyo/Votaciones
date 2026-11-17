@@ -7,7 +7,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 ulimit -n 65536 2>/dev/null || ulimit -n 10240
 LEVELS=("$@"); [ ${#LEVELS[@]} -eq 0 ] && LEVELS=(1 50 100 200 500 1000 1500 2000)
-mkdir -p results
+OUT="${OUT:-results}"; mkdir -p "$OUT"
 for v in "${LEVELS[@]}"; do
   if [ "${RESET:-1}" = "1" ]; then
     # Identity puede quedar bloqueado (pool de BD agotado) tras un nivel saturado:
@@ -23,7 +23,7 @@ for v in "${LEVELS[@]}"; do
   fi
   echo "=== $v VUs ==="
   k6 run -q -e VUS="$v" -e DURATION="${DURATION:-30s}" -e BASE_URL="${BASE_URL:-http://localhost:8088}" \
-    --summary-export "results/vus_${v}.json" performance_test.js 2>&1 | tee "results/vus_${v}.txt" \
+    --summary-export "$OUT/vus_${v}.json" performance_test.js 2>&1 | tee "$OUT/vus_${v}.txt" \
     | grep -E "http_req_duration|http_req_failed|http_reqs" || true
   sleep 10   # deja que el sistema se recupere entre niveles
 done
