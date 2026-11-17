@@ -1,0 +1,15 @@
+time="2026-11-16T22:48:42-05:00" level=warning msg="No script iterations fully finished, consider making the test duration longer"
+
+
+  █ TOTAL RESULTS 
+
+    EXECUTION
+    vus.............: 1000  min=1000 max=1000
+    vus_max.........: 1000  min=1000 max=1000
+
+    NETWORK
+    data_received...: 0 B   0 B/s
+    data_sent.......: 88 kB 1.5 kB/s
+
+
+
