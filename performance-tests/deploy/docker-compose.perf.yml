@@ -1,0 +1,19 @@
+# Override SOLO para el despliegue de pruebas de rendimiento (Laboratorio 6).
+#
+#   docker compose -f docker-compose.yml -f performance-tests/deploy/docker-compose.perf.yml \
+#     -p votaciones-perf up -d --build platform
+#
+# Único cambio: desactiva el límite de tasa del Gateway (por IP y por minuto; un
+# valor 0 lo deshabilita, ver gateway/src/rateLimit.ts). Con un único nodo
+# generador todas las peticiones llegan desde la misma IP y, sin este override,
+# la prueba mediría el limitador y no la capacidad del sistema.
+# `login` también se desactiva: el tier cuenta /login y /login/mfa, y el
+# setup() de k6 hace 28 peticiones (14 usuarios) frente a la cuota de 20/min.
+#
+# No se fijan límites de CPU ni memoria: los recursos del equipo se documentan
+# con scripts/collect-env.sh.
+services:
+  gateway:
+    environment:
+      GATEWAY_RATE_LIMIT_DEFAULT: "0"
+      GATEWAY_RATE_LIMIT_LOGIN: "0"
