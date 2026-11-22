@@ -1,0 +1,12 @@
+# Override SOLO para el Laboratorio 6 (pruebas de desempeño con k6).
+#
+# El Gateway limita a 300 peticiones/min por cliente (GATEWAY_RATE_LIMIT_DEFAULT).
+# Todas las VUs de k6 salen de la misma IP, así que el limitador respondería 429
+# desde ~5 VUs y falsearía la curva. Con 0 el limitador queda desactivado
+# (rateLimit.ts: limit <= 0 => sin límite) y se mide la capacidad real del sistema.
+#
+#   docker compose -f docker-compose.yml -f docs/lab6-performance/docker-compose.perf.yml up -d --build platform
+services:
+  gateway:
+    environment:
+      GATEWAY_RATE_LIMIT_DEFAULT: "0"

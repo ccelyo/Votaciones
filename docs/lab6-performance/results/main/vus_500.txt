@@ -1,0 +1,52 @@
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+time="2026-11-16T23:04:44-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": dial tcp 127.0.0.1:8088: connect: connection reset by peer"
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 160    2.666145/s
+    checks_succeeded...: 71.25% 114 out of 160
+    checks_failed......: 28.74% 46 out of 160
+
+    ✗ status is 200
+      ↳  71% — ✓ 114 / ✗ 46
+
+    HTTP
+    http_req_duration..............: avg=14.33s min=0s       med=8.01s max=39.04s p(90)=38.75s p(95)=38.94s
+      { expected_response:true }...: avg=12.32s min=559.82ms med=8.01s max=38.96s p(90)=38.34s p(95)=38.75s
+    http_req_failed................: 28.74% 46 out of 160
+    http_reqs......................: 160    2.666145/s
+
+    EXECUTION
+    iteration_duration.............: avg=15.45s min=1.09s    med=9.12s max=40.15s p(90)=39.86s p(95)=40.04s
+    iterations.....................: 160    2.666145/s
+    vus............................: 458    min=458       max=500
+    vus_max........................: 500    min=500       max=500
+
+    NETWORK
+    data_received..................: 146 kB 2.4 kB/s
+    data_sent......................: 52 kB  873 B/s
+
+
+

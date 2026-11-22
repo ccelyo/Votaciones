@@ -1,0 +1,52 @@
+time="2026-11-16T23:49:50-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": read tcp 127.0.0.1:55306->127.0.0.1:8088: read: connection reset by peer"
+time="2026-11-16T23:49:50-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": read tcp 127.0.0.1:55287->127.0.0.1:8088: read: connection reset by peer"
+time="2026-11-16T23:49:50-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": read tcp 127.0.0.1:55290->127.0.0.1:8088: read: connection reset by peer"
+time="2026-11-16T23:49:50-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": read tcp 127.0.0.1:55286->127.0.0.1:8088: read: connection reset by peer"
+time="2026-11-16T23:49:50-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": read tcp 127.0.0.1:55289->127.0.0.1:8088: read: connection reset by peer"
+time="2026-11-16T23:49:50-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": read tcp 127.0.0.1:55292->127.0.0.1:8088: read: connection reset by peer"
+time="2026-11-16T23:49:50-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": read tcp 127.0.0.1:55299->127.0.0.1:8088: read: connection reset by peer"
+time="2026-11-16T23:49:50-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": read tcp 127.0.0.1:55301->127.0.0.1:8088: read: connection reset by peer"
+time="2026-11-16T23:49:50-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": read tcp 127.0.0.1:55288->127.0.0.1:8088: read: connection reset by peer"
+time="2026-11-16T23:49:50-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": read tcp 127.0.0.1:55298->127.0.0.1:8088: read: connection reset by peer"
+time="2026-11-16T23:49:50-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": read tcp 127.0.0.1:55295->127.0.0.1:8088: read: connection reset by peer"
+time="2026-11-16T23:49:50-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": read tcp 127.0.0.1:55294->127.0.0.1:8088: read: connection reset by peer"
+time="2026-11-16T23:49:50-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": read tcp 127.0.0.1:55303->127.0.0.1:8088: read: connection reset by peer"
+time="2026-11-16T23:49:50-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": read tcp 127.0.0.1:55302->127.0.0.1:8088: read: connection reset by peer"
+time="2026-11-16T23:49:50-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": read tcp 127.0.0.1:55293->127.0.0.1:8088: read: connection reset by peer"
+time="2026-11-16T23:49:50-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": read tcp 127.0.0.1:55296->127.0.0.1:8088: read: connection reset by peer"
+time="2026-11-16T23:49:50-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": read tcp 127.0.0.1:55304->127.0.0.1:8088: read: connection reset by peer"
+time="2026-11-16T23:49:50-05:00" level=warning msg="Request Failed" error="Get \"http://localhost:8088/api/elections/open\": write tcp 127.0.0.1:55305->127.0.0.1:8088: write: broken pipe"
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 150    2.499482/s
+    checks_succeeded...: 61.33% 92 out of 150
+    checks_failed......: 38.66% 58 out of 150
+
+    ✗ status is 200
+      ↳  61% — ✓ 92 / ✗ 58
+
+    CUSTOM
+    status_0_network...............: 18     0.299938/s
+    status_200.....................: 92     1.533015/s
+    status_5xx.....................: 40     0.666528/s
+
+    HTTP
+    http_req_duration..............: avg=12.35s min=104µs   med=161.07ms max=30.28s p(90)=30.25s p(95)=30.26s
+      { expected_response:true }...: avg=6.99s  min=37.24ms med=137.78ms max=30.28s p(90)=30.26s p(95)=30.27s
+    http_req_failed................: 38.66% 58 out of 150
+    http_reqs......................: 150    2.499482/s
+
+    EXECUTION
+    iteration_duration.............: avg=13.35s min=1s      med=1.16s    max=31.29s p(90)=31.26s p(95)=31.27s
+    iterations.....................: 150    2.499482/s
+    vus............................: 139    min=139       max=200
+    vus_max........................: 200    min=200       max=200
+
+    NETWORK
+    data_received..................: 124 kB 2.1 kB/s
+    data_sent......................: 25 kB  421 B/s
+
+
+
