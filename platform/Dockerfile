@@ -31,4 +31,6 @@ COPY --from=build --chown=node:node /app/public ./public
 COPY --from=build --chown=node:node /app/next.config.ts ./
 USER node
 EXPOSE 3000
-CMD ["pnpm", "start"]
+# Equivale a `pnpm start` (next start), pero sin corepack: así no descarga pnpm
+# de Internet al arrancar y puede correr en redes `internal` sin salida.
+CMD ["node_modules/.bin/next", "start"]
