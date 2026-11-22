@@ -4,12 +4,15 @@
 #
 #   Frontend  http://localhost:3000   (otro puerto: WEB_PORT=3100 docker compose up --build)
 #   Gateway   http://localhost:8088   (GATEWAY_PORT; catálogo de rutas en /api)
+#             Los dos puertos los publica el WAF (servicio `waf`), no platform ni
+#             gateway: toda petición externa pasa por ModSecurity + OWASP CRS.
 #   Mobile    http://localhost:8092   (MOBILE_PORT; la app web llama al Gateway desde el navegador)
 #   Election  http://127.0.0.1:8001   (ELECTION_PORT; solo loopback, para desarrollo)
 #   RabbitMQ  http://127.0.0.1:15672  (RABBITMQ_UI_PORT, guest / guest; solo loopback)
 #
-# Identity, Ballot, Tally, Analytics, Notification y todas las bases de datos
-# NO se publican en el host: solo se llega a ellos a través del Gateway.
+# Platform, Gateway, Identity, Ballot, Tally, Analytics, Notification y todas las
+# bases de datos NO se publican en el host: se llega a la web y a la API solo a
+# través del WAF, y a los servicios solo a través del Gateway.
 #
 # Segmentación de red (Laboratorio 5): cada conexión entre servicios tiene su
 # propia red (ver `networks:` al final). Un servicio solo se ve con los que
@@ -211,9 +214,10 @@ services:
       GATEWAY_ALLOWED_ORIGINS: http://localhost:${WEB_PORT:-3000},http://127.0.0.1:${WEB_PORT:-3000},http://localhost:${MOBILE_PORT:-8092},http://127.0.0.1:${MOBILE_PORT:-8092}
       # Solo es seguro porque el WAF sobrescribe X-Forwarded-For con la IP real.
       GATEWAY_TRUST_FORWARDED_FOR: "true"
-    # Sigue publicado: la app `mobile` (en el navegador) y otros clientes lo llaman.
-    ports: ["${GATEWAY_PORT:-8088}:8088"]
+    # Sin `ports`: la app `mobile`, la CLI y el navegador llegan por el WAF.
+    expose: ["8088"]
     networks:
+      - waf-api-net
       - frontend-net
       - gw-identity-net
       - gw-ballot-net
@@ -231,8 +235,55 @@ services:
         condition: service_healthy
     environment:
       GATEWAY_URL: http://gateway:8088
-    ports: ["${WEB_PORT:-3000}:3000"]
-    networks: [frontend-net]
+    # Sin `ports`: el navegador entra por el WAF.
+    expose: ["3000"]
+    networks: [waf-web-net, frontend-net]
+
+  # Web Application Firewall de borde (escenario de seguridad 4, Prototipo 3).
+  # nginx + ModSecurity v3 + OWASP Core Rule Set 4 (LTS). Inspecciona cada
+  # petición externa y bloquea con 403 las que superan el umbral de anomalía
+  # (SQLi, XSS, path traversal, inyección de comandos, escáneres...). Ver waf/README.md.
+  waf:
+    image: owasp/modsecurity-crs:4.25.2-nginx-alpine-202610180210-lts
+    depends_on:
+      gateway:
+        condition: service_healthy
+      platform:
+        condition: service_started
+    environment:
+      PORT: "8080"
+      GATEWAY_PORT: "8088"
+      WEB_BACKEND: http://platform:3000
+      API_BACKEND: http://gateway:8088
+      # Bloqueo por puntuación de anomalía con paranoia 1 (la recomendada para
+      # producción). Para afinar sin bloquear: MODSEC_RULE_ENGINE=DetectionOnly.
+      MODSEC_RULE_ENGINE: ${WAF_RULE_ENGINE:-On}
+      BLOCKING_PARANOIA: "1"
+      ANOMALY_INBOUND: "5"
+      ANOMALY_OUTBOUND: "4"
+      ALLOWED_METHODS: GET HEAD POST OPTIONS PUT PATCH DELETE
+      # Registro de auditoría JSON en stdout: `docker compose logs waf`.
+      MODSEC_AUDIT_LOG: /dev/stdout
+      MODSEC_AUDIT_LOG_FORMAT: JSON
+      SERVER_TOKENS: "off"
+      SERVER_HEADER: ""
+    volumes:
+      - ./waf/nginx/templates/conf.d/default.conf.template:/etc/nginx/templates/conf.d/default.conf.template:ro
+      - ./waf/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:/etc/modsecurity.d/owasp-crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:ro
+    ports:
+      - "${WEB_PORT:-3000}:8080"
+      - "${GATEWAY_PORT:-8088}:8088"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs -A healthcheck http://localhost:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    # Única red no interna del borde: es la que permite publicar los puertos.
+    # Desde el WAF solo se alcanza a platform y gateway, por redes internas propias.
+    networks:
+      - edge-net
+      - waf-web-net
+      - waf-api-net
 
   # La misma app Flutter, compilada para el navegador, para ver el flujo sin un teléfono.
   mobile:
@@ -353,9 +404,14 @@ services:
 # Internet ni al host; ningún servicio la necesita en ejecución.
 networks:
   # Entrada desde el host (no internas porque publican puertos).
-  frontend-net:      # platform <-> gateway
+  edge-net:          # waf: única entrada a la web y a la API
   mobile-net:        # mobile (solo archivos estáticos)
   dev-access-net:    # election y UI de RabbitMQ, solo en loopback
+
+  # Borde: WAF -> cada servicio que protege, y Platform (SSR/BFF) -> Gateway.
+  waf-web-net: { internal: true }   # waf -> platform
+  waf-api-net: { internal: true }   # waf -> gateway
+  frontend-net: { internal: true }  # platform -> gateway
 
   # Gateway -> cada servicio al que enruta.
   gw-identity-net: { internal: true }

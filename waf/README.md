@@ -58,7 +58,8 @@ for l in sys.stdin:
 Todas las VUs de k6 salen de la misma IP. Hay que desactivar el límite de tasa del
 Gateway (`docs/lab6-performance/docker-compose.perf.yml`); el WAF no bloquea a k6.
 
-## Segmentación de red (`lab5/network-segmentation-base`)
+## Segmentación de red
 
-Al integrar esa rama, `waf` debe compartir una red con `platform` (`frontend-net`) y otra
-interna con `gateway`, y ser el único de los tres con `ports`.
+El WAF está solo en `edge-net` (la única red de borde que publica puertos) y en dos redes
+internas propias: `waf-web-net` con `platform` y `waf-api-net` con `gateway`. No alcanza
+ningún otro servicio ni base de datos. Ver `docs/lab5-network-segmentation/README.md`.
