@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Escenario de seguridad: resultados falsos inyectados por el broker</title>
+<style>
+  @page { size: A4; margin: 22mm 20mm; }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 10.5pt; line-height: 1.45; color: #111; background: #fff; }
+  h1 { font-size: 19pt; line-height: 1.25; margin: 0 0 6px; }
+  h2 { font-size: 13pt; margin: 22px 0 8px; }
+  h3 { font-size: 11pt; margin: 16px 0 6px; }
+  code { font-family: Menlo, Consolas, monospace; font-size: 8.8pt; background: #f0f0f0; padding: 1px 4px; border-radius: 3px; }
+  pre { font-family: Menlo, Consolas, monospace; font-size: 8.2pt; background: #f5f5f5; border: 1px solid #ddd; padding: 10px 12px; line-height: 1.4; white-space: pre-wrap; page-break-inside: avoid; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; border: 1.5px solid #888; }
+  th, td { border: 1px solid #999; padding: 7px 9px; vertical-align: top; text-align: left; }
+  th { background: #e8e8e8; }
+  td:first-child { width: 22%; font-weight: bold; }
+  table.plain td:first-child { font-weight: normal; }
+  tr { page-break-inside: avoid; }
+  ul, ol { margin: 4px 0 8px; padding-left: 22px; }
+  li { margin: 2px 0; }
+  ol ul { list-style: circle; }
+  p { margin: 6px 0; }
+</style>
+</head>
+<body>
+
+<h1>Escenario de seguridad: resultados electorales falsos inyectados a través del broker de mensajería</h1>
+
+<h2>Contexto</h2>
+
+<p>Cuando una elección se cierra, <code>tally</code> descifra y cuenta las papeletas y publica el resultado oficial en RabbitMQ como el evento <code>tally.completed</code> (exchange <code>tally.events</code>). Dos servicios lo consumen:</p>
+
+<ul>
+  <li><code>analytics</code> guarda el conteo en su base «Results» y lo expone a la web y a la app móvil por <code>GET /api/analytics/elections/{id}/results</code>. Es lo que ven los votantes como resultado de la elección.</li>
+  <li><code>notification</code> avisa a los usuarios que los resultados ya están publicados.</li>
+</ul>
+
+<p>Hoy los consumidores creen cualquier mensaje que llegue con la forma correcta:</p>
+
+<ul>
+  <li><b>No se verifica quién publicó el evento.</b> El sobre JSON trae <code>"producer": "tally"</code>, pero es un campo de texto que cualquiera puede escribir, y <code>analytics/src/events.rs</code> ni siquiera lo revisa. El mensaje no lleva ninguna firma.</li>
+  <li><b>El último mensaje gana.</b> <code>apply_tally_completed</code> (<code>analytics/src/store.rs</code>) hace un <code>replace_one</code> con <code>upsert</code> por <code>election_id</code>: un evento falso publicado después del oficial reemplaza el resultado real. Si llega con la urna todavía abierta, además marca la elección como cerrada.</li>
+  <li><b>Hay más de una puerta de entrada.</b> Por compatibilidad, <code>analytics</code> y <code>notification</code> también aceptan <code>tally.completed</code> desde el exchange <code>votes.events</code>, donde publica <code>ballot</code>.</li>
+  <li><b>Todos los servicios comparten el usuario <code>guest/guest</code></b> del broker, con permiso para publicar en cualquier exchange. En <code>rabbitmq/rabbitmq.conf</code> está <code>loopback_users.guest = false</code> (así <code>guest</code> puede entrar desde cualquier equipo, no solo desde el propio servidor) y la consola de administración está publicada en el puerto <code>15672</code>. Desde ahí, o con su API HTTP, se puede publicar un mensaje en cualquier exchange.</li>
+</ul>
+
+<p>Por lo tanto, quien consiga acceso al broker puede publicar un <code>tally.completed</code> con un ganador inventado, y el sistema lo muestra como el resultado oficial.</p>
+
+<h2>Escenario</h2>
+
+<table>
+  <tr><th>Elemento</th><th>Descripción</th></tr>
+  <tr><td>Fuente</td><td>Un atacante que obtuvo acceso al broker RabbitMQ: un externo que usa las credenciales por defecto (<code>guest/guest</code>) o filtradas, un servicio interno comprometido (por ejemplo, <code>ballot</code>, que tiene las mismas credenciales) o un operador con acceso a la consola de administración.</td></tr>
+  <tr><td>Estímulo</td><td>El atacante publica en <code>tally.events</code> (o en <code>votes.events</code>) un mensaje <code>tally.completed</code> con formato válido pero conteos inventados para una elección real: altera el número de votos por opción para cambiar el ganador, o publica un resultado antes de que la urna se cierre. Su objetivo es que el sistema muestre y notifique un resultado falso como si fuera el oficial.</td></tr>
+  <tr><td>Artefacto</td><td>Los eventos <code>tally.completed</code> y sus consumidores: <code>analytics</code> (que guarda y expone los resultados) y <code>notification</code>.</td></tr>
+  <tr><td>Ambiente</td><td>El sistema en producción, al final de la jornada: con la elección recién cerrada o con el escrutinio ya publicado.</td></tr>
+  <tr><td>Respuesta</td><td><code>tally</code> firma cada evento <code>tally.completed</code> con su llave privada Ed25519, que solo él tiene. Antes de procesar el mensaje, <code>analytics</code> y <code>notification</code> verifican la firma con la llave pública de <code>tally</code>. Si falta la firma, no es válida o el contenido se alteró, el mensaje se rechaza sin tocar la base, se envía a la cola de mensajes muertos (<code>analytics.events.dlq</code>) y se registra una alerta de seguridad. Los resultados publicados siguen siendo los del escrutinio oficial. Como refuerzo, cada servicio usa su propio usuario de RabbitMQ y solo <code>tally</code> tiene permiso para publicar en <code>tally.events</code>.</td></tr>
+  <tr><td>Medida de la respuesta</td><td>
+    • El 100 % de los mensajes <code>tally.completed</code> sin firma o con firma inválida se rechaza: 0 cambios en la base «Results» y 0 notificaciones enviadas.<br>
+    • El 100 % de los eventos legítimos con un solo dato alterado (por ejemplo, un voto más a una opción) se rechaza.<br>
+    • El 100 % de los eventos legítimos de <code>tally</code> se acepta, y la verificación agrega menos de 1 ms por mensaje.<br>
+    • El resultado de <code>GET /api/analytics/elections/{id}/results</code> coincide al 100 % con el conteo oficial de <code>tally</code>.<br>
+    • El 100 % de los rechazos queda registrado como alerta de seguridad, con el <code>event_id</code>, el exchange y el motivo, en menos de 1 s.
+  </td></tr>
+</table>
+
+<h2>Contramedida: mensajes firmados digitalmente (Message Signing)</h2>
+
+<p><b>Táctica:</b> detectar ataques → verificar la integridad del mensaje; resistir ataques → autenticar actores y autorizar actores. <b>Patrón:</b> mensajes firmados (<i>Message Signing</i>, también conocido como <i>Message Authentication</i>). El productor firma cada mensaje con su llave privada y cada consumidor verifica la firma con la llave pública del productor antes de confiar en el contenido. Así el consumidor sabe <b>quién</b> generó el mensaje y que <b>nadie lo cambió</b> en el camino, sin importar por dónde pasó.</p>
+
+<p><b>Diferencia con el canal seguro (TLS):</b> TLS protege el mensaje mientras viaja por la red, pero no dice quién lo creó. Un atacante con credenciales del broker publica por una conexión TLS perfectamente válida y el mensaje falso llega intacto. La firma protege el <b>origen y el contenido del mensaje</b> de extremo a extremo, desde <code>tally</code> hasta cada consumidor, aunque el broker esté comprometido.</p>
+
+<h3>Elementos del patrón en Espivota</h3>
+
+<table class="plain">
+  <tr><th>Elemento del patrón</th><th>En Espivota</th></tr>
+  <tr><td>Productor (firmante)</td><td><code>tally</code>, única fuente de verdad del conteo oficial</td></tr>
+  <tr><td>Mensaje protegido</td><td>El cuerpo JSON completo del evento <code>tally.completed</code> (sobre y datos), tal como se publica</td></tr>
+  <tr><td>Credencial del productor</td><td>Par de llaves Ed25519 de <code>tally</code>. La privada vive solo en su volumen (<code>tally-keys</code>); la pública se configura en los consumidores</td></tr>
+  <tr><td>Firma</td><td>Ed25519 sobre los bytes exactos del cuerpo, enviada en las cabeceras AMQP <code>x-signature</code> (Base64) y <code>x-key-id</code> (identificador de la llave, para poder rotarla)</td></tr>
+  <tr><td>Verificadores</td><td><code>analytics</code> (Rust, <code>ed25519-dalek</code>) y <code>notification</code> (Node.js, <code>node:crypto</code>)</td></tr>
+  <tr><td>Respuesta al rechazo</td><td><code>nack</code> sin reencolar → cola de mensajes muertos, y log <code>security_event: invalid_signature</code></td></tr>
+  <tr><td>Refuerzo (autorización)</td><td>Un usuario de RabbitMQ por servicio, con permiso de escritura solo sobre su propio exchange; se elimina <code>guest</code></td></tr>
+</table>
+
+<h3>Flujo</h3>
+
+<pre><code>Publicación legítima
+tally ──(1) cuenta las papeletas y arma el evento tally.completed
+tally ──(2) firma el cuerpo con su llave privada Ed25519
+tally ══(3) publica en tally.events  [x-signature, x-key-id] ══▶ RabbitMQ
+RabbitMQ ──(4) entrega el mensaje ──────────────────────────────▶ analytics / notification
+        analytics verifica la firma con la llave pública de tally → válida
+        analytics guarda el resultado en «Results» y hace ack
+
+Ataque
+atacante ──(5) publica tally.completed falso (sin firma, o firmado
+               con otra llave, o un evento real con los votos cambiados) ──▶ RabbitMQ
+RabbitMQ ──(6) entrega el mensaje ──────────────────────────────▶ analytics
+        analytics verifica la firma → inválida
+        analytics hace nack sin reencolar → analytics.events.dlq
+        analytics registra la alerta; «Results» no cambia</code></pre>
+
+<p>La verificación ocurre antes de decodificar y aplicar el evento, así que un mensaje falso nunca llega a la base de datos. Reenviar un evento oficial ya publicado (<i>replay</i>) no cambia nada: tiene el mismo <code>event_id</code> determinista y el mismo contenido, y <code>analytics</code> ya descarta duplicados.</p>
+
+<h3>Cambios para implementarlo</h3>
+
+<ol>
+  <li><b>Tally (<code>tally/internal/publisher</code>, <code>tally/internal/config</code>):</b>
+    <ul>
+      <li>generar o cargar el par Ed25519 desde <code>TALLY_SIGNING_KEY_FILE</code> (volumen <code>tally-keys</code>) con <code>crypto/ed25519</code> de la biblioteca estándar de Go;</li>
+      <li>al publicar, firmar el cuerpo serializado y agregar las cabeceras <code>x-signature</code> y <code>x-key-id</code>;</li>
+      <li>exponer la llave pública en <code>GET /v1/tally/signing-key</code> para configurarla en los consumidores.</li>
+    </ul>
+  </li>
+  <li><b>Analytics (<code>analytics/src/consumer.rs</code>, <code>analytics/src/events.rs</code>):</b>
+    <ul>
+      <li>nueva variable <code>ANALYTICS_TALLY_PUBLIC_KEYS</code> (pares <code>key-id=llave</code>, para permitir rotación);</li>
+      <li>para <code>tally.completed</code>, verificar la firma sobre los bytes recibidos antes de llamar a <code>apply_tally_completed</code>; si falla, <code>nack</code> sin reencolar y log de seguridad;</li>
+      <li>aceptar <code>tally.completed</code> solo desde el exchange <code>tally.events</code> y quitar el binding de compatibilidad en <code>votes.events</code>.</li>
+    </ul>
+  </li>
+  <li><b>Notification (<code>notification/src</code>):</b> la misma verificación con <code>crypto.verify</code> de Node.js antes de notificar, y quitar la suscripción a <code>tally.completed</code> en <code>votes.events</code>.</li>
+  <li><b>RabbitMQ (<code>rabbitmq/definitions.json</code>, <code>rabbitmq/rabbitmq.conf</code>, <code>docker-compose.yml</code>):</b>
+    <ul>
+      <li>crear un usuario por servicio (<code>tally</code>, <code>ballot</code>, <code>election</code>, <code>analytics</code>, <code>notification</code>) con permisos de escritura solo sobre su exchange;</li>
+      <li>eliminar <code>guest</code> y <code>loopback_users.guest = false</code>.</li>
+    </ul>
+  </li>
+  <li><b>Contrato (<code>tally/docs/events.md</code>, <code>analytics/CONTRACTS.md</code>):</b> documentar las cabeceras de firma y que un <code>tally.completed</code> sin firma válida se rechaza.</li>
+</ol>
+
+<p><i>Mejora opcional:</i> firmar también los demás eventos (<code>votes.cast</code>, <code>election.created</code>, <code>election.closed</code>) con la llave de cada productor, para que nadie pueda inflar la participación en tiempo real ni falsificar la apertura o el cierre de una elección.</p>
+
+<h2>Verificación</h2>
+
+<ol>
+  <li><b>Antes del cambio:</b> cerrar una elección de prueba y lanzar el escrutinio. Luego publicar desde la consola de RabbitMQ (<code>http://localhost:15672</code>, <code>guest/guest</code>), o con <code>curl</code> a su API <code>/api/exchanges/%2f/tally.events/publish</code>, un <code>tally.completed</code> con los votos cambiados. <code>GET /api/analytics/elections/{id}/results</code> muestra el resultado falso.</li>
+  <li><b>Después del cambio:</b> repetir el mismo ataque. El mensaje aparece en <code>analytics.events.dlq</code>, los logs muestran <code>invalid_signature</code> y los resultados siguen siendo los oficiales.</li>
+  <li>Tomar un evento legítimo firmado, cambiar un solo número en <code>results</code> y republicarlo con la firma original: se rechaza.</li>
+  <li>Firmar un evento falso con una llave Ed25519 distinta a la de <code>tally</code>: se rechaza.</li>
+  <li>Publicar un <code>tally.completed</code> en <code>votes.events</code>: ya no llega a <code>analytics</code> ni a <code>notification</code>.</li>
+  <li>Intentar entrar a RabbitMQ con <code>guest/guest</code> y publicar en <code>tally.events</code> con el usuario de <code>ballot</code>: ambos se rechazan por falta de permisos.</li>
+  <li>Correr el flujo completo de <code>docs/demo/e2e_vote.py</code> y comprobar que el resultado legítimo se publica y se notifica normalmente.</li>
+</ol>
+
+</body>
+</html>
