@@ -25,9 +25,9 @@ PY=python3; python3 -c "" >/dev/null 2>&1 || PY=python
 json() { $PY -I -c "import sys,json;d=json.load(sys.stdin);print(d$1)" 2>/dev/null; }
 
 # --- 1. Puertos publicados en el host --------------------------------------
-echo "1. Puertos del host (esperado: solo $WEB, $GW, y 127.0.0.1:$RMQ/$ELEC)"
+echo "1. Puertos del host (esperado: solo $WEB y $GW por el WAF, y 127.0.0.1:$RMQ/$ELEC)"
 http() { curl -s -o /dev/null -m 4 -w '%{http_code}' "$1" 2>/dev/null; }
-for spec in "Platform|http://localhost:$WEB/login" "Gateway|http://localhost:$GW/healthz" \
+for spec in "WAF -> Platform|http://localhost:$WEB/login" "WAF -> Gateway|http://localhost:$GW/healthz" \
             "RabbitMQ UI|http://127.0.0.1:$RMQ/" "Election (dev)|http://127.0.0.1:$ELEC/health"; do
   name=${spec%%|*}; url=${spec#*|}; code=$(http "$url")
   case "$code" in 2??|3??|401) ok "$name responde en $url (HTTP $code)";; *) bad "$name NO responde en $url (HTTP $code)";; esac
@@ -36,6 +36,11 @@ for spec in "Identity|8000" "Ballot|8080" "Ballot gRPC|9091" "Tally|8092" "Analy
             "RabbitMQ AMQP|5672" "Mongo|27017" "Postgres|5432"; do
   name=${spec%%|*}; port=${spec#*|}; code=$(http "http://localhost:$port/")
   if [ "$code" = "000" ]; then ok "$name (localhost:$port) NO publicado"; else bad "$name (localhost:$port) responde HTTP $code"; fi
+done
+# Platform y Gateway solo los publica el WAF: sus contenedores no deben tener puertos en el host.
+for svc in platform gateway; do
+  bindings=$(docker inspect --format '{{json .HostConfig.PortBindings}}' "$(dc ps -q "$svc")" 2>/dev/null)
+  if [ "$bindings" = "{}" ]; then ok "$svc sin puertos propios en el host (solo vía WAF)"; else bad "$svc publica puertos propios en el host"; fi
 done
 
 # --- 2a. Comunicación entre servicios (solo lectura) -----------------------
@@ -99,6 +104,9 @@ t A gateway analytics 8090; t A gateway notification 3000
 t D gateway rabbitmq 5672;  t D gateway postgres 5432; t D gateway mongo 27017
 t D gateway blind-signature 8100; t D gateway election 8000
 t R gateway ballot 9091 "gRPC admin de Ballot sin autenticación, alcanzable desde Gateway"
+t A waf platform 3000;      t A waf gateway 8088
+t D waf identity 8000;      t D waf ballot 8080;       t D waf tally 8092;  t D waf mongo 27017
+t D waf postgres 5432;      t D waf rabbitmq 5672;     t D waf election 8000
 t A platform gateway 8088;  t D platform identity 8000; t D platform ballot 8080; t D platform mongo 27017
 t A identity postgres 5432; t A identity postgres-census 5432; t A identity blind-signature 8100
 t A identity ballot 9091;   t D identity mongo 27017;  t D identity rabbitmq 5672; t D identity election 8000

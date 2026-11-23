@@ -6,6 +6,9 @@
 import re
 from pathlib import Path
 
+import pytest
+from pydantic import ValidationError
+
 from app.config import Settings, normalize_database_url
 from app.models import Base
 
@@ -43,5 +46,10 @@ def test_database_url_formats(monkeypatch):
     monkeypatch.delenv("ELECTION_DATABASE_URL", raising=False)
     monkeypatch.setenv("DATABASE_URL", "postgresql://u:p@db:5432/elections")
     assert Settings().database_url == "postgresql+psycopg://u:p@db:5432/elections"
+
+
+def test_required_tls_rejects_incomplete_certificate_material():
+    with pytest.raises(ValidationError, match="ELECTION_TLS_REQUIRED"):
+        Settings(tls_required=True)
     assert normalize_database_url("postgres://u:p@h/db") == "postgresql+psycopg://u:p@h/db"
     assert normalize_database_url("sqlite://") == "sqlite://"

@@ -19,16 +19,24 @@ El Gateway tiene que estar arriba (`docker compose up` en la raíz del repo).
 ```bash
 cd mobile
 flutter pub get
-flutter run --dart-define=GATEWAY_URL=http://localhost:8088
+flutter run --dart-define=GATEWAY_URL=https://localhost:8088
 ```
 
-La URL cambia según dónde corre la app:
+El Gateway presenta un certificado TLS firmado por la CA local de desarrollo en
+`.dev-certs/ca-public/ca.crt`. Para ejecutar en un dispositivo o navegador, instala
+esa CA en el almacén de confianza correspondiente; no desactives la validación TLS.
+En despliegues reales, usa certificados de una CA de confianza pública o gestionada.
+La URL cambia según dónde corre la app y el certificado debe incluir ese host:
 
 | Dónde | `GATEWAY_URL` |
 | --- | --- |
-| Simulador de iOS o escritorio | `http://localhost:8088` |
-| Emulador de Android | `http://10.0.2.2:8088` |
-| Teléfono en la misma red | `http://IP-DE-TU-COMPUTADORA:8088` |
+| Simulador de iOS o escritorio | `https://localhost:8088` |
+| Emulador de Android | `https://10.0.2.2:8088` |
+| Teléfono en la misma red | `https://IP-DE-TU-COMPUTADORA:8088` |
+
+El certificado de desarrollo incluido cubre `localhost` y `127.0.0.1`; para
+emuladores o teléfonos, configura un certificado con SAN para el host/IP usado y
+confía explícitamente en la CA en ese entorno.
 
 Usuarios de prueba del compose: `votante1` … `votante10`, contraseña `prueba123`, código `123456`.
 
@@ -47,6 +55,6 @@ Queda en `http://localhost:8092`.
 `Dockerfile` compila la app web y la publica con nginx. La URL del Gateway se fija al construir:
 
 ```bash
-docker build --build-arg GATEWAY_URL=http://localhost:8088 -t votaciones-mobile mobile
+docker build --build-arg GATEWAY_URL=https://localhost:8088 -t votaciones-mobile mobile
 docker run --rm -p 8092:80 votaciones-mobile
 ```

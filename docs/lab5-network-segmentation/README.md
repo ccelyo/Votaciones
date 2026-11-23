@@ -43,6 +43,21 @@ Son 17 redes. Ballot tiene su propia red hacia RabbitMQ porque guarda los votos 
 
 **Principio importante:** Docker aísla por **red**, no por puerto. Si dos servicios comparten red, se ven en todos los puertos que el destino tenga abiertos. La separación de redes **no** impide, por ejemplo, que el Gateway alcance el puerto gRPC 9091 de Ballot (ver riesgo 1).
 
+### Integración con el WAF (Prototipo 3, escenario 4)
+
+Al integrar `main` (PR #33), el WAF pasa a ser la única entrada a la web y a la API:
+
+| Red | internal | Miembros | Conexión |
+|---|---|---|---|
+| `edge-net` | no | waf | Publica 3000 (web) y 8088 (API) en el host |
+| `waf-web-net` | sí | waf, platform | WAF → Platform (HTTP 3000) |
+| `waf-api-net` | sí | waf, gateway | WAF → Gateway (HTTP 8088) |
+| `frontend-net` | **sí** (antes no) | platform, gateway | Platform (SSR/BFF) → Gateway (HTTP 8088) |
+
+- Platform y Gateway dejan de publicar puertos (`expose`), y ninguna de sus redes tiene salida.
+- Desde el WAF solo se alcanzan Platform y Gateway. La matriz del script lo comprueba (`waf -> identity`, `ballot`, `tally`, `mongo`, `postgres`, `rabbitmq` y `election` quedan bloqueados).
+- `platform/Dockerfile` arranca con `node_modules/.bin/next start` en vez de `pnpm start`. Corepack descargaba pnpm de Internet en cada arranque, y sin salida el contenedor se caía (`EAI_AGAIN registry.npmjs.org`).
+
 ## 4. Cambios en `docker-compose.yml`
 
 Solo se modificó este archivo de configuración (más los documentos de esta carpeta).

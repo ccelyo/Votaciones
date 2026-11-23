@@ -1,0 +1,90 @@
+# WAF de borde de espivota (escenario de seguridad 4, Prototipo 3).
+#
+# Sustituye la plantilla por defecto de la imagen owasp/modsecurity-crs, que solo
+# admite un BACKEND. Aquí hay dos entradas, ambas inspeccionadas por ModSecurity +
+# OWASP CRS (modsecurity on viene de conf.d/modsecurity.conf, a nivel http):
+#
+#   :${PORT}          → Web SSR (platform:3000)    navegador
+#   :${GATEWAY_PORT}  → API Gateway (gateway:8088) app móvil, CLI y navegador
+#
+# Ni platform ni gateway publican puertos en el host: todo el tráfico externo pasa
+# por aquí. La imagen procesa este archivo con envsubst al arrancar.
+
+server_tokens ${SERVER_TOKENS};
+more_set_headers 'Server: ${SERVER_HEADER}';
+
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    '' close;
+}
+
+# Cabeceras comunes hacia el servicio. X-Forwarded-For se SOBRESCRIBE con la IP
+# real del cliente (no se añade a la del cliente): el Gateway usa la primera IP
+# de esa cabecera para el límite de tasa, y así un atacante no puede falsificarla.
+
+server {
+    listen ${PORT} ssl default_server;
+    server_name _;
+    ssl_certificate ${TLS_CERT_FILE};
+    ssl_certificate_key ${TLS_KEY_FILE};
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        client_max_body_size 1m;
+
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_http_version 1.1;
+        proxy_connect_timeout 10s;
+        proxy_read_timeout 90s;
+        proxy_redirect off;
+        proxy_ssl_certificate ${TLS_CLIENT_CERT_FILE};
+        proxy_ssl_certificate_key ${TLS_CLIENT_KEY_FILE};
+        proxy_ssl_trusted_certificate ${TLS_CA_FILE};
+        proxy_ssl_verify on;
+        proxy_ssl_verify_depth 2;
+        proxy_ssl_server_name on;
+        proxy_ssl_name platform;
+
+        proxy_pass ${WEB_BACKEND};
+    }
+
+    include includes/location_common.conf;
+}
+
+server {
+    listen ${GATEWAY_PORT} ssl;
+    server_name _;
+    ssl_certificate ${TLS_CERT_FILE};
+    ssl_certificate_key ${TLS_KEY_FILE};
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        client_max_body_size 1m;
+
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_http_version 1.1;
+        proxy_connect_timeout 10s;
+        # El POST de Tally es síncrono y el Gateway le da hasta 70 s.
+        proxy_read_timeout 90s;
+        proxy_redirect off;
+        proxy_ssl_certificate ${TLS_CLIENT_CERT_FILE};
+        proxy_ssl_certificate_key ${TLS_CLIENT_KEY_FILE};
+        proxy_ssl_trusted_certificate ${TLS_CA_FILE};
+        proxy_ssl_verify on;
+        proxy_ssl_verify_depth 2;
+        proxy_ssl_server_name on;
+        proxy_ssl_name gateway;
+
+        proxy_pass ${API_BACKEND};
+    }
+
+    # Sin location_common: /healthz y /readyz son del Gateway, no del WAF.
+}

@@ -53,21 +53,22 @@ Servicios hermanos: [`../blind-signature`](../blind-signature) (firma ciega, int
 | `GET /auth/me` | sesión | Devuelve `id`, `username` y `role` del usuario autenticado |
 | `POST /logout` | sesión | Revoca la sesión del JWT actual (204) |
 | `GET /.well-known/jwks.json` | público | Clave pública (JWKS) para validar el JWT en el Gateway |
-| `GET /users` | admin | Usuarios activos |
-| `POST /users` | admin | Crea un usuario `{username, password, role}` (`role`: `admin` o `voter`) |
-| `PATCH /users/{id}` | admin | Activa o desactiva un usuario `{is_active}` |
+| `GET /users` | `users:read` | Usuarios activos |
+| `POST /users` | `users:write` | Crea un usuario `{username, password, role}` (`role`: `admin` o `voter`) |
+| `PATCH /users/{id}` | `users:write` | Activa o desactiva un usuario `{is_active}` |
 | `GET /elections/open` | público | Lista elecciones `open` dentro de su ventana UTC |
-| `GET /elections` | admin | Todas las urnas (cualquier estado) |
-| `POST /elections` | admin | Crea la urna y firma sus parámetros; la registra en `ballot` salvo con `open: false` |
-| `POST /elections/{id}/open` | admin | Registra en `ballot` una urna `draft` y la deja `open` (idempotente) |
-| `POST /elections/{id}/close` | admin | Cierra la urna en `ballot` (irreversible, idempotente) y en PostgreSQL |
-| `GET /elections/{id}/status` | admin | Estado en ambos lados y participación (`CountBallots`) |
-| `GET /elections/{id}/parameters` | sesión | Parámetros firmados que descarga el navegador |
-| `POST /elections/{id}/voters` | admin | Inscribe un usuario en el padrón electoral |
-| `GET /elections/{id}/voters` | admin | Consulta el padrón de una elección |
-| `PATCH /elections/{id}/voters/{user_id}` | admin | Actualiza la elegibilidad de un votante |
-| `POST /tokens/blind` | votante | Firma ciega del token. Body: `{"election_id", "blinded_token"}` (base64url) |
-| `POST /vote-confirmation` | votante | Marca `has_voted=true` para el usuario autenticado |
+| `GET /elections` | `elections:read` | Todas las urnas (cualquier estado) |
+| `POST /elections` | `elections:manage` | Crea la urna y firma sus parámetros; la registra en `ballot` salvo con `open: false` |
+| `POST /elections/{id}/open` | `elections:manage` | Registra en `ballot` una urna `draft` y la deja `open` (idempotente) |
+| `POST /elections/{id}/close` | `elections:manage` | Cierra la urna en `ballot` (irreversible, idempotente) y en PostgreSQL |
+| `GET /elections/{id}/status` | `elections:read` | Estado en ambos lados y participación (`CountBallots`) |
+| `GET /elections/{id}/parameters` | `voting:participate` | Parámetros firmados que descarga el navegador |
+| `GET /elections/{id}/eligibility` | `voting:participate` | Elegibilidad, participación y credencial emitida del propio usuario |
+| `POST /elections/{id}/voters` | `census:write` | Inscribe un usuario en el padrón electoral |
+| `GET /elections/{id}/voters` | `census:read` | Consulta el padrón de una elección |
+| `PATCH /elections/{id}/voters/{user_id}` | `census:write` | Actualiza la elegibilidad de un votante |
+| `POST /tokens/blind` | `voting:participate` | Firma ciega del token. Body: `{"election_id", "blinded_token"}` (base64url) |
+| `POST /vote-confirmation` | `voting:participate` | Marca `has_voted=true` para el usuario autenticado |
 | `GET /keys` | público | Claves públicas de identidad (token y firma de parámetros) |
 | `GET /`, `GET /health` | público | Liveness |
 
@@ -95,6 +96,43 @@ Errores: `{"error": {"code": "...", "message": "..."}}`. Códigos principales:
 `409 election_not_open | election_closed | token_already_issued | user_already_exists`,
 `404 user_not_found`, `400 invalid_request`, `502 ballot_unavailable`.
 
+## Control de acceso por roles (RBAC)
+
+Escenario 5 del Prototipo 3, táctica *Authorize Actors*. En la columna «Acceso» de la tabla
+anterior figura el permiso que exige cada ruta; `sesión` significa solo autenticado y
+`público` significa sin token.
+
+- **Catálogo central**: `app/core/permissions.py` define los permisos (`Permission`) y el
+  mapa `ROLE_PERMISSIONS` rol → permisos. Es la única fuente de verdad; las rutas piden
+  un permiso con `Depends(require_permission(Permission.X))` (`app/core/auth.py`), nunca un rol.
+- **Denegación por defecto**: un rol que no está en el mapa no tiene permisos. Sin sesión
+  válida la respuesta es `401 unauthenticated`; con sesión pero sin el permiso, `403 forbidden`.
+  FastAPI resuelve la dependencia antes de ejecutar la ruta, así que una petición denegada no
+  modifica datos.
+- **Origen del rol**: el rol sale de la base de datos al validar la sesión
+  (`principal_from_token`), no del claim del JWT ni de cabeceras del cliente (`X-User-Roles`
+  se ignora; `X-Dev-*` solo existe con `IDENTITY_DEV_AUTH=true`). No hay migración ni cambio
+  en el JWT.
+
+| Permiso | Operaciones | `admin` | `voter` |
+|---|---|:-:|:-:|
+| `users:read` | `GET /users` | ✔ | — |
+| `users:write` | `POST /users`, `PATCH /users/{id}` | ✔ | — |
+| `census:read` | `GET /elections/{id}/voters` | ✔ | — |
+| `census:write` | `POST /elections/{id}/voters`, `PATCH /elections/{id}/voters/{user_id}` | ✔ | — |
+| `elections:read` | `GET /elections`, `GET /elections/{id}/status` | ✔ | — |
+| `elections:manage` | `POST /elections`, `POST /elections/{id}/open`, `POST /elections/{id}/close` | ✔ | — |
+| `voting:participate` | `GET /elections/{id}/parameters`, `GET /elections/{id}/eligibility`, `POST /tokens/blind`, `POST /vote-confirmation` | ✔ | ✔ |
+
+`voting:participate` solo opera sobre el usuario autenticado. El administrador la conserva
+para no cambiar el comportamiento anterior; quitársela (separación de funciones) queda
+pendiente de decisión del grupo. El padrón y la unicidad de la credencial aplican igual.
+
+Pruebas: `tests/test_rbac.py`, con JWT reales y `dev_auth=False`. Comprueba que cada ruta
+declara el permiso esperado, la matriz 401/403, los roles desconocidos y las cabeceras
+falsificadas, que una modificación denegada no deja cambios, y el flujo de voto completo
+de un votante.
+
 ## JWT de acceso (contrato con el Gateway)
 
 `POST /login/mfa` devuelve un **JWT firmado con RS256**. El Gateway lo valida sin secretos
@@ -115,7 +153,8 @@ Reglas de validación para el Gateway:
 1. Aceptar **solo** `RS256` (rechazar `none` y `HS*`) y buscar la clave por `kid` en el JWKS
    (cacheable; recargar ante un `kid` desconocido para soportar rotación).
 2. Comprobar `iss`, `aud`, `exp` y `nbf` (tolerancia de reloj ≤ 30 s, la misma que usa identidad).
-3. Autorizar por `role`: las rutas de administración exigen `admin`.
+3. Autorizar por `role`: las rutas de administración exigen `admin` (identidad, además,
+   vuelve a autorizar por permiso; ver «Control de acceso por roles»).
 4. **No reenviar el JWT a `ballot`**: la zona de votación es anónima y no debe recibir datos de identidad.
 
 Identidad además comprueba en cada petición que la sesión del `jti` no esté revocada (`/logout`) y

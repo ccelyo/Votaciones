@@ -3,7 +3,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import AliasChoices, Field, field_validator
+from pydantic import AliasChoices, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 from typing import Annotated
 
@@ -48,6 +48,11 @@ class Settings(BaseSettings):
     # SOLO DESARROLLO: acepta X-Dev-User / X-Dev-Roles sin token.
     dev_auth: bool = False
 
+    tls_required: bool = False
+    tls_cert_file: Path | None = None
+    tls_key_file: Path | None = None
+    tls_client_ca_file: Path | None = None
+
     # Llave Ed25519 que firma los parámetros públicos (se crea si no existe).
     keys_dir: Path = Path("./keys")
     # Llave maestra (32 bytes, base64url) que cifra las llaves privadas de las urnas.
@@ -78,6 +83,12 @@ class Settings(BaseSettings):
         if value < 2048:
             raise ValueError("urn keys need at least 2048 bits")
         return value
+
+    @model_validator(mode="after")
+    def _validate_tls(self):
+        if self.tls_required and not all((self.tls_cert_file, self.tls_key_file, self.tls_client_ca_file)):
+            raise ValueError("ELECTION_TLS_REQUIRED needs TLS_CERT_FILE, TLS_KEY_FILE and TLS_CLIENT_CA_FILE")
+        return self
 
 
 @lru_cache

@@ -5,7 +5,7 @@ import 'src/gateway.dart';
 import 'src/vote.dart';
 
 const gatewayUrl = String.fromEnvironment('GATEWAY_URL',
-    defaultValue: 'http://localhost:8088');
+    defaultValue: 'https://localhost:8088');
 
 void main() {
   runApp(VotacionesApp(gateway: GatewayClient(baseUrl: gatewayUrl)));

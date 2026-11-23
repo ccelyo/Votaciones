@@ -21,20 +21,31 @@ const (
 
 // Config is the immutable configuration of the Tally service.
 type Config struct {
-	HTTPAddr        string
-	BallotURL       string
-	BallotToken     string
-	RabbitMQURI     string
-	Exchange        string
-	PrivateKey      []byte
-	AllowPlaintext  bool
-	HTTPTimeout     time.Duration
-	PublishAttempts int
+	HTTPAddr          string
+	TLSRequired       bool
+	TLSCertFile       string
+	TLSKeyFile        string
+	TLSClientCAFile   string
+	BallotTLSCAFile   string
+	BallotTLSCertFile string
+	BallotTLSKeyFile  string
+	BallotURL         string
+	BallotToken       string
+	RabbitMQURI       string
+	Exchange          string
+	PrivateKey        []byte
+	AllowPlaintext    bool
+	HTTPTimeout       time.Duration
+	PublishAttempts   int
 }
 
 // Load reads the configuration from the environment. Missing optional values
 // fall back to development defaults; invalid values are rejected at startup.
 func Load() (Config, error) {
+	tlsRequired, err := boolEnv("TALLY_TLS_REQUIRED", false)
+	if err != nil {
+		return Config{}, err
+	}
 	allowPlaintext, err := boolEnv("TALLY_ALLOW_PLAINTEXT", true)
 	if err != nil {
 		return Config{}, err
@@ -49,14 +60,21 @@ func Load() (Config, error) {
 	}
 
 	cfg := Config{
-		HTTPAddr:        envOr("TALLY_HTTP_ADDR", defaultHTTPAddr),
-		BallotURL:       strings.TrimRight(envOr("BALLOT_URL", defaultBallotURL), "/"),
-		BallotToken:     strings.TrimSpace(os.Getenv("TALLY_BALLOT_TOKEN")),
-		RabbitMQURI:     envOr("TALLY_RABBITMQ_URI", envOr("RABBITMQ_URI", defaultRabbitMQURI)),
-		Exchange:        envOr("TALLY_EXCHANGE", defaultExchange),
-		AllowPlaintext:  allowPlaintext,
-		HTTPTimeout:     httpTimeout,
-		PublishAttempts: publishAttempts,
+		HTTPAddr:          envOr("TALLY_HTTP_ADDR", defaultHTTPAddr),
+		TLSRequired:       tlsRequired,
+		TLSCertFile:       strings.TrimSpace(os.Getenv("TALLY_TLS_CERT_FILE")),
+		TLSKeyFile:        strings.TrimSpace(os.Getenv("TALLY_TLS_KEY_FILE")),
+		TLSClientCAFile:   strings.TrimSpace(os.Getenv("TALLY_TLS_CLIENT_CA_FILE")),
+		BallotTLSCAFile:   strings.TrimSpace(os.Getenv("BALLOT_TLS_CA_FILE")),
+		BallotTLSCertFile: strings.TrimSpace(os.Getenv("BALLOT_TLS_CERT_FILE")),
+		BallotTLSKeyFile:  strings.TrimSpace(os.Getenv("BALLOT_TLS_KEY_FILE")),
+		BallotURL:         strings.TrimRight(envOr("BALLOT_URL", defaultBallotURL), "/"),
+		BallotToken:       strings.TrimSpace(os.Getenv("TALLY_BALLOT_TOKEN")),
+		RabbitMQURI:       envOr("TALLY_RABBITMQ_URI", envOr("RABBITMQ_URI", defaultRabbitMQURI)),
+		Exchange:          envOr("TALLY_EXCHANGE", defaultExchange),
+		AllowPlaintext:    allowPlaintext,
+		HTTPTimeout:       httpTimeout,
+		PublishAttempts:   publishAttempts,
 	}
 
 	parsed, err := url.Parse(cfg.BallotURL)
@@ -65,6 +83,17 @@ func Load() (Config, error) {
 	}
 	if parsed.Scheme != "http" && parsed.Scheme != "https" {
 		return Config{}, fmt.Errorf("BALLOT_URL must use http or https, got %q", parsed.Scheme)
+	}
+	if cfg.TLSRequired {
+		if cfg.TLSCertFile == "" || cfg.TLSKeyFile == "" || cfg.TLSClientCAFile == "" {
+			return Config{}, fmt.Errorf("TALLY_TLS_REQUIRED needs TLS_CERT_FILE, TLS_KEY_FILE and TLS_CLIENT_CA_FILE")
+		}
+		if cfg.BallotTLSCAFile == "" || cfg.BallotTLSCertFile == "" || cfg.BallotTLSKeyFile == "" {
+			return Config{}, fmt.Errorf("TALLY_TLS_REQUIRED needs BALLOT_TLS_CA_FILE, BALLOT_TLS_CERT_FILE and BALLOT_TLS_KEY_FILE")
+		}
+		if parsed.Scheme != "https" {
+			return Config{}, fmt.Errorf("TALLY_TLS_REQUIRED requires BALLOT_URL to use https")
+		}
 	}
 	if cfg.HTTPTimeout <= 0 {
 		return Config{}, fmt.Errorf("TALLY_HTTP_TIMEOUT must be positive")

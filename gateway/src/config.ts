@@ -13,8 +13,16 @@ export type AuthMode = "jwt" | "passthrough";
 export interface GatewayConfig {
   port: number;
   upstreams: Partial<Record<ServiceName, string>>;
+  tlsRequired: boolean;
+  tlsCertFile?: string;
+  tlsKeyFile?: string;
+  tlsClientCaFile?: string;
+  upstreamTlsRequired: boolean;
+  upstreamTlsCaFile?: string;
+  upstreamTlsCertFile?: string;
+  upstreamTlsKeyFile?: string;
   authMode: AuthMode;
-  /** URL del JWKS de identity, p. ej. http://identity:8000/.well-known/jwks.json. */
+  /** URL del JWKS de identity, p. ej. https://identity:8000/.well-known/jwks.json. */
   jwksUrl?: string;
   jwtIssuer: string;
   jwtAudience: string;
@@ -57,6 +65,28 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): GatewayConfig 
     const url = env[`GATEWAY_${service.toUpperCase()}_URL`]?.trim();
     if (url) upstreams[service] = new URL(url).toString().replace(/\/+$/, "");
   }
+  const tlsRequired = env.GATEWAY_TLS_REQUIRED === "true";
+  const upstreamTlsRequired = env.GATEWAY_UPSTREAM_TLS_REQUIRED === "true";
+  const tlsCertFile = env.GATEWAY_TLS_CERT_FILE?.trim();
+  const tlsKeyFile = env.GATEWAY_TLS_KEY_FILE?.trim();
+  const tlsClientCaFile = env.GATEWAY_TLS_CLIENT_CA_FILE?.trim();
+  const upstreamTlsCaFile = env.GATEWAY_UPSTREAM_TLS_CA_FILE?.trim();
+  const upstreamTlsCertFile = env.GATEWAY_UPSTREAM_TLS_CERT_FILE?.trim();
+  const upstreamTlsKeyFile = env.GATEWAY_UPSTREAM_TLS_KEY_FILE?.trim();
+
+  if (tlsRequired && (!tlsCertFile || !tlsKeyFile || !tlsClientCaFile)) {
+    throw new Error("GATEWAY_TLS_REQUIRED needs TLS_CERT_FILE, TLS_KEY_FILE and TLS_CLIENT_CA_FILE");
+  }
+  if (upstreamTlsRequired) {
+    if (!upstreamTlsCaFile || !upstreamTlsCertFile || !upstreamTlsKeyFile) {
+      throw new Error("GATEWAY_UPSTREAM_TLS_REQUIRED needs UPSTREAM_TLS_CA_FILE, UPSTREAM_TLS_CERT_FILE and UPSTREAM_TLS_KEY_FILE");
+    }
+    for (const [service, url] of Object.entries(upstreams)) {
+      if (new URL(url).protocol !== "https:") {
+        throw new Error(`GATEWAY_${service.toUpperCase()}_URL must use https when upstream mTLS is required`);
+      }
+    }
+  }
 
   if (env.GATEWAY_JWT_SECRET?.trim()) {
     // Evita que un despliegue antiguo crea que sigue validando con HS256.
@@ -74,6 +104,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): GatewayConfig 
   return {
     port: integer(env, "GATEWAY_PORT", 8088),
     upstreams,
+    tlsRequired,
+    tlsCertFile,
+    tlsKeyFile,
+    tlsClientCaFile,
+    upstreamTlsRequired,
+    upstreamTlsCaFile,
+    upstreamTlsCertFile,
+    upstreamTlsKeyFile,
     authMode,
     jwksUrl,
     // Valores que emite identity (IDENTITY_JWT_ISSUER / IDENTITY_JWT_AUDIENCE).

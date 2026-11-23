@@ -6,6 +6,7 @@ package ballotclient
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -58,11 +59,23 @@ type Client struct {
 
 // New builds a client. token is an optional bearer shared with Ballot to keep
 // the ballot dump off the public internet.
-func New(baseURL, token string, timeout time.Duration) *Client {
+func New(baseURL, token string, timeout time.Duration, tlsConfigs ...*tls.Config) *Client {
+	var tlsConfig *tls.Config
+	if len(tlsConfigs) > 0 {
+		tlsConfig = tlsConfigs[0]
+	}
 	return &Client{
 		baseURL: strings.TrimRight(baseURL, "/"),
 		token:   token,
-		http:    &http.Client{Timeout: timeout},
+		http: &http.Client{
+			Timeout: timeout,
+			CheckRedirect: func(*http.Request, []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+			Transport: &http.Transport{
+				TLSClientConfig: tlsConfig,
+			},
+		},
 	}
 }
 

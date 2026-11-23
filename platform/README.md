@@ -14,7 +14,8 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [https://localhost:3000](https://localhost:3000) with your browser to see the result
+when running the Compose stack; trust `.dev-certs/ca-public/ca.crt` in your browser/OS.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
@@ -41,7 +42,9 @@ election in the browser. This mode is only a UI mock: it does not validate
 credentials or submit real votes.
 
 To connect to the real backend, set `NEXT_PUBLIC_API_MODE=api` and
-`GATEWAY_URL` to the API Gateway (`gateway/`, default `http://localhost:8088`).
+`GATEWAY_URL` to the API Gateway (`gateway/`, default
+`https://localhost:8088`). Compose configures the internal URL as
+`https://gateway:8088` and requires mTLS from Platform to Gateway.
 `GATEWAY_URL` is read by the server at runtime; the browser never sees it.
 
 ### SSR sub-architecture

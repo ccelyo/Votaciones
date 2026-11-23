@@ -1,11 +1,18 @@
 """Prueba el cliente gRPC contra un servidor gRPC real (en proceso) del contrato ballot.proto."""
 
 from concurrent import futures
+from datetime import datetime, timedelta, timezone
 
 import grpc
 import pytest
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
+from pydantic import ValidationError
 
 from app.clients.ballot_client import ElectionRegistration, GrpcBallotClient, TokenKey
+from app.core.config import Settings
 from app.core.errors import (
     BallotUnavailable,
     ElectionAlreadyExists,
@@ -81,6 +88,72 @@ def registration() -> ElectionRegistration:
     )
 
 
+def issue_certificate(authority_key, authority_cert, common_name, dns_name, extended_usage, *, is_ca=False):
+    key = ec.generate_private_key(ec.SECP256R1())
+    subject = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, common_name)])
+    now = datetime.now(timezone.utc)
+    builder = (
+        x509.CertificateBuilder()
+        .subject_name(subject)
+        .issuer_name(authority_cert.subject if authority_cert else subject)
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now - timedelta(minutes=1))
+        .not_valid_after(now + timedelta(days=1))
+        .add_extension(x509.BasicConstraints(ca=is_ca, path_length=None), critical=True)
+    )
+    if dns_name:
+        builder = builder.add_extension(
+            x509.SubjectAlternativeName([x509.DNSName(dns_name)]), critical=False
+        )
+    if extended_usage:
+        builder = builder.add_extension(x509.ExtendedKeyUsage(extended_usage), critical=False)
+    certificate = builder.sign(authority_key or key, hashes.SHA256())
+    private_key = key.private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption(),
+    )
+    return key, certificate, private_key
+
+
+@pytest.fixture
+def mtls_server(servicer):
+    ca_key, ca_cert, _ = issue_certificate(
+        None, None, "test CA", None, None, is_ca=True
+    )
+    server_key, server_cert, _ = issue_certificate(
+        ca_key, ca_cert, "localhost", "localhost", [ExtendedKeyUsageOID.SERVER_AUTH]
+    )
+    client_key, client_cert, client_key_pem = issue_certificate(
+        ca_key, ca_cert, "identity", "identity", [ExtendedKeyUsageOID.CLIENT_AUTH]
+    )
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=2))
+    ballot_pb2_grpc.add_BallotAdminServiceServicer_to_server(servicer, server)
+    port = server.add_secure_port(
+        "127.0.0.1:0",
+        grpc.ssl_server_credentials(
+            [(server_key.private_bytes(
+                serialization.Encoding.PEM,
+                serialization.PrivateFormat.PKCS8,
+                serialization.NoEncryption(),
+            ), server_cert.public_bytes(serialization.Encoding.PEM))],
+            root_certificates=ca_cert.public_bytes(serialization.Encoding.PEM),
+            require_client_auth=True,
+        ),
+    )
+    server.start()
+    yield (
+        f"localhost:{port}",
+        ca_cert.public_bytes(serialization.Encoding.PEM),
+        client_cert.public_bytes(serialization.Encoding.PEM),
+        client_key_pem,
+        ca_key,
+        ca_cert,
+    )
+    server.stop(grace=None)
+
+
 def test_register_election_sends_every_contract_field(client, servicer):
     assert client.register_election(registration()) is True
     assert client.register_election(registration()) is False  # idempotente
@@ -135,3 +208,68 @@ def test_unreachable_ballot_is_reported_as_unavailable():
             unreachable.get_election_status("e1")
     finally:
         unreachable.close()
+
+
+def test_mtls_requires_identity_and_trusted_ca():
+    with pytest.raises(ValueError, match="mTLS requires trusted roots"):
+        GrpcBallotClient("127.0.0.1:9091", use_tls=True)
+
+
+def test_identity_mtls_listener_requires_complete_certificate_material():
+    with pytest.raises(ValidationError, match="IDENTITY_TLS_REQUIRED"):
+        Settings(tls_required=True)
+
+
+def test_mtls_grpc_accepts_a_client_certificate_from_the_trusted_ca(mtls_server):
+    address, ca, client_certificate, client_key, _, _ = mtls_server
+    secure_client = GrpcBallotClient(
+        address,
+        timeout_seconds=2,
+        use_tls=True,
+        root_certificates=ca,
+        private_key=client_key,
+        certificate_chain=client_certificate,
+    )
+    try:
+        assert secure_client.get_election_status("e1") == "open"
+    finally:
+        secure_client.close()
+
+
+def test_mtls_grpc_rejects_missing_or_untrusted_client_certificates(mtls_server):
+    address, ca, _, _, _, _ = mtls_server
+    channel = grpc.secure_channel(address, grpc.ssl_channel_credentials(root_certificates=ca))
+    try:
+        stub = ballot_pb2_grpc.BallotAdminServiceStub(channel)
+        with pytest.raises(grpc.RpcError) as missing_certificate:
+            stub.GetElectionStatus(ballot_pb2.GetElectionStatusRequest(election_id="e1"), timeout=2)
+        assert missing_certificate.value.code() in {
+            grpc.StatusCode.UNAVAILABLE,
+            grpc.StatusCode.DEADLINE_EXCEEDED,
+        }
+    finally:
+        channel.close()
+
+    other_ca_key, other_ca_cert, _ = issue_certificate(
+        None, None, "untrusted CA", None, None, is_ca=True
+    )
+    _, wrong_client_cert, wrong_client_key = issue_certificate(
+        other_ca_key,
+        other_ca_cert,
+        "identity",
+        "identity",
+        [ExtendedKeyUsageOID.CLIENT_AUTH],
+    )
+    secure_client = GrpcBallotClient(
+        address,
+        timeout_seconds=2,
+        use_tls=True,
+        root_certificates=ca,
+        private_key=wrong_client_key,
+        certificate_chain=wrong_client_cert.public_bytes(serialization.Encoding.PEM),
+    )
+    try:
+        with pytest.raises(BallotUnavailable):
+            secure_client.get_election_status("e1")
+    finally:
+        secure_client.close()

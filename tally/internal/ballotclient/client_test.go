@@ -113,6 +113,29 @@ func TestNetworkFailureIsUnavailable(t *testing.T) {
 	}
 }
 
+func TestDoesNotFollowRedirects(t *testing.T) {
+	var redirected atomic.Int32
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		redirected.Add(1)
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer target.Close()
+	source := httptest.NewServer(http.RedirectHandler(target.URL, http.StatusFound))
+	defer source.Close()
+
+	client := New(source.URL, "", time.Second)
+	status, _, err := client.get(context.Background(), "/redirect", 1024)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status != http.StatusFound {
+		t.Fatalf("status = %d, want %d", status, http.StatusFound)
+	}
+	if redirected.Load() != 0 {
+		t.Fatalf("redirect target received %d requests", redirected.Load())
+	}
+}
+
 func TestRejectsUnsafeElectionID(t *testing.T) {
 	client := New("http://example.invalid", "", time.Second)
 	for _, electionID := range []string{"", "a/b", "a?b", "a#b"} {
