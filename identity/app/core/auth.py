@@ -1,14 +1,20 @@
-"""Autenticación de las peticiones al servicio de identidad."""
+"""Autenticación y autorización de las peticiones al servicio de identidad.
 
+* ``get_principal``: autentica (401 si no hay sesión válida).
+* ``require_permission(p)``: autoriza según ``core/permissions.py`` (403 si el rol no
+  tiene ``p``). FastAPI resuelve estas dependencias antes de validar el cuerpo y de
+  ejecutar la ruta: una petición denegada solo consulta su sesión y nunca llega a la
+  operación protegida.
+"""
+
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.core.errors import Forbidden, Unauthenticated
-
-
-ROLE_ADMIN = "admin"
+from app.core.permissions import ROLE_ADMIN, Permission, has_permission
 
 # Declara autenticación Bearer en OpenAPI/Swagger.
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -67,9 +73,22 @@ def get_principal(
     raise Unauthenticated("authentication required")
 
 
+def require_permission(permission: Permission) -> Callable[..., Principal]:
+    """Dependencia que exige ``permission``: ``Depends(require_permission(Permission.X))``."""
+
+    def dependency(principal: Principal = Depends(get_principal)) -> Principal:
+        if not has_permission(principal.roles, permission):
+            raise Forbidden(f"permission {permission.value!r} required")
+        return principal
+
+    dependency.__name__ = f"require_{permission.name.lower()}"
+    return dependency
+
+
 def require_admin(
     principal: Principal = Depends(get_principal),
 ) -> Principal:
+    """Compatibilidad: las rutas de identidad usan ``require_permission``."""
     if ROLE_ADMIN not in principal.roles:
         raise Forbidden("administrator role required")
 
