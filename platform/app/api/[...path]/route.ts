@@ -7,6 +7,7 @@
 import type { NextRequest } from "next/server";
 
 import { GATEWAY_URL, SESSION_COOKIE } from "@/lib/server/gateway";
+import { fetchGateway } from "@/lib/server/secure-fetch";
 
 const FORWARDED_REQUEST_HEADERS = ["accept", "accept-language", "content-type"];
 const FORWARDED_RESPONSE_HEADERS = [
@@ -70,7 +71,7 @@ async function proxy(
 
   let upstream: Response;
   try {
-    upstream = await fetch(target, {
+    upstream = await fetchGateway(target, {
       method,
       headers,
       body,

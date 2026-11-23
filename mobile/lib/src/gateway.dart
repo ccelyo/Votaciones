@@ -49,7 +49,9 @@ class GatewayClient {
     final uri = _uri(path);
     late http.Response response;
     try {
-      final request = http.Request(method, uri)..headers.addAll(headers);
+      final request = http.Request(method, uri)
+        ..headers.addAll(headers)
+        ..followRedirects = false;
       if (body != null) request.body = jsonEncode(body);
       final streamed =
           await _http.send(request).timeout(const Duration(seconds: 20));

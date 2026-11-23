@@ -8,14 +8,18 @@
 #
 # Uso, con el stack levantado (docker compose up -d):
 #   bash docs/p3-waf/verify-waf.sh [API_URL] [WEB_URL]
-# Por defecto API_URL=http://localhost:8088 y WEB_URL=http://localhost:3000.
+# Por defecto API_URL=https://localhost:8088 y WEB_URL=https://localhost:3000.
 # Sale con código 1 si algún caso no da el resultado esperado.
 
 set -u
 
-API="${1:-http://localhost:8088}"
-WEB="${2:-http://localhost:3000}"
-
+API="${1:-https://localhost:8088}"
+WEB="${2:-https://localhost:3000}"
+TLS_CA="${VOTACIONES_TLS_CA_FILE:-.dev-certs/ca-public/ca.crt}"
+if [[ ! -f "$TLS_CA" ]]; then
+  echo "No se encuentra la CA TLS: $TLS_CA (define VOTACIONES_TLS_CA_FILE)." >&2
+  exit 2
+fi
 pass=0
 fail=0
 UA="Mozilla/5.0 (X11; Linux x86_64) verify-waf"
@@ -25,7 +29,7 @@ check() {
   local expect="$1" desc="$2"
   shift 2
   local code
-  code=$(curl -s -o /dev/null -w '%{http_code}' --path-as-is -A "$UA" --max-time 20 "$@")
+  code=$(curl -s -o /dev/null -w '%{http_code}' --cacert "$TLS_CA" --path-as-is -A "$UA" --max-time 20 "$@")
   local ok=0
   if [[ "$expect" == block && "$code" == 403 ]]; then ok=1; fi
   if [[ "$expect" == allow && "$code" != 403 && "$code" != 000 ]]; then ok=1; fi

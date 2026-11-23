@@ -2,10 +2,11 @@
   "name": "espivota-gateway",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@12.16.1",
   "description": "API Gateway de Espivota: punto de entrada único hacia los servicios lógicos.",
   "type": "module",
   "engines": {
-    "node": ">=22.18"
+    "node": ">=22.19"
   },
   "scripts": {
     "start": "node src/server.ts",
@@ -16,5 +17,8 @@
   "devDependencies": {
     "@types/node": "^22.19.0",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "undici": "^6.29.1"
   }
 }

@@ -2,21 +2,22 @@
 
 Punto de entrada único de los clientes (Web SSR, App móvil y CLI) hacia los servicios
 lógicos, según la vista C&C del prototipo 2 (`docs/entregables/P2/cc-view-p2.html`).
-Responsabilidades: enrutamiento REST/JSON, validación de JWT, CORS y límites de tasa.
-No contiene lógica de votación, identidad ni análisis.
+Responsabilidades: enrutamiento REST/JSON, validación de JWT, CORS, límites de tasa
+y transporte mTLS hacia los servicios internos. No contiene lógica de votación,
+identidad ni análisis.
 
-Está escrito en TypeScript y se ejecuta directamente con Node ≥ 22.18 (eliminación de
-tipos nativa), sin paso de compilación ni dependencias en tiempo de ejecución.
+Está escrito en TypeScript y se ejecuta directamente con Node ≥ 22.19 (eliminación de
+tipos nativa); Undici configura el cliente mTLS de los upstreams.
 
 ## Ejecutar
 
 ```bash
 docker compose up --build            # desde la raíz: levanta todo el sistema
-curl localhost:8088/api              # catálogo de rutas y servicios disponibles
-curl localhost:8088/readyz           # salud de cada servicio configurado
+curl --cacert .dev-certs/ca-public/ca.crt https://localhost:8088/api
+curl --cacert .dev-certs/ca-public/ca.crt https://localhost:8088/readyz
 ```
 
-Sin Docker:
+Sin Docker (modo local de desarrollo; no publiques estos listeners HTTP):
 
 ```bash
 pnpm install
@@ -130,7 +131,7 @@ de identidad.
 
 | Variable | Por defecto | Uso |
 | --- | --- | --- |
-| `GATEWAY_PORT` | `8088` | Puerto HTTP |
+| `GATEWAY_PORT` | `8088` | Puerto del listener |
 | `GATEWAY_AUTH_URL` … `GATEWAY_NOTIFICATIONS_URL` | — | URL base de cada servicio: `AUTH`, `ELECTION`, `IDENTITY`, `BALLOT`, `TALLY`, `ANALYTICS`, `NOTIFICATIONS` |
 | `GATEWAY_AUTH_MODE` | `jwt` si hay JWKS, si no `passthrough` | Modo de autenticación |
 | `GATEWAY_JWKS_URL` | — | JWKS de identity con la clave pública del JWT |
@@ -140,10 +141,16 @@ de identidad.
 | `GATEWAY_TRUST_FORWARDED_FOR` | `false` | Usar `X-Forwarded-For` como IP del cliente |
 | `GATEWAY_UPSTREAM_TIMEOUT_MS` | `10000` | Tiempo máximo por petición al servicio |
 | `GATEWAY_MAX_BODY_BYTES` | `1048576` | Tamaño máximo del cuerpo |
+| `GATEWAY_TLS_REQUIRED` | `false` | Habilita HTTPS de entrada; exige certificado, clave y CA cliente |
+| `GATEWAY_TLS_CERT_FILE` · `_KEY_FILE` · `_CLIENT_CA_FILE` | — | Identidad TLS del Gateway y CA de los clientes mTLS internos |
+| `GATEWAY_UPSTREAM_TLS_REQUIRED` | `false` | Exige HTTPS/mTLS para todos los upstreams |
+| `GATEWAY_UPSTREAM_TLS_CA_FILE` | — | CA que valida los certificados de servicio |
+| `GATEWAY_UPSTREAM_TLS_CERT_FILE` · `_KEY_FILE` | — | Certificado/clave cliente presentados a los upstreams |
 
 En `docker-compose.yml`, Auth y Election apuntan por ahora a `identity`, que todavía
 contiene esas funciones. Cuando Julian y Fabian separen sus servicios, solo cambian
 `GATEWAY_AUTH_URL` y `GATEWAY_ELECTION_URL`, sin tocar los clientes.
+Compose activa los dos modos TLS y publica el Gateway únicamente detrás del WAF.
 
 | Módulo | Responsabilidad |
 | --- | --- |
@@ -153,4 +160,4 @@ contiene esas funciones. Cuando Julian y Fabian separen sus servicios, solo camb
 | `src/rateLimit.ts` | Ventana fija por cliente y cuota |
 | `src/config.ts` | Variables de entorno |
 | `src/app.ts` | CORS, autenticación, reenvío y errores |
-| `src/server.ts` | Servidor HTTP |
+| `src/server.ts` | Servidor HTTPS/mTLS en Compose |

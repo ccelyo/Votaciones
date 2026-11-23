@@ -34,7 +34,6 @@ class AdminCliTest {
     Path home;
 
     FakeServer identity;
-    FakeServer ballot;
 
     record Result(int exit, String out, String err) {
     }
@@ -42,19 +41,15 @@ class AdminCliTest {
     @BeforeEach
     void start() {
         identity = new FakeServer();
-        ballot = new FakeServer();
     }
 
     @AfterEach
     void stop() {
         identity.close();
-        ballot.close();
     }
 
     Result runWithInput(String stdin, String... args) {
-        Map<String, String> env = Map.of(
-                "VOTACIONES_API_URL", identity.url(),
-                "VOTACIONES_BALLOT_URL", ballot.url());
+        Map<String, String> env = Map.of("VOTACIONES_API_URL", identity.url());
         AdminCli cli = new AdminCli(env, home, new BufferedReader(new StringReader(stdin)), null,
                 Clock.fixed(NOW, ZoneOffset.UTC), ZoneId.of("America/Bogota"));
         StringWriter out = new StringWriter();
@@ -288,18 +283,18 @@ class AdminCliTest {
             + "\"results\":[{\"option\":\"Alpha\",\"votes\":2},{\"option\":\"Beta\",\"votes\":1}]}";
 
     @Test
-    void tallyClosesAnOpenElectionAndCountsWithoutSendingTheJwtToBallot() {
+    void tallyClosesAnOpenElectionAndUsesTheAnonymousGatewayRoute() {
         loggedIn();
         identity.on("GET /elections/7/status", 200,
                         "{\"election_id\":\"7\",\"identity_status\":\"open\",\"ballot_status\":\"open\",\"total_ballots\":4}")
-                .on("POST /elections/7/close", 200, "{\"election_id\":\"7\",\"status\":\"closed\"}");
-        ballot.on("GET /v1/elections/7/results", 200, RESULTS);
+                .on("POST /elections/7/close", 200, "{\"election_id\":\"7\",\"status\":\"closed\"}")
+                .on("GET /api/ballots/elections/7/results", 200, RESULTS);
 
         Result result = run("elections", "tally", "7", "--yes");
 
         assertEquals(0, result.exit(), result.err());
         assertEquals(1, identity.requestsTo("POST", "/elections/7/close").size());
-        FakeServer.Request count = ballot.requestsTo("GET", "/v1/elections/7/results").get(0);
+        FakeServer.Request count = identity.requestsTo("GET", "/api/ballots/elections/7/results").get(0);
         assertNull(count.authorization(), "ballot no debe recibir credenciales de identidad");
         assertTrue(result.out().contains("66.7%"), result.out());
         assertTrue(result.out().contains("Papeletas: 4 (válidas 3, inválidas 1)"), result.out());
@@ -310,7 +305,7 @@ class AdminCliTest {
         loggedIn();
         identity.on("GET /elections/7/status", 200,
                 "{\"election_id\":\"7\",\"identity_status\":\"closed\",\"ballot_status\":\"closed\",\"total_ballots\":4}");
-        ballot.on("GET /v1/elections/7/results", 200, RESULTS);
+        identity.on("GET /api/ballots/elections/7/results", 200, RESULTS);
 
         Result result = run("elections", "tally", "7");
 
@@ -328,12 +323,12 @@ class AdminCliTest {
 
         assertEquals(0, result.exit());
         assertTrue(identity.requestsTo("POST", "/elections/7/close").isEmpty());
-        assertTrue(ballot.requests.isEmpty());
+        assertTrue(identity.requestsTo("GET", "/api/ballots/elections/7/results").isEmpty());
     }
 
     @Test
     void resultsOfAnOpenElectionReportBallotsError() {
-        ballot.on("GET /v1/elections/7/results", 409, "{\"error\":\"election_not_closed\"}");
+        identity.on("GET /api/ballots/elections/7/results", 409, "{\"error\":{\"code\":\"election_not_closed\"}}");
         Result result = run("elections", "results", "7");
         assertEquals(AdminCli.EXIT_API_ERROR, result.exit());
         assertTrue(result.err().contains("election_not_closed"), result.err());
@@ -341,7 +336,7 @@ class AdminCliTest {
 
     @Test
     void jsonFlagPrintsTheRawResponse() throws Exception {
-        ballot.on("GET /v1/elections/7/results", 200, RESULTS);
+        identity.on("GET /api/ballots/elections/7/results", 200, RESULTS);
         Result result = run("elections", "results", "7", "--json");
         assertEquals(0, result.exit(), result.err());
         assertEquals(JSON.readTree(RESULTS), JSON.readTree(result.out()));

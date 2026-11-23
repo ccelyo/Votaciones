@@ -20,6 +20,7 @@ import (
 	"github.com/ccelyo/Votaciones/ballot/internal/server"
 	"github.com/ccelyo/Votaciones/ballot/internal/token"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 const (
@@ -65,6 +66,28 @@ func run(logger *slog.Logger) error {
 	httpAddress := httpListenAddress()
 	if _, _, err := net.SplitHostPort(httpAddress); err != nil {
 		return errors.New("BALLOT_HTTP_ADDR must be a host:port address")
+	}
+	httpTLS, err := server.MutualTLSConfig(
+		strings.TrimSpace(os.Getenv("BALLOT_HTTP_TLS_CERT_FILE")),
+		strings.TrimSpace(os.Getenv("BALLOT_HTTP_TLS_KEY_FILE")),
+		strings.TrimSpace(os.Getenv("BALLOT_HTTP_TLS_CLIENT_CA_FILE")),
+		"gateway", "tally",
+	)
+	if err != nil {
+		return err
+	}
+	grpcTLS, err := server.MutualTLSConfig(
+		strings.TrimSpace(os.Getenv("BALLOT_GRPC_TLS_CERT_FILE")),
+		strings.TrimSpace(os.Getenv("BALLOT_GRPC_TLS_KEY_FILE")),
+		strings.TrimSpace(os.Getenv("BALLOT_GRPC_TLS_CLIENT_CA_FILE")),
+		"identity",
+	)
+	if err != nil {
+		return err
+	}
+	tlsRequired := strings.EqualFold(strings.TrimSpace(os.Getenv("BALLOT_TLS_REQUIRED")), "true")
+	if tlsRequired && (httpTLS == nil || grpcTLS == nil) {
+		return errors.New("BALLOT_TLS_REQUIRED needs mTLS configured for both HTTP and gRPC")
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -115,7 +138,11 @@ func run(logger *slog.Logger) error {
 	} else {
 		logger.Warn("BALLOT_RABBITMQ_URI is not set; accepted ballots will not publish votes.cast or consume election.events")
 	}
-	grpcServer := server.NewGRPCServer(server.NewAdminService(elections, nil, ballots))
+	var grpcOptions []grpc.ServerOption
+	if grpcTLS != nil {
+		grpcOptions = append(grpcOptions, grpc.Creds(credentials.NewTLS(grpcTLS)))
+	}
+	grpcServer := server.NewGRPCServer(server.NewAdminService(elections, nil, ballots), grpcOptions...)
 	var handler http.Handler = httpapi.NewHandler(httpapi.Config{
 		Acceptor:       acceptor,
 		Elections:      elections,
@@ -127,10 +154,10 @@ func run(logger *slog.Logger) error {
 		TallyToken:     strings.TrimSpace(os.Getenv("BALLOT_TALLY_TOKEN")),
 		Logger:         logger,
 	})
-	// Cloud Run exposes a single port, so the admin gRPC API can share it with
-	// HTTP over cleartext HTTP/2. The admin API has no authentication yet, so it
-	// becomes as reachable as the public HTTP API.
 	grpcOnHTTP := strings.EqualFold(strings.TrimSpace(os.Getenv("BALLOT_SERVE_GRPC_ON_HTTP")), "true")
+	if grpcOnHTTP && grpcTLS != nil {
+		return errors.New("BALLOT_SERVE_GRPC_ON_HTTP cannot be used with the separate mTLS gRPC listener")
+	}
 	var protocols *http.Protocols
 	if grpcOnHTTP {
 		handler = grpcOrHTTP(grpcServer, handler)
@@ -141,6 +168,7 @@ func run(logger *slog.Logger) error {
 	httpServer := &http.Server{
 		Addr:              httpAddress,
 		Handler:           handler,
+		TLSConfig:         httpTLS,
 		Protocols:         protocols,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
@@ -160,7 +188,11 @@ func run(logger *slog.Logger) error {
 		go func() { serveErrors <- grpcServer.Serve(grpcListener) }()
 		logger.Info("ballot service started", "grpc_address", grpcListener.Addr().String(), "http_address", httpAddress)
 	}
-	go func() { serveErrors <- httpServer.ListenAndServe() }()
+	if httpTLS != nil {
+		go func() { serveErrors <- httpServer.ListenAndServeTLS("", "") }()
+	} else {
+		go func() { serveErrors <- httpServer.ListenAndServe() }()
+	}
 
 	var serveErr error
 	select {

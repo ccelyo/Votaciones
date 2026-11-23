@@ -3,6 +3,12 @@
 Configuración del WAF: [`waf/README.md`](../../waf/README.md). Escenario de calidad y
 patrón: [`docs/entregables/P3/p3_2c.md`](../entregables/P3/p3_2c.md#escenario-4-web-application-firewall).
 
+Después de activar Secure Channel, la entrada web y la API son HTTPS. Para repetir
+la validación con la CA local: `export VOTACIONES_TLS_CA_FILE=.dev-certs/ca-public/ca.crt`
+y ejecuta `bash docs/p3-waf/verify-waf.sh`. Los resultados y métricas siguientes
+corresponden a una ejecución anterior a ese cambio; se deben volver a medir con el
+stack actualizado.
+
 ## 1. Ataques y tráfico legítimo — `verify-waf.sh`
 
 ```

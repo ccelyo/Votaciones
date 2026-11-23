@@ -10,6 +10,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import javax.net.ssl.SSLContext;
 import java.time.Duration;
 
 /** Cliente HTTP/JSON de identity (o del Gateway) y de la API pública de ballot. */
@@ -17,18 +18,27 @@ public class ApiClient {
     private static final Duration TIMEOUT = Duration.ofSeconds(20);
 
     // HTTP/1.1: con http:// el cliente de Java intenta el upgrade a h2c y uvicorn lo rechaza con 400.
-    private final HttpClient http = HttpClient.newBuilder()
-            .version(HttpClient.Version.HTTP_1_1)
-            .connectTimeout(TIMEOUT)
-            .build();
+    private final HttpClient http;
     private final ObjectMapper json;
     private final String baseUrl;
     private final String accessToken;
 
     public ApiClient(ObjectMapper json, String baseUrl, String accessToken) {
+        this(json, baseUrl, accessToken, null);
+    }
+
+    public ApiClient(ObjectMapper json, String baseUrl, String accessToken, SSLContext sslContext) {
         this.json = json;
         this.baseUrl = baseUrl.replaceAll("/+$", "");
         this.accessToken = accessToken;
+        HttpClient.Builder builder = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .followRedirects(HttpClient.Redirect.NEVER)
+                .connectTimeout(TIMEOUT);
+        if (sslContext != null) {
+            builder.sslContext(sslContext);
+        }
+        this.http = builder.build();
     }
 
     public JsonNode get(String path) {

@@ -6,11 +6,12 @@ import { cookies } from "next/headers";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { cache } from "react";
 
+import { fetchGateway } from "@/lib/server/secure-fetch";
 import type { AdminElection, Election } from "@/lib/types/election";
 import type { CurrentUser, User } from "@/lib/types/user";
 
 export const GATEWAY_URL = (
-  process.env.GATEWAY_URL ?? "http://localhost:8088"
+  process.env.GATEWAY_URL ?? "https://localhost:8088"
 ).replace(/\/+$/, "");
 export const SESSION_COOKIE = "espivota_session";
 
@@ -33,7 +34,7 @@ async function sessionToken(): Promise<string | undefined> {
 
 async function gatewayGet<T>(path: string): Promise<T> {
   const token = await sessionToken();
-  const response = await fetch(`${GATEWAY_URL}${path}`, {
+  const response = await fetchGateway(`${GATEWAY_URL}${path}`, {
     cache: "no-store",
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     signal: AbortSignal.timeout(5000),

@@ -23,12 +23,13 @@ Con un alias queda más cómodo: `alias votaciones-admin='java -jar /ruta/admin-
 
 | Variable / opción | Por defecto | Uso |
 |---|---|---|
-| `VOTACIONES_API_URL` / `--api-url` | `http://localhost:8000` | identity, o el Gateway delante de él |
-| `VOTACIONES_BALLOT_URL` / `--ballot-url` | `http://localhost:8080` | API pública de ballot (resultados) |
+| `VOTACIONES_API_URL` / `--api-url` | `https://localhost:8088` | API Gateway |
+| `VOTACIONES_TLS_CA_FILE` | — | CA de confianza para validar el certificado del Gateway (útil con la CA local de desarrollo) |
 | `VOTACIONES_HOME` | `~/.votaciones` | Carpeta de `session.json` (JWT, usuario, rol, `exp`) |
 
 La sesión guardada solo se usa contra la misma `--api-url` con la que se inició y no se envía si
-su `exp` ya pasó. `--json` imprime la respuesta del servidor tal cual (útil en scripts).
+su `exp` ya pasó. Los resultados se consultan por la ruta anónima del Gateway; el JWT no se envía
+a Ballot. `--json` imprime la respuesta del servidor tal cual (útil en scripts).
 
 ## Comandos
 
@@ -65,23 +66,24 @@ Sin `--password-stdin`, las contraseñas se piden sin eco.
 ## Ejemplo
 
 ```text
-$ votaciones-admin login -u admin1
+PS> $env:VOTACIONES_TLS_CA_FILE="..\.dev-certs\ca-public\ca.crt"
+PS> votaciones-admin login -u admin1
 Contraseña:
 Código MFA: 123456
-Sesión iniciada como admin1 (admin) en http://localhost:8000. Expira: 2026-11-02T20:20:05.
+Sesión iniciada como admin1 (admin) en https://localhost:8088. Expira: 2026-11-02T20:20:05.
 
-$ votaciones-admin elections create --name "Consejo Estudiantil 2026" \
-    --option Alpha --option Beta --option "Voto en blanco" \
+PS> votaciones-admin elections create --name "Consejo Estudiantil 2026" `
+    --option Alpha --option Beta --option "Voto en blanco" `
     --duration 8h --encryption-key cHVibGlj --draft
 Urna 1 creada (draft).
 Para publicarla: votaciones-admin elections open 1
 
-$ votaciones-admin elections open 1
+PS> votaciones-admin elections open 1
 Urna 1: open.
 
-$ votaciones-admin voters add 1 2 3
+PS> votaciones-admin voters add 1 2 3
 
-$ votaciones-admin elections tally 1
+PS> votaciones-admin elections tally 1
 La urna 1 sigue abierta. Cerrarla es irreversible. ¿Cerrar y escrutar? [s/N] s
 Urna 1 cerrada.
 Resultados de la urna 1

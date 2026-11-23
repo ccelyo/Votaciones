@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import { createServer } from 'node:https'
+
 import { createNotificationHandlers, NotificationService } from './application/notification-service.js'
 import { decodeEvent } from './domain/event.js'
 import { config } from './infrastructure/config.js'
@@ -13,7 +16,20 @@ await connectMongo(config.mongoUrl, config.mongoDatabase)
 const repository = new MongoNotificationRepository()
 const service = new NotificationService(repository, createNotificationHandlers())
 const app = createHttpApp(repository)
-app.listen(config.port, () => {
+const server = config.tlsRequired
+  ? createServer(
+      {
+        cert: readFileSync(config.tlsCertFile!),
+        key: readFileSync(config.tlsKeyFile!),
+        ca: readFileSync(config.tlsClientCaFile!),
+        minVersion: 'TLSv1.2',
+        requestCert: true,
+        rejectUnauthorized: true,
+      },
+      app,
+    )
+  : createServer(app)
+server.listen(config.port, () => {
   console.log(`Notification service listening on port ${config.port}`)
 })
 

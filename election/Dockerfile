@@ -16,7 +16,7 @@ RUN useradd --system --uid 10001 --home-dir /app election \
 WORKDIR /app
 COPY --from=build /app/.venv /app/.venv
 COPY app ./app
-COPY schema.sql ./
+COPY schema.sql run.py ./
 ENV PATH=/app/.venv/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     ELECTION_KEYS_DIR=/app/keys
@@ -26,5 +26,5 @@ VOLUME /app/keys
 USER election
 EXPOSE 8000
 HEALTHCHECK --interval=10s --timeout=3s --retries=5 \
-    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    CMD ["python", "-c", "import os,ssl,urllib.request; c=ssl.create_default_context(cafile=os.environ['ELECTION_TLS_CLIENT_CA_FILE']); c.load_cert_chain(os.environ['ELECTION_TLS_CERT_FILE'], os.environ['ELECTION_TLS_KEY_FILE']); urllib.request.urlopen('https://localhost:8000/health', context=c, timeout=2)"]
+CMD ["python", "run.py"]

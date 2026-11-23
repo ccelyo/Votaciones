@@ -23,14 +23,13 @@ FROM base AS runtime
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
-    GATEWAY_URL=http://gateway:8088
+    GATEWAY_URL=https://gateway:8088
 COPY --from=build --chown=node:node /app/package.json ./
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/.next ./.next
 COPY --from=build --chown=node:node /app/public ./public
 COPY --from=build --chown=node:node /app/next.config.ts ./
+COPY --chown=node:node server.mjs ./
 USER node
 EXPOSE 3000
-# Equivale a `pnpm start` (next start), pero sin corepack: así no descarga pnpm
-# de Internet al arrancar y puede correr en redes `internal` sin salida.
-CMD ["node_modules/.bin/next", "start"]
+CMD ["node", "server.mjs"]

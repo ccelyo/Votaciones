@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/ccelyo/Votaciones/tally/internal/httpapi"
 	"github.com/ccelyo/Votaciones/tally/internal/publisher"
 	"github.com/ccelyo/Votaciones/tally/internal/tally"
+	"github.com/ccelyo/Votaciones/tally/internal/transport"
 )
 
 func main() {
@@ -51,7 +53,11 @@ func run(logger *slog.Logger) error {
 		}
 	}
 
-	ballotClient := ballotclient.New(cfg.BallotURL, cfg.BallotToken, cfg.HTTPTimeout)
+	ballotTLS, err := transport.ClientTLSConfig(cfg.BallotTLSCAFile, cfg.BallotTLSCertFile, cfg.BallotTLSKeyFile)
+	if err != nil {
+		return err
+	}
+	ballotClient := ballotclient.New(cfg.BallotURL, cfg.BallotToken, cfg.HTTPTimeout, ballotTLS)
 	broker := publisher.NewRabbit(cfg.RabbitMQURI, cfg.Exchange, cfg.PublishAttempts)
 	defer func() { _ = broker.Close() }()
 
@@ -67,9 +73,17 @@ func run(logger *slog.Logger) error {
 		},
 	})
 
+	serverTLS, err := transport.MutualTLSConfig(cfg.TLSCertFile, cfg.TLSKeyFile, cfg.TLSClientCAFile, "gateway", "tally")
+	if err != nil {
+		return err
+	}
+	if cfg.TLSRequired && serverTLS == nil {
+		return errors.New("TALLY_TLS_REQUIRED needs mTLS configured")
+	}
 	server := &http.Server{
 		Addr:              cfg.HTTPAddr,
 		Handler:           handler,
+		TLSConfig:         serverTLS,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      75 * time.Second,
@@ -81,7 +95,11 @@ func run(logger *slog.Logger) error {
 	defer stop()
 
 	serveErrors := make(chan error, 1)
-	go func() { serveErrors <- server.ListenAndServe() }()
+	if serverTLS != nil {
+		go func() { serveErrors <- server.ListenAndServeTLS("", "") }()
+	} else {
+		go func() { serveErrors <- server.ListenAndServe() }()
+	}
 	logger.Info("tally service started",
 		"http_address", cfg.HTTPAddr,
 		"ballot_url", cfg.BallotURL,
@@ -109,9 +127,17 @@ func run(logger *slog.Logger) error {
 func healthcheck() error {
 	target := os.Getenv("TALLY_HEALTHCHECK_URL")
 	if target == "" {
-		target = "http://127.0.0.1:8092/healthz"
+		target = "https://localhost:8092/healthz"
 	}
-	client := &http.Client{Timeout: 2 * time.Second}
+	tlsConfig, err := transport.ClientTLSConfig(
+		strings.TrimSpace(os.Getenv("TALLY_TLS_CLIENT_CA_FILE")),
+		strings.TrimSpace(os.Getenv("TALLY_TLS_CERT_FILE")),
+		strings.TrimSpace(os.Getenv("TALLY_TLS_KEY_FILE")),
+	)
+	if err != nil {
+		return err
+	}
+	client := &http.Client{Timeout: 2 * time.Second, Transport: &http.Transport{TLSClientConfig: tlsConfig}}
 	response, err := client.Get(target)
 	if err != nil {
 		return err

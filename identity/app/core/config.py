@@ -4,7 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated
 
-from pydantic import AliasChoices, Field, field_validator
+from pydantic import AliasChoices, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -47,16 +47,25 @@ class Settings(BaseSettings):
     blind_signature_timeout_seconds: float = 5.0
     blind_signature_api_key: str = ""
 
+    # Internal HTTPS listener; when required, callers must present a trusted
+    # client certificate.
+    tls_required: bool = False
+    tls_cert_file: Path | None = None
+    tls_key_file: Path | None = None
+    tls_client_ca_file: Path | None = None
+
     # schema.sql es la fuente de verdad del esquema.
     # Por defecto la aplicación no crea las tablas al iniciar.
     auto_create_tables: bool = False
 
     # Listener gRPC interno de ballot, en la zona de votación.
-    # En Prototype 1 todavía se usa sin mTLS.
+    # Canal gRPC interno de Identity a Ballot.
     ballot_grpc_addr: str = "127.0.0.1:9091"
     ballot_grpc_timeout_seconds: float = 5.0
-    # Cloud Run: ballot escucha en <servicio>.run.app:443 y exige TLS.
     ballot_grpc_tls: bool = False
+    ballot_grpc_ca_file: Path | None = None
+    ballot_grpc_cert_file: Path | None = None
+    ballot_grpc_key_file: Path | None = None
 
     # Directorio donde identidad almacena sus claves privadas.
     # En producción deberían provenir de un gestor de secretos.
@@ -98,6 +107,18 @@ class Settings(BaseSettings):
     @classmethod
     def _normalize(cls, value: str) -> str:
         return normalize_database_url(value) if value else value
+
+    @model_validator(mode="after")
+    def _validate_tls(self):
+        if self.tls_required and not all((self.tls_cert_file, self.tls_key_file, self.tls_client_ca_file)):
+            raise ValueError("IDENTITY_TLS_REQUIRED needs TLS_CERT_FILE, TLS_KEY_FILE and TLS_CLIENT_CA_FILE")
+        if self.ballot_grpc_tls and not all(
+            (self.ballot_grpc_ca_file, self.ballot_grpc_cert_file, self.ballot_grpc_key_file)
+        ):
+            raise ValueError(
+                "IDENTITY_BALLOT_GRPC_TLS needs BALLOT_GRPC_CA_FILE, BALLOT_GRPC_CERT_FILE and BALLOT_GRPC_KEY_FILE"
+            )
+        return self
 
 
 @lru_cache

@@ -41,10 +41,12 @@ void main() {
 
   test('la ruta anónima no reenvía la sesión', () async {
     final headers = <Map<String, String>>[];
+    final redirectPolicies = <bool>[];
     final gateway = GatewayClient(
       baseUrl: 'http://gateway.test',
       httpClient: MockClient((request) async {
         headers.add(request.headers);
+        redirectPolicies.add(request.followRedirects);
         return http.Response('{}', 200);
       }),
     );
@@ -53,5 +55,6 @@ void main() {
     await gateway.post('/api/identity/tokens/blind', {'election_id': '1'});
     expect(headers[0].containsKey('authorization'), isFalse);
     expect(headers[1]['authorization'], 'Bearer sesion-del-votante');
+    expect(redirectPolicies, everyElement(isFalse));
   });
 }

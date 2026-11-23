@@ -17,19 +17,24 @@ import java.io.Console;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.KeyStore;
+import java.security.cert.CertificateFactory;
 import java.time.Clock;
 import java.time.ZoneId;
 import java.util.Map;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 
 /**
  * CLI administrativa del sistema de votaciones.
  *
- * <p>Habla con identity (o con el Gateway delante de él) usando el JWT que obtiene en
- * {@code login}, y con la API pública de ballot solo para leer resultados, siempre sin
- * credenciales: la zona de votación no debe recibir nada de identidad.
+ * <p>Habla con el API Gateway usando el JWT que obtiene en {@code login}. Las consultas
+ * de resultados usan la ruta anónima del Gateway, que no reenvía credenciales a ballot.
  */
 @Command(
         name = "votaciones-admin",
@@ -50,17 +55,11 @@ public class AdminCli {
     public static final int EXIT_USAGE = 2;
     public static final int EXIT_NOT_LOGGED_IN = 3;
 
-    static final String DEFAULT_API_URL = "http://localhost:8000";
-    static final String DEFAULT_BALLOT_URL = "http://localhost:8080";
+    static final String DEFAULT_API_URL = "https://localhost:8088";
 
     @Option(names = "--api-url", scope = ScopeType.INHERIT, paramLabel = "URL",
-            description = "Identity o Gateway (env VOTACIONES_API_URL, por defecto " + DEFAULT_API_URL + ").")
+            description = "API Gateway (env VOTACIONES_API_URL, por defecto " + DEFAULT_API_URL + ").")
     String apiUrl;
-
-    @Option(names = "--ballot-url", scope = ScopeType.INHERIT, paramLabel = "URL",
-            description = "API pública de ballot para resultados (env VOTACIONES_BALLOT_URL, por defecto "
-                    + DEFAULT_BALLOT_URL + ").")
-    String ballotUrl;
 
     @Option(names = "--json", scope = ScopeType.INHERIT, description = "Imprime la respuesta JSON tal cual.")
     boolean jsonOutput;
@@ -136,10 +135,6 @@ public class AdminCli {
         return firstNonBlank(apiUrl, env.get("VOTACIONES_API_URL"), DEFAULT_API_URL).replaceAll("/+$", "");
     }
 
-    public String ballotUrl() {
-        return firstNonBlank(ballotUrl, env.get("VOTACIONES_BALLOT_URL"), DEFAULT_BALLOT_URL).replaceAll("/+$", "");
-    }
-
     public boolean jsonOutput() {
         return jsonOutput;
     }
@@ -170,7 +165,7 @@ public class AdminCli {
 
     /** Cliente sin sesión (login). */
     public ApiClient anonymousIdentity() {
-        return new ApiClient(json, apiUrl(), null);
+        return apiClient(apiUrl(), null);
     }
 
     /** Cliente con el JWT guardado; falla si no hay sesión vigente para este servidor. */
@@ -184,12 +179,37 @@ public class AdminCli {
         if (saved.expired(clock.instant())) {
             throw new NotLoggedInException("La sesión expiró. Ejecuta: votaciones-admin login");
         }
-        return new ApiClient(json, apiUrl(), saved.accessToken());
+        return apiClient(apiUrl(), saved.accessToken());
     }
 
-    /** API pública de ballot: nunca lleva el JWT. */
+    /** Ruta anónima del Gateway: nunca lleva el JWT a Ballot. */
     public ApiClient ballot() {
-        return new ApiClient(json, ballotUrl(), null);
+        return apiClient(apiUrl(), null);
+    }
+
+    private ApiClient apiClient(String baseUrl, String token) {
+        return new ApiClient(json, baseUrl, token, tlsContext());
+    }
+
+    private SSLContext tlsContext() {
+        String caFile = env.get("VOTACIONES_TLS_CA_FILE");
+        if (caFile == null || caFile.isBlank()) {
+            return null;
+        }
+        try (InputStream input = Files.newInputStream(Path.of(caFile))) {
+            var certificate = CertificateFactory.getInstance("X.509").generateCertificate(input);
+            KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            trustStore.load(null);
+            trustStore.setCertificateEntry("votaciones-ca", certificate);
+            TrustManagerFactory trustManagers =
+                    TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            trustManagers.init(trustStore);
+            SSLContext context = SSLContext.getInstance("TLS");
+            context.init(null, trustManagers.getTrustManagers(), null);
+            return context;
+        } catch (Exception error) {
+            throw new IllegalStateException("No se pudo cargar VOTACIONES_TLS_CA_FILE: " + error.getMessage(), error);
+        }
     }
 
     private static String firstNonBlank(String... values) {
