@@ -11,13 +11,13 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.errors import InvalidRequest, UserAlreadyExists, UserNotFound
+from app.core.permissions import ROLES
 from app.db.models import Role, User
 from app.core.security import hash_password
 
 USERNAME_PATTERN = re.compile(r"[A-Za-z0-9._-]{3,100}")
 MIN_PASSWORD = 8
 MAX_PASSWORD = 128
-ROLES = ("admin", "voter")
 
 
 def create_user(session: Session, *, username: str, password: str, role: str) -> tuple[User, str]:

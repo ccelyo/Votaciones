@@ -27,7 +27,8 @@ from app.services import elections as election_service
 from app.services import tokens as token_service
 from app.services import users as user_service
 from app.core import jwt_tokens
-from app.core.auth import Principal, bearer_scheme, get_principal, require_admin
+from app.core.auth import Principal, bearer_scheme, get_principal, require_permission
+from app.core.permissions import Permission
 from app.clients.ballot_client import BallotGateway
 from app.clients.blind_signature import BlindSigner
 from app.core.encoding import b64url_decode, b64url_encode
@@ -222,7 +223,7 @@ def logout(
 @router.post("/tokens/blind")
 def blind_token(
     body: BlindTokenRequest,
-    principal: Principal = Depends(get_principal),
+    principal: Principal = Depends(require_permission(Permission.VOTING_PARTICIPATE)),
     session: Session = Depends(get_session),
     census: Session = Depends(get_census),
     signer: BlindSigner = Depends(get_signer),
@@ -245,7 +246,7 @@ def blind_token(
 @router.get("/elections/{election_id}/eligibility")
 def eligibility(
     election_id: str,
-    principal: Principal = Depends(get_principal),
+    principal: Principal = Depends(require_permission(Permission.VOTING_PARTICIPATE)),
     session: Session = Depends(get_session),
     census: Session = Depends(get_census),
 ) -> dict:
@@ -263,7 +264,7 @@ def eligibility(
 @router.get("/elections/{election_id}/parameters")
 def election_parameters(
     election_id: str,
-    _: Principal = Depends(get_principal),
+    _: Principal = Depends(require_permission(Permission.VOTING_PARTICIPATE)),
     session: Session = Depends(get_session),
 ) -> dict:
     election, stored = election_service.get_parameters(session, election_id)
@@ -344,7 +345,7 @@ def public_keys(keys: IdentityKeys = Depends(get_keys)) -> dict:
 @router.post("/elections", status_code=201)
 def create_election(
     body: CreateElectionRequest,
-    _: Principal = Depends(require_admin),
+    _: Principal = Depends(require_permission(Permission.ELECTIONS_MANAGE)),
     session: Session = Depends(get_session),
     ballot: BallotGateway = Depends(get_ballot),
     keys: IdentityKeys = Depends(get_keys),
@@ -368,7 +369,7 @@ def create_election(
 @router.post("/elections/{election_id}/open")
 def open_election(
     election_id: str,
-    _: Principal = Depends(require_admin),
+    _: Principal = Depends(require_permission(Permission.ELECTIONS_MANAGE)),
     session: Session = Depends(get_session),
     ballot: BallotGateway = Depends(get_ballot),
 ) -> dict:
@@ -382,7 +383,7 @@ def _iso(value: datetime | None) -> str | None:
 
 @router.get("/elections")
 def list_elections(
-    _: Principal = Depends(require_admin),
+    _: Principal = Depends(require_permission(Permission.ELECTIONS_READ)),
     session: Session = Depends(get_session),
 ) -> list[dict]:
     """Todas las elecciones (cualquier estado), las más recientes primero."""
@@ -403,7 +404,7 @@ def list_elections(
 @router.post("/elections/{election_id}/close")
 def close_election(
     election_id: str,
-    _: Principal = Depends(require_admin),
+    _: Principal = Depends(require_permission(Permission.ELECTIONS_MANAGE)),
     session: Session = Depends(get_session),
     ballot: BallotGateway = Depends(get_ballot),
 ) -> dict:
@@ -414,7 +415,7 @@ def close_election(
 @router.get("/elections/{election_id}/status")
 def status(
     election_id: str,
-    _: Principal = Depends(require_admin),
+    _: Principal = Depends(require_permission(Permission.ELECTIONS_READ)),
     session: Session = Depends(get_session),
     ballot: BallotGateway = Depends(get_ballot),
 ) -> dict:
@@ -428,7 +429,7 @@ def status(
 
 @router.get("/users")
 def list_users(
-    _: Principal = Depends(require_admin),
+    _: Principal = Depends(require_permission(Permission.USERS_READ)),
     session: Session = Depends(get_session),
 ) -> list[dict]:
     """Usuarios activos, para inscribirlos en el padrón desde la UI de admin."""
@@ -451,7 +452,7 @@ def _user_json(user: User, role: str) -> dict:
 @router.post("/users", status_code=201)
 def create_user(
     body: CreateUserRequest,
-    _: Principal = Depends(require_admin),
+    _: Principal = Depends(require_permission(Permission.USERS_WRITE)),
     session: Session = Depends(get_session),
 ) -> dict:
     user, role = user_service.create_user(
@@ -464,7 +465,7 @@ def create_user(
 def update_user(
     user_id: int,
     body: UpdateUserRequest,
-    _: Principal = Depends(require_admin),
+    _: Principal = Depends(require_permission(Permission.USERS_WRITE)),
     session: Session = Depends(get_session),
 ) -> dict:
     user, role = user_service.set_active(session, user_id=user_id, is_active=body.is_active)
@@ -478,7 +479,7 @@ def update_user(
 def enroll_voter(
     election_id: str,
     body: EnrollVoterRequest,
-    _: Principal = Depends(require_admin),
+    _: Principal = Depends(require_permission(Permission.CENSUS_WRITE)),
     session: Session = Depends(get_session),
     census: Session = Depends(get_census),
 ) -> dict:
@@ -501,7 +502,7 @@ def enroll_voter(
 @router.get("/elections/{election_id}/voters")
 def list_voters(
     election_id: str,
-    _: Principal = Depends(require_admin),
+    _: Principal = Depends(require_permission(Permission.CENSUS_READ)),
     session: Session = Depends(get_session),
     census: Session = Depends(get_census),
 ) -> list[dict]:
@@ -527,7 +528,7 @@ def update_voter(
     election_id: str,
     user_id: int,
     body: UpdateEligibilityRequest,
-    _: Principal = Depends(require_admin),
+    _: Principal = Depends(require_permission(Permission.CENSUS_WRITE)),
     session: Session = Depends(get_session),
     census: Session = Depends(get_census),
 ) -> dict:
@@ -551,7 +552,7 @@ def update_voter(
 @router.post("/vote-confirmation")
 def confirm_vote(
     body: VoteConfirmationRequest,
-    principal: Principal = Depends(get_principal),
+    principal: Principal = Depends(require_permission(Permission.VOTING_PARTICIPATE)),
     session: Session = Depends(get_session),
     census: Session = Depends(get_census),
 ) -> dict:
