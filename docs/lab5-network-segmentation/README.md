@@ -1,5 +1,10 @@
 # Laboratorio 5 – Network Segmentation (implementación base)
 
+> **Prototipo 3:** esta base se ajustó en [`docs/p3-network-segmentation`](../p3-network-segmentation/README.md)
+> (ACL de entrada por servicio, una red por cliente de RabbitMQ, UI de RabbitMQ sin
+> publicar). El `verify-segmentation.sh` de esta carpeta usa `http://` y ya no
+> aplica con mTLS: usar `docs/p3-network-segmentation/verify-segmentation.sh`.
+
 Implementación base del patrón **Network Segmentation** sobre el entorno Docker Compose de Espivota. Este documento cubre la preparación del entorno (redes, asignación de servicios y puertos) y su verificación. Las configuraciones específicas de endurecimiento del patrón quedan para el compañero responsable del núcleo (ver [Limitaciones y riesgos pendientes](#7-limitaciones-y-riesgos-pendientes)).
 
 ## 1. Objetivo

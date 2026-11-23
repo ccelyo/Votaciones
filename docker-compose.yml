@@ -6,10 +6,23 @@
 #   Gateway   https://localhost:8088  (GATEWAY_PORT; catálogo de rutas en /api)
 #             Los dos puertos los publica el WAF (servicio `waf`), no platform ni
 #             gateway: toda petición externa pasa por TLS, ModSecurity y OWASP CRS.
-#   Identity, Election y Ballot no publican puertos en el host.
-#   Tally     interno (sin puerto en el host; se accede por el Gateway)
-#   Analytics y Notifications no publican puertos en el host.
-#   RabbitMQ  http://localhost:15672  (RABBITMQ_UI_PORT, guest / guest)
+#   Mobile    http://localhost:8092   (MOBILE_PORT; la app web llama al Gateway desde el navegador)
+#   RabbitMQ  UI de gestión NO publicada; para desarrollo, en 127.0.0.1:15672:
+#             docker compose -f docker-compose.yml -f docker-compose.rabbitmq-ui.yml up -d
+#
+# Platform, Gateway, Identity, Election, Ballot, Tally, Analytics, Notification,
+# RabbitMQ y todas las bases de datos NO se publican en el host: se llega a la web y a la API
+# solo a través del WAF, y a los servicios solo a través del Gateway.
+#
+# Segmentación de red (escenario de seguridad 3, Prototipo 3; base del Laboratorio 5):
+#   1. Cada conexión entre servicios tiene su propia red (ver `networks:` al
+#      final). Un servicio solo se ve con los que comparten red; las redes
+#      `internal: true` no tienen salida a Internet ni al host.
+#   2. Docker aísla por red, no por puerto. Por eso cada servicio que recibe
+#      conexiones tiene un sidecar `<servicio>-fw` (security/netfw) con una ACL de
+#      entrada: denegación por defecto, solo el puerto del servicio y solo desde
+#      la red de quien lo llama. Los intentos denegados: docker compose logs <servicio>-fw
+#   Verificación: bash docs/p3-network-segmentation/verify-segmentation.sh
 #
 # Usuarios de prueba (identity/seed_dev_users.sql): admin1..admin4 y votante1..votante10,
 # contraseña "prueba123", código MFA "123456".
@@ -23,12 +36,24 @@
 # SOLO DESARROLLO: las contraseñas y la clave de recibos de abajo son públicas.
 # Para usar otra clave de recibos: BALLOT_RECEIPT_PRIVATE_KEY=... docker compose up
 
+# Sidecar de ACL de entrada (security/netfw/acl.sh). Comparte el espacio de red del
+# servicio (`network_mode: service:<servicio>`) y es el único con NET_ADMIN: un
+# servicio comprometido no puede cambiar sus propias reglas. Si el servicio se
+# recrea, Compose recrea también su sidecar.
+x-netfw: &netfw
+  build: ./security/netfw
+  image: espivota/netfw:dev
+  cap_add: [NET_ADMIN, NET_RAW]
+  restart: unless-stopped
+
 services:
   # Development-only CA and service certificates. Production must use
   # deployment-managed certificates instead.
   dev-certificates:
     build: ./security/dev-certs
     volumes: ["./.dev-certs:/certs"]
+    # Solo escribe archivos: no necesita red.
+    network_mode: none
 
   postgres:
     image: postgres:16-alpine
@@ -114,6 +139,25 @@ services:
       - ./.dev-certs/ballot:/run/certs:ro
       - ./.dev-certs/ca-public:/run/ca:ro
     expose: ["8080", "9091"]
+    networks:
+      - gw-ballot-net     # lo llama el Gateway (HTTPS 8080)
+      - vote-link-net     # lo llama Identity (gRPC 9091)
+      - tally-ballot-net  # lo llama Tally (HTTPS 8080)
+      - ballot-data-net   # su MongoDB
+      - mq-ballot-net     # RabbitMQ
+
+  # Ballot guarda los votos: el HTTP solo desde Gateway y Tally, el gRPC de
+  # administración solo desde Identity.
+  ballot-fw:
+    <<: *netfw
+    network_mode: service:ballot
+    depends_on: [ballot]
+    environment:
+      FW_NAME: ballot
+      FW_ALLOW: >-
+        tcp:8080:10.89.31.0/24
+        tcp:8080:10.89.41.0/24
+        tcp:9091:10.89.40.0/24
 
   identity:
     build: ./identity
@@ -149,6 +193,19 @@ services:
       - ./.dev-certs/identity:/run/certs:ro
       - ./.dev-certs/ca-public:/run/ca:ro
     expose: ["8000"]
+    networks:
+      - gw-identity-net    # lo llama el Gateway (HTTPS 8000)
+      - identity-data-net  # postgres y postgres-census
+      - signer-net         # llama a blind-signature (HTTP 8100)
+      - vote-link-net      # llama a Ballot (gRPC 9091)
+
+  identity-fw:
+    <<: *netfw
+    network_mode: service:identity
+    depends_on: [identity]
+    environment:
+      FW_NAME: identity
+      FW_ALLOW: tcp:8000:10.89.30.0/24
 
   # Base «Elections», exclusiva del servicio Election.
   postgres-elections:
@@ -191,6 +248,20 @@ services:
       - ./.dev-certs/election:/run/certs:ro
       - ./.dev-certs/ca-public:/run/ca:ro
     expose: ["8000"]
+    # Ya no publica el puerto de desarrollo 8001, así que sale de dev-access-net.
+    networks:
+      - election-data-net  # postgres-elections
+      - mq-election-net    # RabbitMQ
+
+  # Nadie llama hoy a Election por red (el Gateway enruta /api/elections a
+  # Identity): no acepta conexiones entrantes. Su healthcheck usa loopback.
+  election-fw:
+    <<: *netfw
+    network_mode: service:election
+    depends_on: [election]
+    environment:
+      FW_NAME: election
+      FW_ALLOW: ""
 
   # Punto de entrada único de los clientes (web SSR, app móvil y CLI).
   gateway:
@@ -242,13 +313,24 @@ services:
       - ./.dev-certs/ca-public:/run/ca:ro
     expose: ["8088"]
     networks:
-      - waf-api-net
-      - frontend-net
+      - waf-api-net          # lo llama el WAF (API externa)
+      - frontend-net         # lo llama Platform (SSR/BFF)
       - gw-identity-net
       - gw-ballot-net
       - gw-tally-net
       - gw-analytics-net
       - gw-notification-net
+
+  # Los upstreams comparten red con el Gateway, pero no deben poder llamarlo.
+  gateway-fw:
+    <<: *netfw
+    network_mode: service:gateway
+    depends_on: [gateway]
+    environment:
+      FW_NAME: gateway
+      FW_ALLOW: >-
+        tcp:8088:10.89.21.0/24
+        tcp:8088:10.89.22.0/24
 
   platform:
     build:
@@ -276,6 +358,15 @@ services:
     # Sin `ports`: el navegador entra por el WAF.
     expose: ["3000"]
     networks: [waf-web-net, frontend-net]
+
+  # Solo el WAF entra a la web; el Gateway comparte frontend-net pero no la llama.
+  platform-fw:
+    <<: *netfw
+    network_mode: service:platform
+    depends_on: [platform]
+    environment:
+      FW_NAME: platform
+      FW_ALLOW: tcp:3000:10.89.20.0/24
 
   # Web Application Firewall de borde (escenario de seguridad 4, Prototipo 3).
   # nginx + ModSecurity v3 + OWASP Core Rule Set 4 (LTS). Inspecciona cada
@@ -332,6 +423,19 @@ services:
       - waf-web-net
       - waf-api-net
 
+  # Solo se entra al WAF por los puertos publicados: cualquier cliente, pero solo
+  # por su dirección en edge-net. Platform y Gateway comparten red con él, pero
+  # no lo llaman.
+  waf-fw:
+    <<: *netfw
+    network_mode: service:waf
+    depends_on: [waf]
+    environment:
+      FW_NAME: waf
+      FW_ALLOW: >-
+        tcp:8443:0.0.0.0/0:10.89.10.0/24
+        tcp:8444:0.0.0.0/0:10.89.10.0/24
+
   # La misma app Flutter, compilada para el navegador, para ver el flujo sin un teléfono.
   mobile:
     build:
@@ -350,17 +454,35 @@ services:
     volumes:
       - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
       - ./rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
-    # UI solo en loopback. Un contenedor solo en redes `internal` no puede
-    # publicar puertos, por eso también va en dev-access-net.
-    ports: ["127.0.0.1:${RABBITMQ_UI_PORT:-15672}:15672"]
+    # La UI de gestión (guest/guest) ya no se publica: desde una red no interna era
+    # alcanzable por cualquier contenedor de otra red no interna (p. ej. el WAF).
+    # Para desarrollo: docker compose -f docker-compose.yml -f docker-compose.rabbitmq-ui.yml up -d
+    # Una red por cliente del broker: los clientes no se ven entre sí.
     networks:
       - mq-ballot-net
-      - messaging-net
-      - dev-access-net
+      - mq-election-net
+      - mq-tally-net
+      - mq-analytics-net
+      - mq-notification-net
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 5s
       retries: 30
+
+  # Solo AMQP y solo desde las redes de sus clientes; la API de gestión (15672)
+  # queda cerrada para todos.
+  rabbitmq-fw:
+    <<: *netfw
+    network_mode: service:rabbitmq
+    depends_on: [rabbitmq]
+    environment:
+      FW_NAME: rabbitmq
+      FW_ALLOW: >-
+        tcp:5672:10.89.60.0/24
+        tcp:5672:10.89.61.0/24
+        tcp:5672:10.89.62.0/24
+        tcp:5672:10.89.63.0/24
+        tcp:5672:10.89.64.0/24
 
   # Servicio de escrutinio: lee las papeletas cifradas de Ballot, las descifra,
   # las cuenta y publica tally.completed. No tiene base de datos propia.
@@ -402,6 +524,18 @@ services:
     volumes:
       - ./.dev-certs/tally:/run/certs:ro
       - ./.dev-certs/ca-public:/run/ca:ro
+    networks:
+      - gw-tally-net      # lo llama el Gateway (HTTPS 8092)
+      - tally-ballot-net  # llama a Ballot (HTTPS 8080)
+      - mq-tally-net      # RabbitMQ
+
+  tally-fw:
+    <<: *netfw
+    network_mode: service:tally
+    depends_on: [tally]
+    environment:
+      FW_NAME: tally
+      FW_ALLOW: tcp:8092:10.89.32.0/24
 
   # Base «Results» de analytics, separada de la de ballot.
   mongo-results:
@@ -434,6 +568,18 @@ services:
       - ./.dev-certs/analytics:/run/certs:ro
       - ./.dev-certs/ca-public:/run/ca:ro
     expose: ["8090"]
+    networks:
+      - gw-analytics-net  # lo llama el Gateway (HTTPS 8090)
+      - results-data-net  # mongo-results
+      - mq-analytics-net  # RabbitMQ
+
+  analytics-fw:
+    <<: *netfw
+    network_mode: service:analytics
+    depends_on: [analytics]
+    environment:
+      FW_NAME: analytics
+      FW_ALLOW: tcp:8090:10.89.33.0/24
 
   notifications-mongo:
     image: mongo:8.0
@@ -467,6 +613,60 @@ services:
       - ./.dev-certs/notification:/run/certs:ro
       - ./.dev-certs/ca-public:/run/ca:ro
     expose: ["3000"]
+    networks:
+      - gw-notification-net  # lo llama el Gateway (HTTPS 3000)
+      - notif-data-net       # notifications-mongo
+      - mq-notification-net  # RabbitMQ
+
+  notification-fw:
+    <<: *netfw
+    network_mode: service:notification
+    depends_on: [notification]
+    environment:
+      FW_NAME: notification
+      FW_ALLOW: tcp:3000:10.89.34.0/24
+
+# Subredes fijas 10.89.N.0/24: las ACL de los sidecars `*-fw` filtran por red de
+# origen. Si chocan con una red del equipo, cambiar el bloque aquí y en los FW_ALLOW.
+networks:
+  # Entrada desde el host (no internas porque publican puertos). Las redes no
+  # internas se enrutan entre sí a través del host: solo deben tener puntos de entrada.
+  # (10.89.12.0/24 queda reservada a dev-access-net, en docker-compose.rabbitmq-ui.yml.)
+  edge-net:          # waf: única entrada a la web y a la API
+    ipam: { config: [{ subnet: 10.89.10.0/24 }] }
+  mobile-net:        # mobile (solo archivos estáticos)
+    ipam: { config: [{ subnet: 10.89.11.0/24 }] }
+
+  # Borde: WAF -> cada servicio que protege, y Platform (SSR/BFF) -> Gateway.
+  waf-web-net:   { internal: true, ipam: { config: [{ subnet: 10.89.20.0/24 }] } }  # waf -> platform
+  waf-api-net:   { internal: true, ipam: { config: [{ subnet: 10.89.21.0/24 }] } }  # waf -> gateway
+  frontend-net:  { internal: true, ipam: { config: [{ subnet: 10.89.22.0/24 }] } }  # platform -> gateway
+
+  # Gateway -> cada servicio al que enruta.
+  gw-identity-net:     { internal: true, ipam: { config: [{ subnet: 10.89.30.0/24 }] } }
+  gw-ballot-net:       { internal: true, ipam: { config: [{ subnet: 10.89.31.0/24 }] } }
+  gw-tally-net:        { internal: true, ipam: { config: [{ subnet: 10.89.32.0/24 }] } }
+  gw-analytics-net:    { internal: true, ipam: { config: [{ subnet: 10.89.33.0/24 }] } }
+  gw-notification-net: { internal: true, ipam: { config: [{ subnet: 10.89.34.0/24 }] } }
+
+  # Conexiones entre servicios.
+  vote-link-net:    { internal: true, ipam: { config: [{ subnet: 10.89.40.0/24 }] } }  # identity -> ballot (gRPC)
+  tally-ballot-net: { internal: true, ipam: { config: [{ subnet: 10.89.41.0/24 }] } }  # tally -> ballot (HTTPS)
+  signer-net:       { internal: true, ipam: { config: [{ subnet: 10.89.42.0/24 }] } }  # identity -> blind-signature
+
+  # Cada base de datos solo la ve su dueño.
+  identity-data-net: { internal: true, ipam: { config: [{ subnet: 10.89.50.0/24 }] } }  # identity -> postgres, postgres-census
+  ballot-data-net:   { internal: true, ipam: { config: [{ subnet: 10.89.51.0/24 }] } }  # ballot -> mongo
+  election-data-net: { internal: true, ipam: { config: [{ subnet: 10.89.52.0/24 }] } }  # election -> postgres-elections
+  results-data-net:  { internal: true, ipam: { config: [{ subnet: 10.89.53.0/24 }] } }  # analytics -> mongo-results
+  notif-data-net:    { internal: true, ipam: { config: [{ subnet: 10.89.54.0/24 }] } }  # notification -> notifications-mongo
+
+  # RabbitMQ: una red por cliente, para que los clientes no se alcancen entre sí.
+  mq-ballot-net:       { internal: true, ipam: { config: [{ subnet: 10.89.60.0/24 }] } }
+  mq-election-net:     { internal: true, ipam: { config: [{ subnet: 10.89.61.0/24 }] } }
+  mq-tally-net:        { internal: true, ipam: { config: [{ subnet: 10.89.62.0/24 }] } }
+  mq-analytics-net:    { internal: true, ipam: { config: [{ subnet: 10.89.63.0/24 }] } }
+  mq-notification-net: { internal: true, ipam: { config: [{ subnet: 10.89.64.0/24 }] } }
 
 volumes:
   postgres-data:
