@@ -1,0 +1,27 @@
+{
+  "scenario": "p3-open-elections",
+  "vus": 175,
+  "duration_s": 30,
+  "base_url": "https://host.docker.internal:8088",
+  "requests": 5108,
+  "iterations": 5108,
+  "throughput_rps": 164.8545745596476,
+  "error_rate": 0,
+  "latency_ms": {
+    "avg": 35.16972036570084,
+    "min": 7.787982,
+    "p50": 14.941355000000001,
+    "p90": 46.02556770000002,
+    "p95": 82.04894069999999,
+    "p99": 618.2482430400025,
+    "max": 768.805224
+  },
+  "status": {
+    "0": 0,
+    "200": 5108,
+    "403": 0,
+    "429": 0,
+    "5xx": 0,
+    "other": 0
+  }
+}
