@@ -1,0 +1,2 @@
+# Los scripts corren en Linux (nodos A y B): evitar CRLF al clonar desde Windows.
+*.sh text eol=lf

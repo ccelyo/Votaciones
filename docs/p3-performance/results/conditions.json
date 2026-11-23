@@ -1,0 +1,20 @@
+﻿{
+  "hostname": "FELIPE",
+  "cpu": "12th Gen Intel(R) Core(TM) i5-12400",
+  "logical_processors": 12,
+  "ram_gb": 31.7,
+  "git": "189c55f",
+  "endpoint": "GET /api/elections/open",
+  "path": "k6 -> HTTPS :8088 WAF (TLS + ModSecurity CRS) -> Gateway TLS -> Identity -> PostgreSQL",
+  "rate_limit": "GATEWAY_RATE_LIMIT_DEFAULT=0 (docs/lab6-performance/docker-compose.perf.yml). Sin esto, todas las VUs salen de la misma IP y el Gateway responde 429.",
+  "think_time_s": 1,
+  "duration": "30s",
+  "levels": [1, 25, 50, 75, 100, 125, 150, 175, 200, 250, 300, 350, 400, 600, 800],
+  "generator": "grafana/k6:0.54.0 en Docker, en la misma máquina que el sistema (Docker Desktop). Compite por CPU con el sistema bajo prueba.",
+  "tls": "certificado de desarrollo; k6 con insecureSkipTLSVerify. El handshake TLS sí se ejecuta.",
+  "user_agent": "espivota-perf/p3",
+  "waf_blocks": 0,
+  "rate_limit_hits": 0,
+  "collapse_cause": "Identity agota el pool de SQLAlchemy (size 5 + overflow 10, timeout 30 s) y responde 500. El Gateway espera el upstream hasta 70 s y responde 504. k6 corta a los 30 s, así que esos fallos quedan como status 0, no como 5xx.",
+  "discarded": "La segunda repetición de 300 y 350 VUs se descartó: arrancó 8 s después de un colapso, con el pool todavía agotado."
+}
