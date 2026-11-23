@@ -1,0 +1,28 @@
+# SOLO DESARROLLO: publica la UI de gestión de RabbitMQ en http://127.0.0.1:15672
+# (RABBITMQ_UI_PORT, guest / guest).
+#
+#   docker compose -f docker-compose.yml -f docker-compose.rabbitmq-ui.yml up -d
+#
+# Reabre un riesgo que la segmentación cierra por defecto: dev-access-net no es
+# interna (un contenedor solo en redes internas no puede publicar puertos), y las
+# redes no internas se enrutan entre sí a través del host. El tráfico que cruza
+# llega enmascarado con la IP del gateway del bridge, la misma que usa el host, así
+# que la ACL no puede distinguirlos: el WAF (edge-net) también alcanza esta UI.
+# Sin este archivo, `docker compose exec rabbitmq rabbitmqctl list_queues` basta.
+services:
+  rabbitmq:
+    ports: ["127.0.0.1:${RABBITMQ_UI_PORT:-15672}:15672"]
+    networks: [dev-access-net]
+  rabbitmq-fw:
+    environment:
+      FW_ALLOW: >-
+        tcp:5672:10.89.60.0/24
+        tcp:5672:10.89.61.0/24
+        tcp:5672:10.89.62.0/24
+        tcp:5672:10.89.63.0/24
+        tcp:5672:10.89.64.0/24
+        tcp:15672:10.89.12.1/32
+
+networks:
+  dev-access-net:
+    ipam: { config: [{ subnet: 10.89.12.0/24 }] }

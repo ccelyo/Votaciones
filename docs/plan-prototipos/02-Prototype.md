@@ -754,4 +754,8 @@ El enunciado pide: diseño arquitectónico de las cuatro estructuras, sistema en
 - [ ] Instrucciones de ejecución verificadas en una máquina limpia.
 - [ ] Equipo, nombres completos, nombre, logo y descripción del sistema.
 - [ ] `docs/entregables/P2/p2_2c.md` exportado a `p2_2c.pdf`.
-- [ ] Enlace al video (10–15 min) incluido en el PDF.
+
+
+### Enlace video
+
+https://drive.google.com/drive/folders/1zvN3jjIh6ZMMkhRnfYr6ks6bZ8ulzuo-?usp=drive_link

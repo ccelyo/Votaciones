@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Escenario de seguridad: custodia de la llave de la urna</title>
+<style>
+  @page { size: A4; margin: 22mm 20mm; }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 10.5pt; line-height: 1.45; color: #111; background: #fff; }
+  h1 { font-size: 19pt; line-height: 1.25; margin: 0 0 6px; }
+  h2 { font-size: 13pt; margin: 22px 0 8px; }
+  h3 { font-size: 11pt; margin: 16px 0 6px; }
+  code { font-family: Menlo, Consolas, monospace; font-size: 8.8pt; background: #f0f0f0; padding: 1px 4px; border-radius: 3px; }
+  pre { font-family: Menlo, Consolas, monospace; font-size: 8.2pt; background: #f5f5f5; border: 1px solid #ddd; padding: 10px 12px; line-height: 1.4; white-space: pre-wrap; page-break-inside: avoid; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; border: 1.5px solid #888; }
+  th, td { border: 1px solid #999; padding: 7px 9px; vertical-align: top; text-align: left; }
+  th { background: #e8e8e8; }
+  td:first-child { width: 22%; font-weight: bold; }
+  table.plain td:first-child { font-weight: normal; }
+  tr { page-break-inside: avoid; }
+  ul, ol { margin: 4px 0 8px; padding-left: 22px; }
+  li { margin: 2px 0; }
+  ol ul { list-style: circle; }
+  p { margin: 6px 0; }
+  .avoid { page-break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<h1>Escenario de seguridad: obtención de la llave privada de la urna por un solo administrador</h1>
+
+<h2>Contexto</h2>
+
+<p>En Espivota cada voto se cifra en el cliente (web y app móvil) con la <b>llave pública de la urna</b> antes de enviarlo a <code>ballot</code>. Solo la <b>llave privada de la urna</b> puede descifrar las papeletas, y la usa <code>tally</code> para hacer el escrutinio cuando la elección se cierra. Quien tenga esa llave puede leer todos los votos de la elección.</p>
+
+<p>Hoy la custodia de esa llave depende de una sola persona y de un solo secreto:</p>
+
+<ul>
+  <li>El servicio <code>election</code> genera el par de llaves al abrir la elección y guarda la privada <b>completa</b> en la tabla <code>urn_keys</code>, cifrada con una sola llave maestra (KEK, <code>ELECTION_URN_KEK</code> o el archivo <code>urn_kek.bin</code>). En el despliegue actual la KEK está en el volumen <code>election-keys</code>, en el mismo servidor que la base de datos.</li>
+  <li>Cualquier usuario con rol <code>admin</code> puede llamar <code>POST /elections/{id}/urn-key/private</code> después del cierre y recibe la llave privada completa en PEM. No hace falta la aprobación de nadie más, y la llamada se puede repetir sin límite (<code>release_count</code> solo cuenta las entregas).</li>
+  <li>El mismo administrador cierra la elección (<code>POST /elections/{id}/close</code>), pide la llave y lanza el escrutinio en <code>tally</code> enviándola en el cuerpo de la petición. Todo el ciclo depende de una sola cuenta.</li>
+</ul>
+
+<p>Así, un administrador deshonesto, o un atacante que robe una sola cuenta de administrador, puede quedarse con una copia de la llave, descifrar las papeletas por fuera del proceso oficial y cruzar la hora de cada papeleta con los inicios de sesión de <code>identity</code> para intentar saber quién votó qué. Quien obtenga la base de datos junto con la KEK puede incluso descifrar los votos <b>antes del cierre</b> y filtrar resultados parciales durante la jornada.</p>
+
+<h2>Escenario</h2>
+
+<table>
+  <tr><th>Elemento</th><th>Descripción</th></tr>
+  <tr><td>Fuente</td><td>Un actor <b>interno</b> con rol <code>admin</code> que actúa de mala fe, o un atacante externo que robó las credenciales de una sola cuenta de administrador (por <i>phishing</i> o reutilización de contraseña).</td></tr>
+  <tr><td>Estímulo</td><td>El actor intenta obtener por su cuenta la llave privada de la urna: la pide a <code>election</code> con su cuenta, o la extrae de la base de datos y la KEK del servidor. Su objetivo es descifrar las papeletas fuera del escrutinio oficial, conocer resultados antes de tiempo o romper el secreto del voto.</td></tr>
+  <tr><td>Artefacto</td><td>La llave privada de la urna de una elección: su generación y almacenamiento en <code>election</code> (tabla <code>urn_keys</code>), su entrega (<code>POST /elections/{id}/urn-key/private</code>) y su uso en <code>tally</code>.</td></tr>
+  <tr><td>Ambiente</td><td>El sistema en producción, durante la jornada electoral (urna abierta) y después del cierre, antes y durante el escrutinio.</td></tr>
+  <tr><td>Respuesta</td><td>La llave privada nunca existe completa en manos de una sola persona ni guardada en un solo lugar. Al abrir la elección, <code>election</code> la divide en <i>n</i> fragmentos con el esquema de umbral de Shamir y le entrega un fragmento cifrado a cada <b>custodio</b> (por ejemplo, los jurados de la elección). Después borra la llave completa. Para el escrutinio, al menos <i>k</i> custodios distintos deben entregar su fragmento a <code>tally</code>, que reconstruye la llave solo en memoria, cuenta los votos y la descarta. Un solo administrador, o cualquier grupo de menos de <i>k</i> custodios, no puede reconstruirla. Cada entrega de fragmento queda registrada en la auditoría.</td></tr>
+  <tr><td>Medida de la respuesta</td><td>
+    • Con <i>k</i>&nbsp;−&nbsp;1 fragmentos o menos, el 100 % de los intentos de reconstruir la llave falla. Shamir no revela ningún bit de la llave con menos de <i>k</i> fragmentos.<br>
+    • En la base de datos y en los volúmenes de <code>election</code> hay 0 copias de la llave privada completa, cifradas o en claro, después de abrir la elección.<br>
+    • El 100 % de las peticiones de un administrador para obtener la llave completa se rechaza (el endpoint <code>/urn-key/private</code> deja de existir).<br>
+    • El 100 % de los fragmentos entregados antes del cierre de la urna se rechaza.<br>
+    • El escrutinio se puede completar aunque falten hasta <i>n</i>&nbsp;−&nbsp;<i>k</i> custodios (por ejemplo, 2 de 5).<br>
+    • El 100 % de las entregas de fragmentos queda en la auditoría con el custodio, la elección y la hora.
+  </td></tr>
+</table>
+
+<h2>Contramedida: separación de funciones con Shamir Secret Sharing</h2>
+
+<p><b>Táctica:</b> resistir ataques → autorizar actores, limitar el acceso y separar entidades. <b>Patrón:</b> separación de funciones (<i>control dual</i> o <i>split knowledge</i>). Una operación crítica no la puede ejecutar una sola persona: se necesita la participación de varias, de modo que un único actor comprometido no basta para hacer daño. Se implementa con el esquema de umbral (<i>k</i>, <i>n</i>) de Shamir: el secreto se divide en <i>n</i> fragmentos y cualquier grupo de <i>k</i> de ellos lo reconstruye.</p>
+
+<h3>Elementos del patrón en Espivota</h3>
+
+<table class="plain">
+  <tr><th>Elemento del patrón</th><th>En Espivota</th></tr>
+  <tr><td>Secreto protegido</td><td>Llave privada RSA de la urna (una por elección)</td></tr>
+  <tr><td>Repartidor (<i>dealer</i>)</td><td><code>election</code>: genera la llave al abrir la elección, la divide y borra la copia completa</td></tr>
+  <tr><td>Custodios</td><td><i>n</i> usuarios con el nuevo rol <code>custodio</code>, distintos entre sí, asignados al crear la elección. El administrador que la crea puede ser a lo sumo uno de ellos</td></tr>
+  <tr><td>Umbral</td><td><i>k</i> de <i>n</i>, configurable por elección (por defecto 3 de 5)</td></tr>
+  <tr><td>Protección de cada fragmento</td><td>Cifrado con la llave pública personal del custodio (RSA-OAEP o X25519). Solo él lo puede abrir con su llave privada, que guarda en su equipo</td></tr>
+  <tr><td>Combinador</td><td><code>tally</code>: junta los fragmentos en memoria, verifica que la llave reconstruida corresponde a la pública de la urna, cuenta y la descarta</td></tr>
+  <tr><td>Registro</td><td><code>election_audit</code>, con nuevas acciones <code>shares_distributed</code> y <code>share_submitted</code></td></tr>
+</table>
+
+<h3>Flujo</h3>
+
+<pre><code>Apertura de la elección
+admin ──(1) POST /elections/{id}/open ──────────────────────────────▶ election
+        election genera el par RSA de la urna
+        election divide la privada en n fragmentos (Shamir k de n)
+        election cifra el fragmento i con la llave pública del custodio i
+        election guarda los n fragmentos cifrados y borra la llave completa
+        election publica la llave pública de la urna (los clientes cifran el voto)
+
+Escrutinio (con la urna cerrada)
+custodio 1 ──(2) descarga su fragmento cifrado ◀──────────────────── election
+custodio 1 ──(3) lo descifra en su equipo con su llave privada
+custodio 1 ══(4) POST /tally/{id}/shares (fragmento) ═══════════════▶ tally
+   ... custodios 2 … k hacen lo mismo ...
+                       tally: con k fragmentos reconstruye la llave en memoria,
+                       verifica que corresponde a la pública, descifra y cuenta,
+                       publica tally.completed y borra la llave y los fragmentos
+
+admin solo ──(x) POST /elections/{id}/urn-key/private ──▶ 404 (ya no existe)</code></pre>
+
+<p>Ningún componente guarda la llave completa en disco. Solo existe dos veces y por poco tiempo, en memoria: al generarla en <code>election</code> y al reconstruirla en <code>tally</code>.</p>
+
+<h3>Cambios para implementarlo</h3>
+
+<ol>
+  <li><b>Base de datos (<code>election/schema.sql</code>):</b>
+    <ul>
+      <li>tabla <code>election_custodians</code> (elección, usuario, llave pública del custodio) y columnas <code>threshold_k</code> y <code>custodians_n</code> en <code>elections</code>;</li>
+      <li>tabla <code>urn_key_shares</code> (elección, custodio, índice <i>x</i>, fragmento cifrado);</li>
+      <li>quitar <code>wrapped_private_key</code> y <code>wrap_nonce</code> de <code>urn_keys</code>: la KEK deja de proteger la llave completa;</li>
+      <li>agregar <code>shares_distributed</code> y <code>share_submitted</code> al <code>CHECK</code> de <code>election_audit</code>.</li>
+    </ul>
+  </li>
+  <li><b>Llaves (<code>election/app/keys.py</code>):</b> función <code>split_urn_key(private_der, k, n)</code> con Shamir sobre GF(2<sup>8</sup>), aplicado byte a byte, y cifrado de cada fragmento con la llave pública del custodio.</li>
+  <li><b>Reglas y servicio (<code>election/app/rules.py</code>, <code>election/app/service.py</code>):</b>
+    <ul>
+      <li>no permitir abrir una elección sin <i>n</i> custodios registrados y <i>k</i>&nbsp;≥&nbsp;2;</li>
+      <li>validar que los custodios sean usuarios distintos;</li>
+      <li>eliminar <code>release_urn_private_key</code> y el endpoint <code>POST /elections/{id}/urn-key/private</code>;</li>
+      <li>nuevo <code>GET /elections/{id}/urn-key/shares/mine</code> (rol <code>custodio</code>), que devuelve solo el fragmento cifrado de quien llama.</li>
+    </ul>
+  </li>
+  <li><b>Auth (<code>identity</code>):</b> nuevo rol <code>custodio</code> en el JWT y registro de la llave pública de cada custodio.</li>
+  <li><b>Tally (<code>tally/</code>):</b> nuevo <code>POST /tally/{id}/shares</code>. Rechaza fragmentos si la urna no está cerrada y fragmentos repetidos del mismo custodio. Al llegar a <i>k</i>, reconstruye la llave con interpolación de Lagrange, la compara con la pública de la urna y lanza el escrutinio. Se elimina <code>private_key</code> del cuerpo del <code>POST</code> actual y la variable <code>TALLY_PRIVATE_KEY</code>.</li>
+  <li><b>Clientes (<code>admin-cli</code> y web):</b> comando para que el custodio genere su par de llaves, descargue y descifre su fragmento y lo envíe a <code>tally</code>.</li>
+</ol>
+
+<p><i>Mejora opcional:</i> guardar la llave privada de cada custodio en una llave física (YubiKey o tarjeta inteligente), para que no pueda copiarse ni siquiera desde su propio equipo.</p>
+
+<h2>Verificación</h2>
+
+<ol>
+  <li><b>Antes del cambio:</b> con una sola cuenta <code>admin</code>, cerrar una elección de prueba, llamar <code>POST /elections/{id}/urn-key/private</code>, guardar el PEM y descifrar con él las papeletas por fuera de <code>tally</code>. Funciona: una sola persona lee todos los votos.</li>
+  <li><b>Después del cambio:</b> repetir con la misma cuenta. El endpoint responde <code>404</code> y no hay forma de obtener la llave completa.</li>
+  <li>Revisar la tabla <code>urn_keys</code> y el volumen <code>election-keys</code> después de abrir la elección: no aparece la llave privada, ni en claro ni cifrada.</li>
+  <li>Enviar a <code>tally</code> <i>k</i>&nbsp;−&nbsp;1 fragmentos válidos: el escrutinio no arranca. Enviar el mismo fragmento dos veces: se rechaza el duplicado.</li>
+  <li>Enviar un fragmento con la urna aún abierta: se rechaza.</li>
+  <li>Con 5 custodios y umbral 3, completar el escrutinio con solo 3 fragmentos y comprobar que el conteo coincide con los votos emitidos en <code>docs/demo/e2e_vote.py</code>.</li>
+  <li>Revisar <code>election_audit</code>: aparece una fila <code>share_submitted</code> por cada custodio que participó.</li>
+</ol>
+
+</body>
+</html>
