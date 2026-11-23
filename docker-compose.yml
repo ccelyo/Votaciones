@@ -114,6 +114,12 @@ services:
       - ./.dev-certs/ballot:/run/certs:ro
       - ./.dev-certs/ca-public:/run/ca:ro
     expose: ["8080", "9091"]
+    networks:
+      - gw-ballot-net
+      - vote-link-net
+      - tally-ballot-net
+      - ballot-data-net
+      - mq-ballot-net
 
   identity:
     build: ./identity
@@ -149,6 +155,11 @@ services:
       - ./.dev-certs/identity:/run/certs:ro
       - ./.dev-certs/ca-public:/run/ca:ro
     expose: ["8000"]
+    networks:
+      - gw-identity-net
+      - identity-data-net
+      - signer-net
+      - vote-link-net
 
   # Base «Elections», exclusiva del servicio Election.
   postgres-elections:
@@ -191,6 +202,9 @@ services:
       - ./.dev-certs/election:/run/certs:ro
       - ./.dev-certs/ca-public:/run/ca:ro
     expose: ["8000"]
+    networks:
+      - election-data-net
+      - dev-access-net
 
   # Punto de entrada único de los clientes (web SSR, app móvil y CLI).
   gateway:
@@ -402,6 +416,10 @@ services:
     volumes:
       - ./.dev-certs/tally:/run/certs:ro
       - ./.dev-certs/ca-public:/run/ca:ro
+    networks:
+      - gw-tally-net
+      - tally-ballot-net
+      - messaging-net
 
   # Base «Results» de analytics, separada de la de ballot.
   mongo-results:
@@ -434,6 +452,10 @@ services:
       - ./.dev-certs/analytics:/run/certs:ro
       - ./.dev-certs/ca-public:/run/ca:ro
     expose: ["8090"]
+    networks:
+      - gw-analytics-net
+      - results-data-net
+      - messaging-net
 
   notifications-mongo:
     image: mongo:8.0
@@ -467,6 +489,40 @@ services:
       - ./.dev-certs/notification:/run/certs:ro
       - ./.dev-certs/ca-public:/run/ca:ro
     expose: ["3000"]
+    networks:
+      - gw-notification-net
+      - notif-data-net
+      - messaging-net
+
+# Redes de la segmentación (Laboratorio 5 + borde del WAF). Sin este bloque
+# el compose no arranca: los servicios ya referencian estas redes.
+networks:
+  edge-net:          # waf: única entrada a la web y a la API
+  mobile-net:        # mobile (solo archivos estáticos)
+  dev-access-net:    # election y UI de RabbitMQ, solo en loopback
+
+  waf-web-net: { internal: true }   # waf -> platform
+  waf-api-net: { internal: true }   # waf -> gateway
+  frontend-net: { internal: true }  # platform -> gateway
+
+  gw-identity-net: { internal: true }
+  gw-ballot-net: { internal: true }
+  gw-tally-net: { internal: true }
+  gw-analytics-net: { internal: true }
+  gw-notification-net: { internal: true }
+
+  vote-link-net: { internal: true }     # identity -> ballot (gRPC)
+  tally-ballot-net: { internal: true }  # tally -> ballot (HTTP)
+  signer-net: { internal: true }        # identity -> blind-signature
+
+  identity-data-net: { internal: true }
+  ballot-data-net: { internal: true }
+  election-data-net: { internal: true }
+  results-data-net: { internal: true }
+  notif-data-net: { internal: true }
+
+  mq-ballot-net: { internal: true }
+  messaging-net: { internal: true }
 
 volumes:
   postgres-data:

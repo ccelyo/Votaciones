@@ -1,0 +1,3 @@
+# Muestras de monitoreo (vmstat, docker stats): pesadas y reproducibles.
+results/raw/*
+!results/raw/.gitkeep

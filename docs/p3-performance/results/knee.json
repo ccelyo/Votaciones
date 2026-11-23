@@ -1,0 +1,19 @@
+{
+  "knee_last_stable_vus": 300,
+  "knee_first_degraded_vus": 350,
+  "last_stable": {
+    "throughput_rps": 269.33,
+    "avg_ms": 82.9,
+    "p95_ms": 180.0,
+    "error_pct": 0.0,
+    "clean_reps": "2/2"
+  },
+  "intermittent": [
+    {
+      "vus": 200,
+      "clean_reps": "3/4",
+      "error_max_pct": 58.31
+    }
+  ],
+  "kneedle_vus": 300
+}
