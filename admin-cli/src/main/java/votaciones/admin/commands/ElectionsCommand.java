@@ -221,11 +221,11 @@ public class ElectionsCommand {
                     out().println("Urna " + electionId + " cerrada.");
                 }
             }
-            Results.print(this, cli().ballot().get("/v1/elections/" + electionId + "/results"));
+            Results.print(this, cli().ballot().get("/api/ballots/elections/" + electionId + "/results"));
         }
     }
 
-    @Command(name = "results", description = "Consulta el conteo de una urna ya cerrada (API pública de ballot).")
+    @Command(name = "results", description = "Consulta el conteo de una urna ya cerrada (ruta anónima del Gateway).")
     static class Results extends AdminCommand {
         @Parameters(paramLabel = "ID")
         String electionId;
@@ -233,7 +233,7 @@ public class ElectionsCommand {
         @Override
         void run() {
             path(electionId); // valida el id
-            print(this, cli().ballot().get("/v1/elections/" + electionId + "/results"));
+            print(this, cli().ballot().get("/api/ballots/elections/" + electionId + "/results"));
         }
 
         static void print(AdminCommand command, JsonNode results) {

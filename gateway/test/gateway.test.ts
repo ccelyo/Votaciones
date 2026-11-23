@@ -355,3 +355,26 @@ test("la configuración exige el JWKS en modo jwt y rechaza el secreto HS256", (
   assert.equal(config.jwtIssuer, "votaciones-identity");
   assert.equal(config.jwtAudience, "votaciones");
 });
+
+test("la configuración segura exige material mTLS y upstreams HTTPS", () => {
+  assert.throws(() => loadConfig({ GATEWAY_TLS_REQUIRED: "true" }), /GATEWAY_TLS_REQUIRED/);
+  assert.throws(
+    () =>
+      loadConfig({
+        GATEWAY_UPSTREAM_TLS_REQUIRED: "true",
+        GATEWAY_BALLOT_URL: "http://ballot:8080",
+      }),
+    /GATEWAY_UPSTREAM_TLS_REQUIRED/,
+  );
+  assert.throws(
+    () =>
+      loadConfig({
+        GATEWAY_UPSTREAM_TLS_REQUIRED: "true",
+        GATEWAY_UPSTREAM_TLS_CA_FILE: "/ca.pem",
+        GATEWAY_UPSTREAM_TLS_CERT_FILE: "/client.pem",
+        GATEWAY_UPSTREAM_TLS_KEY_FILE: "/client.key",
+        GATEWAY_BALLOT_URL: "http://ballot:8080",
+      }),
+    /must use https/,
+  );
+});

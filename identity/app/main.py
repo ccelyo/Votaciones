@@ -76,6 +76,15 @@ def create_app(
                 settings.ballot_grpc_addr,
                 settings.ballot_grpc_timeout_seconds,
                 use_tls=settings.ballot_grpc_tls,
+                root_certificates=(
+                    settings.ballot_grpc_ca_file.read_bytes() if settings.ballot_grpc_ca_file else None
+                ),
+                private_key=(
+                    settings.ballot_grpc_key_file.read_bytes() if settings.ballot_grpc_key_file else None
+                ),
+                certificate_chain=(
+                    settings.ballot_grpc_cert_file.read_bytes() if settings.ballot_grpc_cert_file else None
+                ),
             )
             app.state.ballot = owned_ballot
 

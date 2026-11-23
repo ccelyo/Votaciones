@@ -45,7 +45,9 @@ publicarse directamente a Internet.
 ### Lanzar el escrutinio
 
 ```bash
-curl -X POST http://localhost:8088/api/tally/elections/consejo-superior-2026 \
+export VOTACIONES_TLS_CA_FILE=.dev-certs/ca-public/ca.crt
+curl --cacert "$VOTACIONES_TLS_CA_FILE" \
+  -X POST https://localhost:8088/api/tally/elections/consejo-superior-2026 \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d "{\"private_key\": \"$(cat urna.pem)\"}"
@@ -203,7 +205,8 @@ Con Docker, desde la raíz:
 ```bash
 docker compose up --build
 # No publica puerto: se entra por el Gateway.
-curl -X POST http://localhost:8088/api/tally/elections/<id> \
+curl --cacert "$VOTACIONES_TLS_CA_FILE" \
+  -X POST https://localhost:8088/api/tally/elections/<id> \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{}'
 ```
 

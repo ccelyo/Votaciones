@@ -4,7 +4,7 @@ Uso (desde la raíz del repo, con el stack levantado):
     identity/.venv/bin/python docs/demo/e2e_vote.py [GATEWAY]
 Deja la llave privada de la urna en docs/demo/urna.pem (no versionar).
 """
-import base64, json, os, secrets, sys, time, urllib.request, urllib.error
+import base64, json, os, secrets, ssl, sys, time, urllib.request, urllib.error
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.insert(0, os.path.join(ROOT, "identity", "tests"))
@@ -13,7 +13,9 @@ from cryptography.hazmat.primitives import hashes, serialization  # noqa: E402
 from cryptography.hazmat.primitives.asymmetric import padding, rsa  # noqa: E402
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM  # noqa: E402
 
-GW = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8088"
+GW = sys.argv[1] if len(sys.argv) > 1 else "https://localhost:8088"
+TLS_CA_FILE = os.environ.get("VOTACIONES_TLS_CA_FILE")
+TLS_CONTEXT = ssl.create_default_context(cafile=TLS_CA_FILE) if TLS_CA_FILE else None
 OUT = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -29,7 +31,7 @@ def call(method, path, body=None, token=None, timeout=90):
     if token:
         req.add_header("Authorization", "Bearer " + token)
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
+        with urllib.request.urlopen(req, timeout=timeout, context=TLS_CONTEXT) as r:
             raw = r.read(); code = r.status
     except urllib.error.HTTPError as e:
         raw = e.read(); code = e.code

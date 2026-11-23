@@ -153,12 +153,16 @@ func (s *AdminService) GetElectionStatus(ctx context.Context, request *pb.GetEle
 }
 
 // NewGRPCServer registers the admin API and standard gRPC health service.
-// This first prototype intentionally serves plaintext; the listener must remain internal.
-func NewGRPCServer(admin *AdminService) *grpc.Server {
-	server := grpc.NewServer(
+// Callers provide TLS credentials through options; without them it serves plaintext for development.
+func NewGRPCServer(admin *AdminService, options ...grpc.ServerOption) *grpc.Server {
+	serverOptions := []grpc.ServerOption{
 		grpc.MaxRecvMsgSize(MaxMessageSize),
 		grpc.MaxSendMsgSize(MaxMessageSize),
 		grpc.UnaryInterceptor(deadlineInterceptor(requestTimeout)),
+	}
+	serverOptions = append(serverOptions, options...)
+	server := grpc.NewServer(
+		serverOptions...,
 	)
 	pb.RegisterBallotAdminServiceServer(server, admin)
 	healthServer := health.NewServer()

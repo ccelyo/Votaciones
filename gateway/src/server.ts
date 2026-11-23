@@ -1,14 +1,33 @@
-import { createServer } from "node:http";
+import { createServer as createHttpServer } from "node:http";
+import { createServer as createHttpsServer } from "node:https";
 
 import { createGateway } from "./app.ts";
 import { loadConfig } from "./config.ts";
+import { createUpstreamTransport, loadGatewayTlsOptions } from "./transport.ts";
 
 const config = loadConfig();
-const gateway = createGateway(config);
+const upstreamTransport = createUpstreamTransport(config);
+const gateway = createGateway(config, { fetch: upstreamTransport.fetch });
 
-const server = createServer((req, res) => {
+const handler = (req: Parameters<typeof gateway.handle>[0], res: Parameters<typeof gateway.handle>[1]) => {
   void gateway.handle(req, res);
-});
+};
+const tlsOptions = loadGatewayTlsOptions(config);
+const server = tlsOptions
+  ? createHttpsServer(tlsOptions, handler)
+  : createHttpServer(handler);
+
+if (tlsOptions) {
+  server.on("secureConnection", (socket) => {
+    const sans: string[] = socket.getPeerCertificate().subjectaltname?.split(", ") ?? [];
+    if (
+      !socket.authorized ||
+      !sans.some((san) => san === "DNS:waf" || san === "DNS:platform" || san === "DNS:gateway")
+    ) {
+      socket.destroy();
+    }
+  });
+}
 
 server.listen(config.port, () => {
   console.log(
@@ -18,6 +37,7 @@ server.listen(config.port, () => {
       port: config.port,
       authMode: config.authMode,
       services: config.upstreams,
+      tls: Boolean(tlsOptions),
     }),
   );
   if (config.authMode === "passthrough") {
@@ -31,5 +51,9 @@ server.listen(config.port, () => {
 });
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
-  process.on(signal, () => server.close(() => process.exit(0)));
+  process.on(signal, () => {
+    server.close(() => {
+      void upstreamTransport.close().finally(() => process.exit(0));
+    });
+  });
 }
