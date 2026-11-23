@@ -41,6 +41,7 @@ services:
       # Solo se ejecutan la primera vez, con el volumen vacío.
       - ./identity/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./identity/seed_dev_users.sql:/docker-entrypoint-initdb.d/02-seed_dev_users.sql:ro
+    networks: [identity-data-net]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U votaciones -d votaciones"]
       interval: 3s
@@ -56,6 +57,7 @@ services:
     volumes:
       - census-data:/var/lib/postgresql/data
       - ./census/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    networks: [identity-data-net]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U census -d census"]
       interval: 3s
@@ -71,11 +73,13 @@ services:
       BLINDSIG_API_KEY: ${BLINDSIG_API_KEY:-dev-only-blindsig-token}
     volumes: ["blind-signature-keys:/app/keys"]
     expose: ["8100"]
+    networks: [signer-net]
 
   mongo:
     image: mongo:8.0
     command: ["--replSet", "rs0", "--bind_ip_all"]
     volumes: ["mongo-data:/data/db"]
+    networks: [ballot-data-net]
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "try { rs.status().ok } catch (e) { rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'mongo:27017'}]}).ok }"]
       interval: 5s
@@ -157,6 +161,7 @@ services:
       - elections-data:/var/lib/postgresql/data
       # Solo se ejecuta la primera vez, con el volumen vacío.
       - ./election/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    networks: [election-data-net]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U elections -d elections"]
       interval: 3s
@@ -236,6 +241,14 @@ services:
       - ./.dev-certs/gateway:/run/certs:ro
       - ./.dev-certs/ca-public:/run/ca:ro
     expose: ["8088"]
+    networks:
+      - waf-api-net
+      - frontend-net
+      - gw-identity-net
+      - gw-ballot-net
+      - gw-tally-net
+      - gw-analytics-net
+      - gw-notification-net
 
   platform:
     build:
@@ -262,6 +275,7 @@ services:
       - ./.dev-certs/ca-public:/run/ca:ro
     # Sin `ports`: el navegador entra por el WAF.
     expose: ["3000"]
+    networks: [waf-web-net, frontend-net]
 
   # Web Application Firewall de borde (escenario de seguridad 4, Prototipo 3).
   # nginx + ModSecurity v3 + OWASP Core Rule Set 4 (LTS). Inspecciona cada
@@ -311,6 +325,12 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+    # Única red no interna del borde: es la que permite publicar los puertos.
+    # Desde el WAF solo se alcanza a platform y gateway, por redes internas propias.
+    networks:
+      - edge-net
+      - waf-web-net
+      - waf-api-net
 
   # La misma app Flutter, compilada para el navegador, para ver el flujo sin un teléfono.
   mobile:
@@ -319,6 +339,8 @@ services:
       args:
         GATEWAY_URL: https://localhost:${GATEWAY_PORT:-8088}
     ports: ["${MOBILE_PORT:-8092}:80"]
+    # Solo sirve archivos estáticos; no llama a ningún servicio desde el contenedor.
+    networks: [mobile-net]
 
   rabbitmq:
     image: rabbitmq:4-management-alpine
@@ -328,7 +350,13 @@ services:
     volumes:
       - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
       - ./rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
-    ports: ["${RABBITMQ_UI_PORT:-15672}:15672"]
+    # UI solo en loopback. Un contenedor solo en redes `internal` no puede
+    # publicar puertos, por eso también va en dev-access-net.
+    ports: ["127.0.0.1:${RABBITMQ_UI_PORT:-15672}:15672"]
+    networks:
+      - mq-ballot-net
+      - messaging-net
+      - dev-access-net
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 5s
@@ -379,6 +407,7 @@ services:
   mongo-results:
     image: mongo:8.0
     volumes: ["results-data:/data/db"]
+    networks: [results-data-net]
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 5s
@@ -409,6 +438,7 @@ services:
   notifications-mongo:
     image: mongo:8.0
     volumes: ["notifications-data:/data/db"]
+    networks: [notif-data-net]
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 5s
