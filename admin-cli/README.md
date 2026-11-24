@@ -27,7 +27,7 @@ Con un alias queda más cómodo: `alias votaciones-admin='java -jar /ruta/admin-
 | Variable / opción | Por defecto | Uso |
 |---|---|---|
 | `VOTACIONES_API_URL` / `--api-url` | `https://localhost:8088` | API Gateway |
-| `VOTACIONES_TLS_CA_FILE` | — | CA de confianza para validar el certificado del Gateway (útil con la CA local de desarrollo) |
+| `VOTACIONES_TLS_CA_FILE` | — | Certificado de autorización público de confianza para validar el certificado del Gateway (útil con el certificado de autorización público local de desarrollo) |
 | `VOTACIONES_HOME` | `~/.votaciones` | Carpeta de `session.json` (JWT, usuario, rol, `exp`) |
 
 La sesión guardada solo se usa contra la misma `--api-url` con la que se inició y no se envía si

@@ -189,8 +189,8 @@ la hora de emisión del token en identidad; el orden lo da `seq`.
 | `PORT` / `BALLOT_HTTP_ADDR` | `:8080` | `PORT` lo fija Cloud Run |
 | `BALLOT_GRPC_ADDR` | `127.0.0.1:9091` | API admin interna (identity) |
 | `BALLOT_ALLOWED_ORIGINS` | vacío | Orígenes CORS separados por coma |
-| `BALLOT_HTTP_TLS_CERT_FILE` · `_KEY_FILE` · `_CLIENT_CA_FILE` | — | Certificado servidor y CA de clientes para HTTPS/mTLS |
-| `BALLOT_GRPC_TLS_CERT_FILE` · `_KEY_FILE` · `_CLIENT_CA_FILE` | — | Certificado servidor y CA de clientes para gRPC/mTLS |
+| `BALLOT_HTTP_TLS_CERT_FILE` · `_KEY_FILE` · `_CLIENT_CA_FILE` | — | Certificado servidor y certificado de autorización público de clientes para HTTPS/mTLS |
+| `BALLOT_GRPC_TLS_CERT_FILE` · `_KEY_FILE` · `_CLIENT_CA_FILE` | — | Certificado servidor y certificado de autorización público de clientes para gRPC/mTLS |
 | `BALLOT_TLS_REQUIRED` | `false` | Exige ambos listeners TLS |
 | `BALLOT_RABBITMQ_URI` | vacío → no publica ni consume | `amqp://usuario:clave@host:5672/%2f`. Sin ella no hay `votes.cast` ni se leen `election.events` (ver `docs/election-events.md`) |
 
