@@ -93,20 +93,22 @@
 <rect x="62.0" y="342.0" width="1576.0" height="78.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
 <text x="72.0" y="362.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">API Gateway</text>
 <text x="72.0" y="377.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">gateway/ · Node.js · TypeScript</text>
-<rect x="72.0" y="382.0" width="217.1" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<rect x="72.0" y="382.0" width="189.2" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
 <text x="79.0" y="398.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">server.ts (arranque)</text>
-<rect x="295.1" y="382.0" width="217.1" height="24" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
-<text x="302.1" y="398.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">app.ts (cadena HTTP y proxy)</text>
-<rect x="518.3" y="382.0" width="217.1" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
-<text x="525.3" y="398.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">routes.ts (catálogo)</text>
-<rect x="741.4" y="382.0" width="217.1" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
-<text x="748.4" y="398.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">router.ts (enrutamiento)</text>
-<rect x="964.6" y="382.0" width="217.1" height="24" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
-<text x="971.6" y="398.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">jwt.ts (RS256 + JWKS)</text>
-<rect x="1187.7" y="382.0" width="217.1" height="24" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
-<text x="1194.7" y="398.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">rateLimit.ts</text>
-<rect x="1410.9" y="382.0" width="217.1" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
-<text x="1417.9" y="398.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">config.ts</text>
+<rect x="267.3" y="382.0" width="189.2" height="24" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="274.3" y="398.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">app.ts (cadena HTTP y proxy)</text>
+<rect x="462.6" y="382.0" width="189.2" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="469.6" y="398.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">routes.ts (catálogo)</text>
+<rect x="657.9" y="382.0" width="189.2" height="24" rx="3" fill="#E8F5E9" stroke="#00A651" stroke-width="1.3"/>
+<text x="664.9" y="398.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">router.ts (enrutamiento)</text>
+<rect x="853.2" y="382.0" width="189.2" height="24" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="860.2" y="398.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">jwt.ts (RS256 + JWKS)</text>
+<rect x="1048.5" y="382.0" width="189.2" height="24" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="1055.5" y="398.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">session.ts (sesión vigente)</text>
+<rect x="1243.8" y="382.0" width="189.2" height="24" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="1250.8" y="398.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">rateLimit.ts</text>
+<rect x="1439.1" y="382.0" width="189.2" height="24" rx="3" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="1.3"/>
+<text x="1446.1" y="398.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#222">config.ts</text>
 <rect x="48" y="448.0" width="1604" height="318.0" rx="5" fill="#F7F7F7" stroke="#B0B0B0" stroke-width="1.5" stroke-dasharray="8 5"/>
 <text x="62.0" y="468.0" font-size="13" font-weight="600" text-anchor="start" fill="#555">Subsistema de lógica · identidad y elecciones</text>
 <rect x="62.0" y="478.0" width="823.4" height="282.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
