@@ -1,0 +1,9 @@
+WAF->gateway con cert de cliente (mTLS)       200 (curl exit 0)
+WAF->gateway SIN cert de cliente              000 (curl exit 56)
+WAF->gateway por HTTP plano                   000 (curl exit 52)
+WAF->gateway sin confiar en la CA             000 (curl exit 60)
+WAF->platform con cert de cliente             200 (curl exit 0)
+WAF->platform SIN cert de cliente             000 (curl exit 56)
+Protocol: TLSv1.3
+Verify return code: 0 (ok)
+host -> :8088 por HTTP plano: 400

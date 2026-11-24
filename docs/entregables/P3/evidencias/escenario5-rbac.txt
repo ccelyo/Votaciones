@@ -1,0 +1,8 @@
+✔ votante   GET   /api/auth/users              -> 403 (esperado 403)
+✔ votante   POST  /api/elections               -> 403 (esperado 403)
+✔ votante   POST  /api/auth/users              -> 403 (esperado 403)
+✔ votante   POST  /api/tally/elections/1       -> 403 (esperado 403)
+✔ votante   GET   /api/elections/open          -> 200 (esperado 200)
+✔ sin token GET   /api/auth/users              -> 401 (esperado 401)
+✔ admin     GET   /api/auth/users              -> 200 (esperado 200)
+Resultado: 7 correctos, 0 fallidos.

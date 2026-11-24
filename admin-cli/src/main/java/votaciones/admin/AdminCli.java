@@ -163,13 +163,17 @@ public class AdminCli {
         return zone;
     }
 
-    /** Cliente sin sesión (login). */
-    public ApiClient anonymousIdentity() {
+    /** Cliente del Gateway sin sesión (login). */
+    public ApiClient anonymousApi() {
         return apiClient(apiUrl(), null);
     }
 
-    /** Cliente con el JWT guardado; falla si no hay sesión vigente para este servidor. */
-    public ApiClient identity() {
+    /**
+     * Cliente del Gateway con el JWT guardado; falla si no hay sesión vigente para este
+     * servidor. Todas las operaciones van por rutas {@code /api/...} del catálogo del
+     * Gateway (WAF → Gateway): la CLI nunca llama a las rutas internas de los servicios.
+     */
+    public ApiClient api() {
         SessionStore.Saved saved = sessions().load()
                 .orElseThrow(() -> new NotLoggedInException("No hay sesión. Ejecuta: votaciones-admin login"));
         if (!saved.apiUrl().equals(apiUrl())) {

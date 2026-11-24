@@ -1,0 +1,72 @@
+Reverse Proxy · API https://localhost:8088 (TTL de la caché de sesión: 5000 ms)
+
+Estático 1. Solo el WAF y mobile publican puertos (docker compose config)
+  ✔ waf publica ['3000', '8088'] (esperado ['3000', '8088'])
+  ✔ mobile publica ['8092'] (esperado ['8092'])
+  ✔ identity sin puertos en el host
+  ✔ gateway sin puertos en el host
+  ✔ platform sin puertos en el host
+  ✔ ballot sin puertos en el host
+  ✔ tally sin puertos en el host
+  ✔ analytics sin puertos en el host
+  ✔ blind-signature sin puertos en el host
+  ✔ election sin puertos en el host
+  ✔ ningún otro servicio publica puertos
+Estático 2. El Gateway comprueba la sesión en identity
+  ✔ GATEWAY_SESSION_CHECK=identity
+  ✔ GATEWAY_AUTH_URL=https://identity:8000 (mTLS hacia identity)
+  ✔ GATEWAY_SESSION_CACHE_TTL_MS=5000
+Estático 3. La CLI no usa rutas internas de los servicios
+  ✔ todos los literales de ruta de admin-cli/src/main son /api/... o sufijos conocidos
+  ✔ ApiClient.send() valida cada ruta con requireCatalogPath
+  ✔ pruebas de la CLI: todos los comandos piden solo /api/ y ApiClient rechaza rutas internas
+1. Los servicios no son alcanzables desde el host
+  ✔ localhost:8000 cerrado
+  ✔ localhost:8001 cerrado
+  ✔ localhost:8080 cerrado
+  ✔ localhost:8090 cerrado
+  ✔ localhost:8100 cerrado
+  ✔ WAF -> Gateway /healthz HTTP 200
+2-3. Operaciones de la CLI de administración por /api/...
+  ✔ cli login (POST /api/auth/login + /api/auth/login/mfa)
+  ✔ cli whoami
+  ✔ cli users list
+  ✔ cli users create rp-1795483304 (POST /api/auth/users)
+  ✔ cli elections list
+  ✔ cli elections create --draft
+  ✔ cli elections open 27 (POST /api/elections/:id/open)
+  ✔ cli elections status 27
+  ✔ cli voters list 27
+  ✔ cli elections close 27
+4. Un token revocado se rechaza de inmediato y tras 5 s, sin llegar al servicio
+  ✔ antes del logout: GET /api/analytics/summary HTTP 200
+  ✔ POST /api/auth/logout HTTP 204
+  ✔ revocado, sin esperar: GET /api/analytics/summary 401 invalid_token
+  ✔ revocado, sin esperar: POST /api/tally/elections/27 401 invalid_token
+  ✔ revocado: POST /api/tally: log del Gateway, requestId a44e2a93-f303-441a-a998-14f47b5c7a3a con forwarded=false (no llegó al servicio)
+  ✔ revocado, tras 5+1 s: 401 invalid_token
+5. Un usuario desactivado pierde el acceso sin esperar al exp del JWT
+  ✔ rp-1795483304 activo: HTTP 200
+  ✔ PATCH /api/auth/users/20 {is_active:false} HTTP 200
+  ✔ desactivado, sin esperar: HTTP 401
+  ✔ desactivado: GET /api/analytics/summary: log del Gateway, requestId b853d6d9-fe18-484c-81c7-bf03e8e74aee con forwarded=false (no llegó al servicio)
+  ✔ desactivado, tras 5+1 s: HTTP 401
+6. Las respuestas no revelan servicios, hosts ni frameworks
+  ✔ GET /api (catálogo) HTTP 200
+  ✔ GET /readyz HTTP 200
+  ✔ GET /api/no-existe HTTP 404
+  ✔ DELETE /api/auth/users/1 HTTP 405
+  ✔ POST /api/auth/login {"username":1} HTTP 422
+  ✔ GET /api/ballots/elections/999999/results HTTP 404
+  ✔ POST /api/identity/tokens/blind (vacío) HTTP 422
+  ✔ WAF: cuerpo de 2 MB (límite 1 MB) HTTP 413
+  ✔ WAF: XSS bloqueado por CRS HTTP 403
+  ✔ WAF (web): XSS bloqueado por CRS HTTP 403
+  ✔ el WAF sigue bloqueando con 403
+7. La ruta de votación no pasa por la comprobación de sesión del Gateway
+  ✔ POST /api/ballots con un token revocado: HTTP 400 de Ballot (invalid_request), sin 401 de sesión del Gateway
+
+Datos de prueba: el usuario rp-1795483304 (id 20) queda desactivado (identity no permite borrar)
+y la elección 27 queda cerrada.
+
+Resultado: 56 correctos, 0 fallidos.

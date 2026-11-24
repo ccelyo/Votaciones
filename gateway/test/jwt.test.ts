@@ -27,7 +27,11 @@ const claims = (overrides: Record<string, unknown> = {}) => identityClaims(overr
 describe("verifyJwt", () => {
   test("acepta el token de identity y lee el rol", async () => {
     const token = signRs256(claims({ role: "admin", sub: "7" }), key);
-    assert.deepEqual(await verifyJwt(token, options), { userId: "7", roles: ["admin"] });
+    assert.deepEqual(await verifyJwt(token, options), {
+      userId: "7",
+      roles: ["admin"],
+      expiresAt: Math.floor(NOW / 1000) + 3600,
+    });
   });
 
   test("rechaza la firma de una clave que no corresponde al kid", async () => {

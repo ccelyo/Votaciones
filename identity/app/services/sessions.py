@@ -112,7 +112,12 @@ def _claims(token: str, keys: IdentityKeys, settings: Settings) -> jwt_tokens.Ac
 
 
 def revoke_session(session: Session, token: str, *, keys: IdentityKeys, settings: Settings) -> None:
-    """Revoca la sesión del JWT. El Gateway lo seguirá aceptando hasta su ``exp``."""
+    """Revoca la sesión del JWT.
+
+    Con ``GATEWAY_SESSION_CHECK=identity`` el Gateway revalida la sesión contra ``/auth/me`` y
+    guarda el resultado como mucho ``GATEWAY_SESSION_CACHE_TTL_MS`` (5 s); un logout que pasa
+    por el Gateway invalida esa caché de inmediato.
+    """
     claims = _claims(token, keys, settings)
     user_session = session.scalar(
         select(UserSession).where(

@@ -6,6 +6,11 @@ Responsabilidades: enrutamiento REST/JSON, validación de JWT, CORS, límites de
 y transporte mTLS hacia los servicios internos. No contiene lógica de votación,
 identidad ni análisis.
 
+Desde el escenario de seguridad 2 (Prototipo 3) es el **reverse proxy de aplicación**,
+detrás del WAF: revalida cada sesión en identity (mediación completa) y sanea las
+respuestas para no revelar servicios, hosts ni frameworks. Validación:
+[`docs/p3-reverse-proxy/`](../docs/p3-reverse-proxy/README.md).
+
 Está escrito en TypeScript y se ejecuta directamente con Node ≥ 22.19 (eliminación de
 tipos nativa); Undici configura el cliente mTLS de los upstreams.
 
@@ -38,11 +43,13 @@ Acceso: **public** sin token · **user** JWT válido · **admin** JWT con rol `a
 | POST | `/api/auth/login/mfa` | Auth | `/login/mfa` | public |
 | GET | `/api/auth/me` | Auth | `/auth/me` | user |
 | POST | `/api/auth/logout` | Auth | `/logout` | user |
-| GET | `/api/auth/users` | Auth | `/users` | admin |
+| GET · POST | `/api/auth/users` | Auth | `/users` | admin |
+| PATCH | `/api/auth/users/:userId` | Auth | `/users/:userId` | admin |
 | GET | `/api/elections/open` | Election | `/elections/open` | public |
 | GET · POST | `/api/elections` | Election | `/elections` | admin |
 | GET | `/api/elections/:id/parameters` | Election | `/elections/:id/parameters` | user |
 | GET | `/api/elections/:id/status` | Election | `/elections/:id/status` | admin |
+| POST | `/api/elections/:id/open` | Election | `/elections/:id/open` | admin |
 | POST | `/api/elections/:id/close` | Election | `/elections/:id/close` | admin |
 | GET | `/api/identity/keys` | Identity | `/keys` | public |
 | GET | `/api/identity/elections/:id/eligibility` | Identity | `/elections/:id/eligibility` | user |
@@ -66,6 +73,10 @@ Acceso: **public** sin token · **user** JWT válido · **admin** JWT con rol `a
   publicado. Hay que confirmarlas con Camilo.
 - Un servicio sin URL configurada responde `503 service_not_configured`.
 - La consulta (`?limit=…`) se reenvía tal cual.
+- `GET /api` publica solo `method`, `path`, `access` y `description` de cada ruta: no
+  dice qué servicio la atiende ni si está configurado.
+- La CLI de administración (`admin-cli/`) usa exclusivamente estas rutas; una prueba
+  (`test/cli-catalog.test.ts`) comprueba que cada operación de la CLI está en el catálogo.
 
 ## Contrato JWT con identity (CR-04 / JU-05)
 
@@ -90,9 +101,19 @@ Acordado con Julian; el lado emisor está en `identity/README.md`, sección
   descartan siempre.
 - Token inválido o expirado: `401 invalid_token`. Si identity no responde y no hay JWKS en
   caché: `503 auth_unavailable`.
-- **Revocación**: `/logout` revoca la sesión en identity al instante, pero el Gateway no
-  guarda estado y la sigue aceptando hasta su `exp` (1 hora). Se acepta para el prototipo;
-  identity sí rechaza el token revocado en sus propios endpoints.
+- **Revocación y mediación completa** (`GATEWAY_SESSION_CHECK=identity`, activo en
+  Compose): tras validar la firma, el Gateway consulta `GET /auth/me` en identity (por el
+  mismo cliente mTLS) antes de reenviar cualquier ruta `user` o `admin`. Si identity
+  responde 401/403 (sesión revocada, usuario desactivado), el Gateway responde
+  `401 invalid_token` sin contactar el servicio destino. El rol que decide `admin` es el
+  que devuelve identity, no el claim del JWT. El resultado positivo se cachea por
+  `sha256(token)` durante `GATEWAY_SESSION_CACHE_TTL_MS` (5 s), nunca más allá del `exp`;
+  un `POST /api/auth/logout` o un `PATCH /api/auth/users/:id` correctos invalidan la caché
+  al momento en esa réplica; una consulta a identity que estaba en vuelo durante esa
+  invalidación no vuelve a guardar su resultado. Tras el `PATCH`, el id que se invalida es
+  el que devuelve identity en el cuerpo (`/users/05` es el usuario 5). Si identity no
+  responde, falla cerrado: `503 auth_unavailable`.
+  Las rutas `public` y `anonymous` (Ballot) nunca provocan la consulta.
 
 **Modo `passthrough`** (solo desarrollo): si no hay `GATEWAY_JWKS_URL`, el Gateway exige
 un Bearer en las rutas `user` y `admin` pero delega su validación y la del rol en el
@@ -116,7 +137,9 @@ de identidad.
 - **CORS**: solo los orígenes de `GATEWAY_ALLOWED_ORIGINS` reciben
   `Access-Control-Allow-Origin`, sin credenciales (la autenticación va en la cabecera
   `Authorization`, no en cookies). La web no lo necesita porque llama al Gateway desde su
-  servidor; está para clientes de navegador que llamen directamente.
+  servidor; está para clientes de navegador que llamen directamente. A esos orígenes se
+  les expone `X-Request-Id` (`Access-Control-Expose-Headers`); el Servidor SSR de la web
+  también lo reenvía al navegador.
 - **Límites de tasa** por cliente y minuto: `login` 20, `default` 300, `ballot` 600.
   Responde `429` con `Retry-After`. La cuota es por IP de origen; detrás del Servidor SSR
   todas las peticiones de la web comparten la IP del contenedor, salvo que un proxy de
@@ -125,7 +148,29 @@ de identidad.
 - Tiempo máximo por servicio (`504`), servicio caído (`502`), cuerpo máximo de 1 MiB
   (`413`), método no permitido (`405` con `Allow`). Las cookies que fije un servicio no
   se reenvían.
-- Errores propios del Gateway: `{"error": {"code": "...", "message": "..."}}`.
+- Errores propios del Gateway: `{"error": {"code": "...", "message": "...", "requestId": "..."}}`.
+  Los mensajes no nombran el servicio; el detalle va al log con el mismo `requestId`.
+- **Toda respuesta lleva `X-Request-Id`**, que correlaciona con el log del Gateway. La
+  línea de acceso de cada petición incluye `forwarded: true|false`: `false` significa que
+  el Gateway la rechazó (ruta, tasa, token, sesión, rol) sin llegar al servicio.
+- **Respuestas de los servicios saneadas**:
+  - `5xx` → cuerpo descartado; `502` (o `503`/`504` con `Retry-After`) y
+    `{"error":{"code":"upstream_error",...}}`. Esto incluye los 5xx con formato acordado
+    de identity (`ballot_unavailable`, `blind_signature_unavailable`...): sus códigos
+    nombran servicios internos, así que el cliente solo ve `upstream_error` y el código
+    original queda en el log (`upstreamStatus`, `service`) con el mismo `requestId`.
+  - `4xx` con el formato acordado se reconstruye conservando solo el código:
+    `{"error":"<código>","requestId":"..."}` (Ballot, Tally, Analytics) o
+    `{"error":{"code":...,"message":...,"requestId":...}}` (identity; `message` solo si
+    es texto). Cualquier otro campo se descarta. Cualquier otro cuerpo (el 422 de
+    validación del framework, el `404 page not found` en texto plano, HTML) se reescribe a
+    `{"error":{"code":"invalid_request|unauthenticated|forbidden|not_found|conflict|request_error",...}}`.
+  - `Location` solo se reenvía si es relativa y empieza por `/api/`.
+  - Solo se reenvían las cabeceras de la allowlist (`Content-Type`, `Cache-Control`,
+    `ETag`, `Last-Modified`, `Retry-After`).
+- `GET /readyz` responde solo `{"status":"ready"|"degraded"}`; el estado por servicio va
+  al log. Como es público, el resultado se reutiliza 2 s y las consultas simultáneas
+  comparten una sola ronda de sondas (no una ráfaga mTLS por petición). `GET /healthz` no cambia (lo usan Compose y la validación de segmentación).
 
 ## Configuración
 
@@ -141,6 +186,9 @@ de identidad.
 | `GATEWAY_TRUST_FORWARDED_FOR` | `false` | Usar `X-Forwarded-For` como IP del cliente |
 | `GATEWAY_UPSTREAM_TIMEOUT_MS` | `10000` | Tiempo máximo por petición al servicio |
 | `GATEWAY_MAX_BODY_BYTES` | `1048576` | Tamaño máximo del cuerpo |
+| `GATEWAY_SESSION_CHECK` | `off` | `identity`: revalida cada sesión en identity (`GET /auth/me`); exige `GATEWAY_AUTH_URL` y modo `jwt`. Compose lo activa |
+| `GATEWAY_SESSION_CACHE_TTL_MS` | `5000` | Tiempo que se reutiliza una sesión ya comprobada (ventana máxima de revocación) |
+| `GATEWAY_SESSION_CACHE_MAX` | `10000` | Sesiones en caché; se expulsa la más antigua |
 | `GATEWAY_TLS_REQUIRED` | `false` | Habilita HTTPS de entrada; exige certificado, clave y CA cliente |
 | `GATEWAY_TLS_CERT_FILE` · `_KEY_FILE` · `_CLIENT_CA_FILE` | — | Identidad TLS del Gateway y CA de los clientes mTLS internos |
 | `GATEWAY_UPSTREAM_TLS_REQUIRED` | `false` | Exige HTTPS/mTLS para todos los upstreams |
@@ -157,7 +205,8 @@ Compose activa los dos modos TLS y publica el Gateway únicamente detrás del WA
 | `src/routes.ts` | Catálogo de rutas, acceso y cuotas |
 | `src/router.ts` | Coincidencia de rutas y construcción de la ruta del servicio |
 | `src/jwt.ts` | Validación RS256 y caché del JWKS |
+| `src/session.ts` | Comprobación de la sesión en identity y su caché |
 | `src/rateLimit.ts` | Ventana fija por cliente y cuota |
 | `src/config.ts` | Variables de entorno |
-| `src/app.ts` | CORS, autenticación, reenvío y errores |
+| `src/app.ts` | CORS, autenticación, reenvío, saneamiento de respuestas y errores |
 | `src/server.ts` | Servidor HTTPS/mTLS en Compose |
