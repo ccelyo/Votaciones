@@ -21,12 +21,12 @@ completas están en [`evidencias/`](./evidencias/).
 
 | Prueba | Esperado | Resultado |
 |---|---|---|
-| Cliente → WAF (`:8088`) con la CA local | TLS verificado | TLS 1.3, `Verify return code: 0 (ok)` |
+| Cliente → WAF (`:8088`) con la autoridad de certificación local | TLS verificado | TLS 1.3, `Verify return code: 0 (ok)` |
 | Cliente → WAF por HTTP plano | Rechazo | 400 |
 | WAF → Gateway con certificado de cliente | 200 | 200 |
 | WAF → Gateway sin certificado de cliente | Rechazo | Handshake rechazado |
 | WAF → Gateway por HTTP plano | Rechazo | Conexión rechazada |
-| WAF → Gateway sin confiar en la CA | Rechazo | Certificado no verificado |
+| WAF → Gateway sin confiar en la autoridad de certificación | Rechazo | Certificado no verificado |
 | WAF → Platform con / sin certificado de cliente | 200 / rechazo | 200 / handshake rechazado |
 | Identity → Ballot por gRPC con mTLS | Funciona | El flujo de voto emite y recibe la papeleta |
 
