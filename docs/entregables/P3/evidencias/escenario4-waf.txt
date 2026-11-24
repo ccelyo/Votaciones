@@ -1,0 +1,32 @@
+WAF · API Gateway (https://localhost:8088) y Web SSR (https://localhost:3000)
+
+Ataques (deben dar 403):
+  ✔ block   403  SQLi en query (tautología)
+  ✔ block   403  SQLi UNION SELECT en query
+  ✔ block   403  SQLi en el JSON de login
+  ✔ block   403  SQLi en la web (BFF)
+  ✔ block   403  XSS reflejado en query
+  ✔ block   403  XSS en el cuerpo JSON
+  ✔ block   403  XSS en la web
+  ✔ block   403  Path traversal en la ruta
+  ✔ block   403  Path traversal codificado en query
+  ✔ block   403  Inyección de comandos (Unix)
+  ✔ block   403  Inyección de comandos en JSON
+  ✔ block   403  Log4Shell / JNDI en cabecera
+  ✔ block   403  Escáner (User-Agent sqlmap)
+  ✔ block   403  Escáner (User-Agent Nikto)
+  ✔ block   403  Acceso a archivo sensible (.env)
+  ✔ block   403  Inclusión remota de archivos (RFI)
+
+Tráfico legítimo (no debe dar 403):
+  ✔ allow   200  Catálogo de rutas del Gateway
+  ✔ allow   200  Salud del Gateway
+  ✔ allow   200  Elecciones abiertas (API)
+  ✔ allow   200  Login con credenciales válidas
+  ✔ allow   401  Login con contraseña con símbolos
+  ✔ allow   401  Ruta protegida sin token (401)
+  ✔ allow   200  Página de inicio (web)
+  ✔ allow   200  Página de login (web)
+  ✔ allow   200  Elecciones abiertas vía BFF (web)
+
+Resultado: 25 correctos, 0 fallidos.

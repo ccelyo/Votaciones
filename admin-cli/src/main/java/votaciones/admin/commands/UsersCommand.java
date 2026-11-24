@@ -24,7 +24,7 @@ public class UsersCommand {
     static class ListUsers extends AdminCommand {
         @Override
         void run() {
-            JsonNode users = cli().identity().get("/users");
+            JsonNode users = cli().api().get("/api/auth/users");
             if (printedAsJson(users)) {
                 return;
             }
@@ -58,7 +58,7 @@ public class UsersCommand {
                     throw new IllegalArgumentException("Las contraseñas no coinciden");
                 }
             }
-            JsonNode user = cli().identity().post("/users",
+            JsonNode user = cli().api().post("/api/auth/users",
                     Map.of("username", username, "password", password, "role", role));
             if (!printedAsJson(user)) {
                 out().println("Usuario " + text(user, "username") + " creado con id " + text(user, "id")
@@ -72,7 +72,7 @@ public class UsersCommand {
         int userId;
 
         void setActive(boolean active) {
-            JsonNode user = cli().identity().patch("/users/" + userId, Map.of("is_active", active));
+            JsonNode user = cli().api().patch("/api/auth/users/" + userId, Map.of("is_active", active));
             if (!printedAsJson(user)) {
                 out().println("Usuario " + text(user, "username") + (active ? " activado." : " desactivado."));
             }

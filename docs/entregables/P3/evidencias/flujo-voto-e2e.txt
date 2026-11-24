@@ -1,0 +1,25 @@
+POST /api/auth/login -> 200
+POST /api/auth/login/mfa -> 200
+POST /api/auth/login -> 200
+POST /api/auth/login/mfa -> 200
+GET /api/auth/me -> 200
+POST /api/elections -> 201
+{'election_id': '28', 'status': 'open'}
+POST /api/identity/elections/28/voters -> 201
+(201, {'user_id': 14, 'election_id': '28', 'is_eligible': True, 'has_voted': False})
+GET /api/ballots/elections/28/parameters -> 200
+POST /api/identity/tokens/blind -> 200
+{'kid': 'f190cacc965bcbb7', 'variant': 'RSABSSA-SHA384-PSS-Randomized'}
+POST /api/ballots -> 201
+(201, {'election_id': '28', 'ballot_hash': 'utS64mVG1YkQBhcQsoZOxQobG59_5U8t-az9vvEvJRk', 'receipt': 'eyJ2IjoxLCJlbGVjdGlvbl9pZCI6IjI4IiwiYmFsbG90X2hhc2giOiJ1dFM2NG1WRzFZa1FCaGNRc29aT3hRb2JHNTlfNVU4dC1hejl2dkV2SlJrIiwic2lnbmF0dXJlIjoidDFBbkFLYTZJdGx0REl5aHJZX2I4X281cFQ5VldTdTltemZGTXBUa25oUGtWUHRBZ1BoN3dDSmRPeWU0X243Zzk3ZE1mZWYzemVMMWx1Yk1ESnVhQVEifQ', 'replayed': False})
+POST /api/ballots -> 200
+replay: 200
+POST /api/elections/28/close -> 200
+200
+POST /api/tally/elections/28 -> 200
+(200, {'election_id': '28', 'total_ballots': 1, 'invalid_ballots': 0, 'results': [{'option': 'candidata-1', 'votes': 1}, {'option': 'candidato-2', 'votes': 0}, {'option': 'voto-en-blanco', 'votes': 0}], 'tallied_at': '2026-11-24T01:22:22.071397917Z', 'event_id': 'cced2ae4-ea9c-5d0d-a9e2-393185ea417c', 'reused': False})
+POST /api/tally/elections/28 -> 200
+(200, {'election_id': '28', 'total_ballots': 1, 'invalid_ballots': 0, 'results': [{'option': 'candidata-1', 'votes': 1}, {'option': 'candidato-2', 'votes': 0}, {'option': 'voto-en-blanco', 'votes': 0}], 'tallied_at': '2026-11-24T01:22:22.071397917Z', 'event_id': 'cced2ae4-ea9c-5d0d-a9e2-393185ea417c', 'reused': True})
+GET /api/tally/elections/28 -> 200
+(200, {'election_id': '28', 'total_ballots': 1, 'invalid_ballots': 0, 'results': [{'option': 'candidata-1', 'votes': 1}, {'option': 'candidato-2', 'votes': 0}, {'option': 'voto-en-blanco', 'votes': 0}], 'tallied_at': '2026-11-24T01:22:22.071397917Z', 'event_id': 'cced2ae4-ea9c-5d0d-a9e2-393185ea417c', 'reused': False})
+ELECTION_ID 28

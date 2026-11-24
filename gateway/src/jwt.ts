@@ -13,6 +13,8 @@ import { createPublicKey, type JsonWebKey, type KeyObject, verify } from "node:c
 export interface Principal {
   userId: string;
   roles: string[];
+  /** Claim `exp` del JWT, en segundos: limita cuánto puede guardarse la sesión en caché. */
+  expiresAt?: number;
 }
 
 /** El token no es válido: el cliente recibe 401. */
@@ -86,7 +88,7 @@ export async function verifyJwt(token: string, options: JwtOptions): Promise<Pri
     roles = claims.roles.filter((r): r is string => typeof r === "string");
   }
 
-  return { userId: sub, roles };
+  return { userId: sub, roles, expiresAt: claims.exp };
 }
 
 /** Convierte un JWK RSA de firma en clave pública; descarta lo que no sirva para RS256. */

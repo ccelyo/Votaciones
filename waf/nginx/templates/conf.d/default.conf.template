@@ -18,6 +18,28 @@ map $http_upgrade $connection_upgrade {
     '' close;
 }
 
+# Errores que genera el propio borde (403 de ModSecurity/CRS, 413 de
+# client_max_body_size, 400, 502/504 si el servicio no responde...). Sin esto,
+# nginx responde con su página HTML por defecto, que nombra "nginx" aunque
+# server_tokens esté apagado (escenario 2: no revelar la tecnología). Solo afecta
+# a errores del WAF: las respuestas de error del servicio pasan intactas porque
+# proxy_intercept_errors sigue apagado. $status conserva el código original.
+map $status $edge_error_code {
+    400     invalid_request;
+    403     forbidden;
+    404     not_found;
+    405     method_not_allowed;
+    408     request_timeout;
+    413     request_too_large;
+    414     request_too_large;
+    429     rate_limited;
+    500     internal_error;
+    502     upstream_unavailable;
+    503     upstream_unavailable;
+    504     upstream_timeout;
+    default request_error;
+}
+
 # Cabeceras comunes hacia el servicio. X-Forwarded-For se SOBRESCRIBE con la IP
 # real del cliente (no se añade a la del cliente): el Gateway usa la primera IP
 # de esa cabecera para el límite de tasa, y así un atacante no puede falsificarla.
@@ -50,7 +72,22 @@ server {
         proxy_ssl_server_name on;
         proxy_ssl_name platform;
 
+        # No anunciar el framework del servicio (escenario 2: limitar la exposición).
+        proxy_hide_header X-Powered-By;
+
         proxy_pass ${WEB_BACKEND};
+    }
+
+    error_page 400 403 404 405 408 413 414 429 500 502 503 504 /__edge_error.json;
+    location = /__edge_error.json {
+        internal;
+        modsecurity off;
+        # Sin esto, nginx vuelve a comprobar el tamaño del cuerpo contra el límite por
+        # defecto (1 MB) al redirigir aquí y responde un 413 con su página HTML.
+        client_max_body_size 0;
+        default_type application/json;
+        add_header Cache-Control "no-store" always;
+        return 200 '{"error":{"code":"$edge_error_code","message":"No se pudo completar la solicitud."}}';
     }
 
     include includes/location_common.conf;
@@ -83,7 +120,21 @@ server {
         proxy_ssl_server_name on;
         proxy_ssl_name gateway;
 
+        proxy_hide_header X-Powered-By;
+
         proxy_pass ${API_BACKEND};
+    }
+
+    error_page 400 403 404 405 408 413 414 429 500 502 503 504 /__edge_error.json;
+    location = /__edge_error.json {
+        internal;
+        modsecurity off;
+        # Sin esto, nginx vuelve a comprobar el tamaño del cuerpo contra el límite por
+        # defecto (1 MB) al redirigir aquí y responde un 413 con su página HTML.
+        client_max_body_size 0;
+        default_type application/json;
+        add_header Cache-Control "no-store" always;
+        return 200 '{"error":{"code":"$edge_error_code","message":"No se pudo completar la solicitud."}}';
     }
 
     # Sin location_common: /healthz y /readyz son del Gateway, no del WAF.

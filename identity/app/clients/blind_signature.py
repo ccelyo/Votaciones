@@ -41,7 +41,9 @@ class HttpBlindSigner:
         except httpx.HTTPError as error:
             raise BlindSignatureUnavailable("blind signature service unreachable") from error
         if response.status_code == 400:
-            raise InvalidRequest(response.json().get("detail", "invalid blinded message"))
+            # No se reenvía el `detail` del servicio interno: el cliente solo necesita
+            # saber que el mensaje cegado no es válido (escenario de seguridad 2).
+            raise InvalidRequest("invalid blinded message")
         if response.status_code != 200:
             raise BlindSignatureUnavailable(
                 f"blind signature service error ({response.status_code})"

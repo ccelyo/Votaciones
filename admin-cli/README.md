@@ -1,8 +1,11 @@
 # CLI de administración (Java)
 
-Cliente de consola para los administradores: inicia sesión contra identity (o el Gateway)
-con usuario, contraseña y MFA, guarda el **JWT** y lo usa para crear, abrir y cerrar urnas,
-gestionar el padrón y los usuarios, lanzar el escrutinio y consultar resultados.
+Cliente de consola para los administradores. Habla **solo con el API Gateway**
+(`https://localhost:8088`, WAF → Gateway) y únicamente por rutas `/api/...` de su catálogo:
+inicia sesión con usuario, contraseña y MFA, guarda el **JWT** y lo usa para crear, abrir y
+cerrar urnas, gestionar el padrón y los usuarios, lanzar el escrutinio y consultar resultados.
+`ApiClient` rechaza cualquier ruta que no empiece por `/api/`, así que la CLI no puede
+saltarse el WAF ni el Gateway llamando directamente a un servicio (escenario de seguridad 2).
 
 Los resultados se leen de la API pública de `ballot` **sin credenciales**: la CLI nunca envía el
 JWT a la zona de votación.
@@ -105,8 +108,9 @@ Papeletas: 3 (válidas 3, inválidas 0)
 
 ## Pruebas
 
-`./mvnw test` levanta un servidor HTTP en memoria que hace de identity y de ballot
-(`FakeServer`) y ejecuta la CLI real. Cubre el login con MFA, la sesión (ausente, vencida, de
+`./mvnw test` levanta un servidor HTTP en memoria que hace de API Gateway
+(`FakeServer`) y ejecuta la CLI real. Una prueba ejecuta todos los comandos y comprueba que
+cada petición va a una ruta `/api/...`. Cubre el login con MFA, la sesión (ausente, vencida, de
 otro servidor, rechazada), el cuerpo exacto de cada operación administrativa, las
 confirmaciones, el escrutinio sin enviar credenciales a ballot y el mapeo de errores.
 
@@ -115,6 +119,6 @@ confirmaciones, el escrutinio sin enviar credenciales a ballot y el mapeo de err
 | Archivo | Responsabilidad |
 |---|---|
 | `AdminCli.java` | Comando raíz, opciones globales, manejo de errores y códigos de salida |
-| `ApiClient.java` | HTTP/JSON (HTTP/1.1) y traducción de errores de identity y ballot |
+| `ApiClient.java` | HTTP/JSON (HTTP/1.1) hacia el Gateway, solo rutas `/api/...`, y traducción de errores |
 | `SessionStore.java` | `session.json`: JWT y claims (`username`, `role`, `exp`) |
 | `commands/` | `login`, `logout`, `whoami`, `elections`, `voters`, `users` |
