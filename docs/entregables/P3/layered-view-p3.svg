@@ -1,213 +1,303 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1700 1078" width="100%" font-family="'Open Sans','Segoe UI',Arial,sans-serif">
-<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#444"/></marker><marker id="arrRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#D32F2F"/></marker><marker id="arrGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9E9E9E"/></marker><marker id="arrPur" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8E24AA"/></marker></defs>
-<rect width="1700" height="1078" fill="#fff"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1700 1180" width="100%" font-family="'Open Sans','Segoe UI',Arial,sans-serif"><rect width="1700" height="1180" fill="#fff"/>
 <text x="850.0" y="34.0" font-size="22" font-weight="600" text-anchor="middle" fill="#222">Votaciones (espivota) · Vista por capas del sistema (Prototipo 3)</text>
-<rect x="30.0" y="64.0" width="1640.0" height="150.0" rx="6" fill="#E3F2FD" stroke="#1E88E5" stroke-width="2"/>
-<rect x="30.0" y="64.0" width="170.0" height="150.0" rx="6" fill="#1E88E5" stroke="#1E88E5" stroke-width="2"/>
-<text x="115.0" y="133.0" font-size="13" font-weight="600" text-anchor="middle" fill="#fff">Capa 5</text>
-<text x="115.0" y="152.0" font-size="15" font-weight="600" text-anchor="middle" fill="#fff">Presentación</text>
-<rect x="30.0" y="248.0" width="1640.0" height="92.0" rx="6" fill="#FFEBEE" stroke="#E53935" stroke-width="2"/>
-<rect x="30.0" y="248.0" width="170.0" height="92.0" rx="6" fill="#E53935" stroke="#E53935" stroke-width="2"/>
-<text x="115.0" y="288.0" font-size="13" font-weight="600" text-anchor="middle" fill="#fff">Capa 4</text>
-<text x="115.0" y="307.0" font-size="15" font-weight="600" text-anchor="middle" fill="#fff">Borde</text>
-<rect x="30.0" y="374.0" width="1640.0" height="120.0" rx="6" fill="#FFF8E1" stroke="#F9A825" stroke-width="2"/>
-<rect x="30.0" y="374.0" width="170.0" height="120.0" rx="6" fill="#F9A825" stroke="#F9A825" stroke-width="2"/>
-<text x="115.0" y="428.0" font-size="13" font-weight="600" text-anchor="middle" fill="#fff">Capa 3</text>
-<text x="115.0" y="447.0" font-size="15" font-weight="600" text-anchor="middle" fill="#fff">Comunicación</text>
-<rect x="30.0" y="528.0" width="1640.0" height="190.0" rx="6" fill="#E8F5E9" stroke="#00A651" stroke-width="2"/>
-<rect x="30.0" y="528.0" width="170.0" height="190.0" rx="6" fill="#00A651" stroke="#00A651" stroke-width="2"/>
-<text x="115.0" y="617.0" font-size="13" font-weight="600" text-anchor="middle" fill="#fff">Capa 2</text>
-<text x="115.0" y="636.0" font-size="15" font-weight="600" text-anchor="middle" fill="#fff">Lógica de negocio</text>
-<rect x="30.0" y="752.0" width="1640.0" height="196.0" rx="6" fill="#FFF3E0" stroke="#FB8C00" stroke-width="2"/>
-<rect x="30.0" y="752.0" width="170.0" height="196.0" rx="6" fill="#FB8C00" stroke="#FB8C00" stroke-width="2"/>
-<text x="115.0" y="844.0" font-size="13" font-weight="600" text-anchor="middle" fill="#fff">Capa 1</text>
-<text x="115.0" y="863.0" font-size="15" font-weight="600" text-anchor="middle" fill="#fff">Datos y mensajería</text>
-<rect x="224.0" y="78.0" width="700.0" height="122.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
-<text x="236.0" y="98.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">Web SSR · Cliente navegador</text>
-<text x="452.0" y="98.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">Next.js · TypeScript (en el navegador)</text>
-<text x="236.0" y="124.0" font-size="11" font-weight="normal" text-anchor="start" fill="#444">UI hidratada para votantes y administradores.</text>
-<text x="236.0" y="140.0" font-size="11" font-weight="normal" text-anchor="start" fill="#444">Ciega el token y cifra el voto antes de enviarlo.</text>
-<text x="236.0" y="166.0" font-size="11" font-weight="normal" text-anchor="start" fill="#444">Solo conoce la URL pública del WAF (:3000).</text>
-<rect x="946.0" y="78.0" width="330.0" height="122.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
-<text x="958.0" y="98.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">App móvil</text>
-<text x="958.0" y="114.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">Flutter · Dart</text>
-<text x="958.0" y="140.0" font-size="11" font-weight="normal" text-anchor="start" fill="#444">Login, urnas abiertas, voto y recibo.</text>
-<text x="958.0" y="156.0" font-size="11" font-weight="normal" text-anchor="start" fill="#444">Ciega el token y cifra el voto.</text>
-<rect x="1298.0" y="78.0" width="362.0" height="122.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
-<text x="1310.0" y="98.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">CLI administración</text>
-<text x="1310.0" y="114.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">Java · picocli</text>
-<text x="1310.0" y="140.0" font-size="11" font-weight="normal" text-anchor="start" fill="#444">Usuarios, padrón, urnas y resultados.</text>
-<text x="1310.0" y="166.0" font-size="11" font-weight="600" text-anchor="start" fill="#2E7D32">Solo rutas /api/... a través del WAF</text>
-<text x="1310.0" y="181.0" font-size="11" font-weight="600" text-anchor="start" fill="#2E7D32">y el Gateway (ApiClient rechaza las demás).</text>
-<line x1="574.0" y1="200.0" x2="574.0" y2="262.0" stroke="#444" stroke-width="2" marker-end="url(#arr)"/>
-<text x="582.0" y="235.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#555">HTTPS · TLS</text>
-<line x1="1111.0" y1="200.0" x2="1111.0" y2="262.0" stroke="#444" stroke-width="2" marker-end="url(#arr)"/>
-<text x="1119.0" y="235.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#555">HTTPS · TLS</text>
-<line x1="1479.0" y1="200.0" x2="1479.0" y2="262.0" stroke="#444" stroke-width="2" marker-end="url(#arr)"/>
-<text x="1487.0" y="235.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#555">HTTPS · TLS</text>
-<rect x="224.0" y="262.0" width="1372.0" height="64.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
-<text x="236.0" y="284.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">WAF · reverse proxy de borde</text>
-<text x="452.0" y="284.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">nginx + ModSecurity v3 · OWASP CRS 4.25</text>
-<rect x="236.0" y="296.0" width="305.4" height="22.0" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
-<text x="243.0" y="311.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Única entrada publicada (:3000 web · :8088 API)</text>
-<rect x="549.4" y="296.0" width="107.0" height="22.0" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
-<text x="556.4" y="311.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Terminación TLS</text>
-<rect x="664.4" y="296.0" width="138.0" height="22.0" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
-<text x="671.4" y="311.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Inspección CRS → 403</text>
-<rect x="810.4" y="296.0" width="100.8" height="22.0" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
-<text x="817.4" y="311.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Audit log JSON</text>
-<rect x="919.2" y="296.0" width="181.4" height="22.0" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
-<text x="926.2" y="311.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Sobrescribe X-Forwarded-For</text>
-<rect x="1108.6" y="296.0" width="156.6" height="22.0" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
-<text x="1115.6" y="311.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Errores propios en JSON</text>
-<rect x="224.0" y="388.0" width="300.0" height="92.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
-<text x="236.0" y="408.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">Web SSR · Servidor SSR</text>
-<text x="236.0" y="424.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">Next.js · TypeScript</text>
-<text x="236.0" y="448.0" font-size="11" font-weight="normal" text-anchor="start" fill="#444">Renderiza páginas y hace de BFF:</text>
-<text x="236.0" y="464.0" font-size="11" font-weight="normal" text-anchor="start" fill="#444">reenvía /api/* al Gateway (JWT en cookie).</text>
-<rect x="548.0" y="388.0" width="1048.0" height="92.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
-<text x="560.0" y="408.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">API Gateway · reverse proxy de aplicación</text>
-<text x="872.0" y="408.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">Node.js · TypeScript</text>
-<rect x="560.0" y="420.0" width="193.8" height="22.0" rx="3" fill="#FFFDE7" stroke="#F9A825" stroke-width="1.3"/>
-<text x="567.0" y="435.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Catálogo de rutas (allowlist)</text>
-<rect x="761.8" y="420.0" width="181.4" height="22.0" rx="3" fill="#FFFDE7" stroke="#F9A825" stroke-width="1.3"/>
-<text x="768.8" y="435.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Validación JWT RS256 (JWKS)</text>
-<rect x="951.2" y="420.0" width="175.2" height="22.0" rx="3" fill="#FFFDE7" stroke="#F9A825" stroke-width="1.3"/>
-<text x="958.2" y="435.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Sesión vigente en Identity</text>
-<rect x="1134.4" y="420.0" width="88.4" height="22.0" rx="3" fill="#FFFDE7" stroke="#F9A825" stroke-width="1.3"/>
-<text x="1141.4" y="435.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Rol por ruta</text>
-<rect x="560.0" y="450.0" width="107.0" height="22.0" rx="3" fill="#FFFDE7" stroke="#F9A825" stroke-width="1.3"/>
-<text x="567.0" y="465.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Límites de tasa</text>
-<rect x="675.0" y="450.0" width="38.8" height="22.0" rx="3" fill="#FFFDE7" stroke="#F9A825" stroke-width="1.3"/>
-<text x="682.0" y="465.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">CORS</text>
-<rect x="721.8" y="450.0" width="169.0" height="22.0" rx="3" fill="#FFFDE7" stroke="#F9A825" stroke-width="1.3"/>
-<text x="728.8" y="465.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Ruta anónima /api/ballots</text>
-<rect x="898.8" y="450.0" width="293.0" height="22.0" rx="3" fill="#FFFDE7" stroke="#F9A825" stroke-width="1.3"/>
-<text x="905.8" y="465.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Respuestas saneadas (sin hosts ni frameworks)</text>
-<line x1="374.0" y1="326.0" x2="374.0" y2="388.0" stroke="#444" stroke-width="2" marker-end="url(#arr)"/>
-<text x="382.0" y="361.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#555">mTLS · web</text>
-<line x1="1111.0" y1="326.0" x2="1111.0" y2="388.0" stroke="#444" stroke-width="2" marker-end="url(#arr)"/>
-<text x="1119.0" y="361.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#555">mTLS · API</text>
-<line x1="524.0" y1="434.0" x2="548.0" y2="434.0" stroke="#444" stroke-width="1.8" marker-end="url(#arr)"/>
-
-
-<rect x="224.0" y="558.0" width="140.0" height="104.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
-<text x="294.0" y="580.0" font-size="14" font-weight="600" text-anchor="middle" fill="#222">Auth</text>
-<text x="294.0" y="596.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#666">Python · FastAPI</text>
-<text x="294.0" y="620.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">Usuarios, roles,</text>
-<text x="294.0" y="635.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">login MFA y JWT</text>
-<rect x="400.0" y="558.0" width="140.0" height="104.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
-<text x="470.0" y="580.0" font-size="14" font-weight="600" text-anchor="middle" fill="#222">Identity</text>
-<text x="470.0" y="596.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#666">Python · FastAPI</text>
-<text x="470.0" y="620.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">Padrón, elegibilidad</text>
-<text x="470.0" y="635.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">y credencial anónima</text>
-<rect x="576.0" y="558.0" width="140.0" height="104.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
-<text x="646.0" y="580.0" font-size="14" font-weight="600" text-anchor="middle" fill="#222">Blind Signature</text>
-<text x="646.0" y="596.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#666">Python · FastAPI</text>
-<text x="646.0" y="620.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">Firma ciega RSA</text>
-<text x="646.0" y="635.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">(RFC 9474)</text>
-<rect x="752.0" y="558.0" width="140.0" height="104.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
-<text x="822.0" y="580.0" font-size="14" font-weight="600" text-anchor="middle" fill="#222">Election</text>
-<text x="822.0" y="596.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#666">Python · FastAPI</text>
-<text x="822.0" y="620.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">Urnas, opciones,</text>
-<text x="822.0" y="635.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">reglas y llaves</text>
-<rect x="928.0" y="558.0" width="140.0" height="104.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
-<text x="998.0" y="580.0" font-size="14" font-weight="600" text-anchor="middle" fill="#222">Ballot</text>
-<text x="998.0" y="596.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#666">Go</text>
-<text x="998.0" y="620.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">Voto anónimo, token</text>
-<text x="998.0" y="635.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">gastado y recibo</text>
-<rect x="1104.0" y="558.0" width="140.0" height="104.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
-<text x="1174.0" y="580.0" font-size="14" font-weight="600" text-anchor="middle" fill="#222">Tally</text>
-<text x="1174.0" y="596.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#666">Go</text>
-<text x="1174.0" y="620.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">Descifra y cuenta</text>
-<text x="1174.0" y="635.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">la urna cerrada</text>
-<rect x="1280.0" y="558.0" width="140.0" height="104.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
-<text x="1350.0" y="580.0" font-size="14" font-weight="600" text-anchor="middle" fill="#222">Analytics</text>
-<text x="1350.0" y="596.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#666">Rust · axum</text>
-<text x="1350.0" y="620.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">Participación y</text>
-<text x="1350.0" y="635.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">resultados</text>
-<rect x="1456.0" y="558.0" width="140.0" height="104.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
-<text x="1526.0" y="580.0" font-size="14" font-weight="600" text-anchor="middle" fill="#222">Notifications</text>
-<text x="1526.0" y="596.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#666">Node.js · TypeScript</text>
-<text x="1526.0" y="620.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">Registro de</text>
-<text x="1526.0" y="635.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">notificaciones</text>
-<rect x="218.0" y="538.0" width="328.0" height="130.0" rx="5" fill="none" stroke="#666" stroke-width="1.3" stroke-dasharray="5 4"/>
-<text x="224.0" y="551.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#555" font-style="italic">mismo despliegue: identity/</text>
-<line x1="294.0" y1="480.0" x2="294.0" y2="536.0" stroke="#444" stroke-width="1.8" marker-end="url(#arr)"/>
-<line x1="470.0" y1="480.0" x2="470.0" y2="536.0" stroke="#444" stroke-width="1.8" marker-end="url(#arr)"/>
-<line x1="998.0" y1="480.0" x2="998.0" y2="556.0" stroke="#444" stroke-width="1.8" marker-end="url(#arr)"/>
-<line x1="1174.0" y1="480.0" x2="1174.0" y2="556.0" stroke="#444" stroke-width="1.8" marker-end="url(#arr)"/>
-<line x1="1350.0" y1="480.0" x2="1350.0" y2="556.0" stroke="#444" stroke-width="1.8" marker-end="url(#arr)"/>
-<line x1="1526.0" y1="480.0" x2="1526.0" y2="556.0" stroke="#444" stroke-width="1.8" marker-end="url(#arr)"/>
-<line x1="822.0" y1="480.0" x2="822.0" y2="556.0" stroke="#9E9E9E" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#arrGray)"/>
-<text x="646.0" y="506.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#888" font-style="italic">sin ruta</text>
-<line x1="540.0" y1="628.0" x2="576.0" y2="628.0" stroke="#444" stroke-width="1.6" marker-end="url(#arr)"/>
-<text x="558.0" y="620.0" font-size="9" font-weight="normal" text-anchor="middle" fill="#555">HTTP</text>
-<line x1="1104.0" y1="628.0" x2="1068.0" y2="628.0" stroke="#444" stroke-width="1.6" marker-end="url(#arr)"/>
-<text x="1086.0" y="620.0" font-size="9" font-weight="normal" text-anchor="middle" fill="#555">mTLS</text>
-<path d="M470.0,662.0 L470.0,684.0 L977.0,684.0 L977.0,663.0" fill="none" stroke="#444" stroke-width="1.6" marker-end="url(#arr)"/>
-<text x="723.5" y="679.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#555">gRPC · mTLS (administración de urnas)</text>
-<path d="M224.0,775.0 L224.0,819.0 A50.4,7 0 0 0 324.8,819.0 L324.8,775.0" fill="#fff" stroke="#808080" stroke-width="2"/>
-<ellipse cx="274.4" cy="775.0" rx="50.4" ry="7" fill="#fff" stroke="#808080" stroke-width="2"/>
-<text x="274.4" y="800.0" font-size="12.5" font-weight="600" text-anchor="middle" fill="#222">Auth DB</text>
-<text x="274.4" y="815.0" font-size="9.5" font-weight="normal" text-anchor="middle" fill="#666">PostgreSQL</text>
-<line x1="274.4" y1="662.0" x2="274.4" y2="768.0" stroke="#444" stroke-width="1.6" marker-end="url(#arr)"/>
-<path d="M400.0,775.0 L400.0,819.0 A50.4,7 0 0 0 500.8,819.0 L500.8,775.0" fill="#fff" stroke="#808080" stroke-width="2"/>
-<ellipse cx="450.4" cy="775.0" rx="50.4" ry="7" fill="#fff" stroke="#808080" stroke-width="2"/>
-<text x="450.4" y="800.0" font-size="12.5" font-weight="600" text-anchor="middle" fill="#222">Census</text>
-<text x="450.4" y="815.0" font-size="9.5" font-weight="normal" text-anchor="middle" fill="#666">PostgreSQL</text>
-<line x1="450.4" y1="662.0" x2="450.4" y2="768.0" stroke="#444" stroke-width="1.6" marker-end="url(#arr)"/>
-<path d="M576.0,775.0 L576.0,819.0 A50.4,7 0 0 0 676.8,819.0 L676.8,775.0" fill="#fff" stroke="#808080" stroke-width="2"/>
-<ellipse cx="626.4" cy="775.0" rx="50.4" ry="7" fill="#fff" stroke="#808080" stroke-width="2"/>
-<text x="626.4" y="800.0" font-size="12.5" font-weight="600" text-anchor="middle" fill="#222">Claves RSA</text>
-<text x="626.4" y="815.0" font-size="9.5" font-weight="normal" text-anchor="middle" fill="#666">volumen de archivos</text>
-<line x1="626.4" y1="662.0" x2="626.4" y2="768.0" stroke="#444" stroke-width="1.6" marker-end="url(#arr)"/>
-<path d="M752.0,775.0 L752.0,819.0 A50.4,7 0 0 0 852.8,819.0 L852.8,775.0" fill="#fff" stroke="#808080" stroke-width="2"/>
-<ellipse cx="802.4" cy="775.0" rx="50.4" ry="7" fill="#fff" stroke="#808080" stroke-width="2"/>
-<text x="802.4" y="800.0" font-size="12.5" font-weight="600" text-anchor="middle" fill="#222">Elections</text>
-<text x="802.4" y="815.0" font-size="9.5" font-weight="normal" text-anchor="middle" fill="#666">PostgreSQL</text>
-<line x1="802.4" y1="662.0" x2="802.4" y2="768.0" stroke="#444" stroke-width="1.6" marker-end="url(#arr)"/>
-<path d="M928.0,775.0 L928.0,819.0 A50.4,7 0 0 0 1028.8,819.0 L1028.8,775.0" fill="#fff" stroke="#808080" stroke-width="2"/>
-<ellipse cx="978.4" cy="775.0" rx="50.4" ry="7" fill="#fff" stroke="#808080" stroke-width="2"/>
-<text x="978.4" y="800.0" font-size="12.5" font-weight="600" text-anchor="middle" fill="#222">Votes</text>
-<text x="978.4" y="815.0" font-size="9.5" font-weight="normal" text-anchor="middle" fill="#666">MongoDB (réplica)</text>
-<line x1="978.4" y1="662.0" x2="978.4" y2="768.0" stroke="#444" stroke-width="1.6" marker-end="url(#arr)"/>
-<rect x="1104.0" y="768.0" width="100.8" height="58.0" rx="4" fill="none" stroke="#BDBDBD" stroke-width="1.3" stroke-dasharray="4 3"/>
-<text x="1154.4" y="794.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#888" font-style="italic">sin almacén</text>
-<text x="1154.4" y="808.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#888" font-style="italic">propio</text>
-<path d="M1280.0,775.0 L1280.0,819.0 A50.4,7 0 0 0 1380.8,819.0 L1380.8,775.0" fill="#fff" stroke="#808080" stroke-width="2"/>
-<ellipse cx="1330.4" cy="775.0" rx="50.4" ry="7" fill="#fff" stroke="#808080" stroke-width="2"/>
-<text x="1330.4" y="800.0" font-size="12.5" font-weight="600" text-anchor="middle" fill="#222">Results</text>
-<text x="1330.4" y="815.0" font-size="9.5" font-weight="normal" text-anchor="middle" fill="#666">MongoDB</text>
-<line x1="1330.4" y1="662.0" x2="1330.4" y2="768.0" stroke="#444" stroke-width="1.6" marker-end="url(#arr)"/>
-<path d="M1456.0,775.0 L1456.0,819.0 A50.4,7 0 0 0 1556.8,819.0 L1556.8,775.0" fill="#fff" stroke="#808080" stroke-width="2"/>
-<ellipse cx="1506.4" cy="775.0" rx="50.4" ry="7" fill="#fff" stroke="#808080" stroke-width="2"/>
-<text x="1506.4" y="800.0" font-size="12.5" font-weight="600" text-anchor="middle" fill="#222">Notif. record</text>
-<text x="1506.4" y="815.0" font-size="9.5" font-weight="normal" text-anchor="middle" fill="#666">MongoDB</text>
-<line x1="1506.4" y1="662.0" x2="1506.4" y2="768.0" stroke="#444" stroke-width="1.6" marker-end="url(#arr)"/>
-<rect x="748.0" y="856.0" width="852.0" height="62.0" rx="5" fill="#F3E5F5" stroke="#8E24AA" stroke-width="2.2"/>
-<text x="1174.0" y="880.0" font-size="14" font-weight="600" text-anchor="middle" fill="#6A1B9A">Message Broker · RabbitMQ</text>
-<text x="1174.0" y="899.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#6A1B9A">election.events · votes.events · tally.events · identity.events (exchanges topic duraderos, colas con DLQ)</text>
-<line x1="875.2" y1="662.0" x2="875.2" y2="856.0" stroke="#8E24AA" stroke-width="1.6" marker-end="url(#arrPur)"/>
-<text x="871.2" y="850.0" font-size="10" font-weight="600" text-anchor="end" fill="#8E24AA">pub</text>
-<line x1="1051.2" y1="662.0" x2="1051.2" y2="856.0" stroke="#8E24AA" stroke-width="1.6" marker-start="url(#arrPur)" marker-end="url(#arrPur)"/>
-<text x="1047.2" y="850.0" font-size="10" font-weight="600" text-anchor="end" fill="#8E24AA">pub · sub</text>
-<line x1="1227.2" y1="662.0" x2="1227.2" y2="856.0" stroke="#8E24AA" stroke-width="1.6" marker-end="url(#arrPur)"/>
-<text x="1223.2" y="850.0" font-size="10" font-weight="600" text-anchor="end" fill="#8E24AA">pub</text>
-<line x1="1403.2" y1="856.0" x2="1403.2" y2="662.0" stroke="#8E24AA" stroke-width="1.6" marker-end="url(#arrPur)"/>
-<text x="1399.2" y="850.0" font-size="10" font-weight="600" text-anchor="end" fill="#8E24AA">sub</text>
-<line x1="1579.2" y1="856.0" x2="1579.2" y2="662.0" stroke="#8E24AA" stroke-width="1.6" marker-end="url(#arrPur)"/>
-<text x="1575.2" y="850.0" font-size="10" font-weight="600" text-anchor="end" fill="#8E24AA">sub</text>
-<text x="224.0" y="880.0" font-size="11.5" font-weight="600" text-anchor="start" fill="#555">Cada servicio es dueño de su almacén:</text>
-<text x="224.0" y="897.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#555">ningún otro servicio lo consulta directamente.</text>
-
-<rect x="30.0" y="972.0" width="1640.0" height="92.0" rx="5" fill="#fff" stroke="#ddd" stroke-width="2"/>
-<text x="46.0" y="994.0" font-size="14" font-weight="600" text-anchor="start" fill="#222">Notación</text>
-<line x1="46.0" y1="1018.0" x2="92.0" y2="1018.0" stroke="#444" stroke-width="2" marker-end="url(#arr)"/>
-<text x="104.0" y="1022.0" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Puede usar (llamada síncrona hacia la capa inferior o dentro de la misma capa); entre contenedores, por mTLS</text>
-<line x1="46.0" y1="1044.0" x2="92.0" y2="1044.0" stroke="#8E24AA" stroke-width="2" marker-end="url(#arrPur)"/>
-<text x="104.0" y="1048.0" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Publica / consume eventos a través del broker</text>
-<line x1="846.0" y1="1044.0" x2="892.0" y2="1044.0" stroke="#9E9E9E" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrGray)"/>
-<text x="904.0" y="1048.0" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Uso previsto que aún no está conectado en la configuración</text>
-<text x="1010.0" y="1022.0" font-size="12" font-weight="normal" text-anchor="start" fill="#555">Identity → Blind Signature: HTTP con token interno (sin mTLS)</text>
-</svg>
+<rect x="30.0" y="64.0" width="1640.0" height="140.0" rx="6" fill="#E3F2FD" stroke="#1E88E5" stroke-width="2"/>
+<rect x="30.0" y="64.0" width="170.0" height="140.0" rx="6" fill="#1E88E5" stroke="#1E88E5" stroke-width="2"/>
+<text x="115.0" y="128.0" font-size="13" font-weight="600" text-anchor="middle" fill="#fff">Capa 5</text>
+<text x="115.0" y="147.0" font-size="15" font-weight="600" text-anchor="middle" fill="#fff">Presentación</text>
+<rect x="224.0" y="78.0" width="560.0" height="112.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="236.0" y="100.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">Web SSR · Cliente navegador</text>
+<text x="478.2" y="100.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">Next.js · TypeScript</text>
+<rect x="236.0" y="112.0" width="122.5" height="22.0" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="243.0" y="127.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Componentes de UI</text>
+<rect x="366.5" y="112.0" width="122.5" height="22.0" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="373.5" y="127.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Cliente de la API</text>
+<rect x="496.9" y="112.0" width="218.2" height="22.0" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="503.9" y="127.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Token, cegado y cifrado del voto</text>
+<rect x="236.0" y="140.0" width="109.7" height="22.0" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="243.0" y="155.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Tipos y formato</text>
+<rect x="800.0" y="78.0" width="400.0" height="112.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="812.0" y="100.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">App móvil</text>
+<text x="899.4" y="100.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">Flutter · Dart</text>
+<rect x="812.0" y="112.0" width="71.4" height="22.0" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="819.0" y="127.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Pantallas</text>
+<rect x="891.4" y="112.0" width="103.3" height="22.0" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="898.4" y="127.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Flujo del voto</text>
+<rect x="1002.7" y="112.0" width="135.2" height="22.0" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="1009.7" y="127.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Cliente del Gateway</text>
+<rect x="812.0" y="140.0" width="160.7" height="22.0" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="819.0" y="155.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Token, cegado y cifrado</text>
+<rect x="1216.0" y="78.0" width="444.0" height="112.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="1228.0" y="100.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">CLI administración</text>
+<text x="1392.8" y="100.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">Java · picocli</text>
+<rect x="1228.0" y="112.0" width="116.1" height="22.0" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="1235.0" y="127.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Punto de entrada</text>
+<rect x="1352.1" y="112.0" width="84.2" height="22.0" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="1359.1" y="127.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Subcomandos</text>
+<rect x="1444.3" y="112.0" width="90.6" height="22.0" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="1451.3" y="127.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Cliente HTTP</text>
+<rect x="1228.0" y="140.0" width="122.5" height="22.0" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="1235.0" y="155.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Sesión del admin.</text>
+<rect x="1358.5" y="140.0" width="58.7" height="22.0" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="1365.5" y="155.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Errores</text>
+<rect x="30.0" y="218.0" width="1640.0" height="92.0" rx="6" fill="#FFEBEE" stroke="#E53935" stroke-width="2"/>
+<rect x="30.0" y="218.0" width="170.0" height="92.0" rx="6" fill="#E53935" stroke="#E53935" stroke-width="2"/>
+<text x="115.0" y="258.0" font-size="13" font-weight="600" text-anchor="middle" fill="#fff">Capa 4</text>
+<text x="115.0" y="277.0" font-size="15" font-weight="600" text-anchor="middle" fill="#fff">Borde</text>
+<rect x="224.0" y="230.0" width="1436.0" height="68.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="236.0" y="252.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">WAF · reverse proxy de borde</text>
+<text x="486.8" y="252.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">nginx + ModSecurity v3 · OWASP CRS 4.25</text>
+<rect x="236.0" y="264.0" width="313.9" height="22.0" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="243.0" y="279.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Única entrada publicada (:3000 web · :8088 API)</text>
+<rect x="557.9" y="264.0" width="109.7" height="22.0" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="564.9" y="279.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Terminación TLS</text>
+<rect x="675.6" y="264.0" width="141.6" height="22.0" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="682.6" y="279.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Inspección CRS → 403</text>
+<rect x="825.2" y="264.0" width="135.2" height="22.0" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="832.2" y="279.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Exclusiones propias</text>
+<rect x="968.4" y="264.0" width="103.3" height="22.0" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="975.4" y="279.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Audit log JSON</text>
+<rect x="1079.7" y="264.0" width="186.3" height="22.0" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="1086.7" y="279.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Sobrescribe X-Forwarded-For</text>
+<rect x="1274.0" y="264.0" width="160.7" height="22.0" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="1281.0" y="279.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Errores propios en JSON</text>
+<rect x="30.0" y="324.0" width="1640.0" height="128.0" rx="6" fill="#FFF8E1" stroke="#F9A825" stroke-width="2"/>
+<rect x="30.0" y="324.0" width="170.0" height="128.0" rx="6" fill="#F9A825" stroke="#F9A825" stroke-width="2"/>
+<text x="115.0" y="382.0" font-size="13" font-weight="600" text-anchor="middle" fill="#fff">Capa 3</text>
+<text x="115.0" y="401.0" font-size="15" font-weight="600" text-anchor="middle" fill="#fff">Comunicación</text>
+<rect x="224.0" y="336.0" width="420.0" height="104.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="236.0" y="358.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">Web SSR · Servidor SSR</text>
+<text x="435.2" y="358.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">Next.js</text>
+<rect x="236.0" y="370.0" width="84.2" height="22.0" rx="3" fill="#FFFDE7" stroke="#F9A825" stroke-width="1.3"/>
+<text x="243.0" y="385.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Páginas SSR</text>
+<rect x="328.2" y="370.0" width="77.8" height="22.0" rx="3" fill="#FFFDE7" stroke="#F9A825" stroke-width="1.3"/>
+<text x="335.2" y="385.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">BFF /api/*</text>
+<rect x="414.0" y="370.0" width="135.2" height="22.0" rx="3" fill="#FFFDE7" stroke="#F9A825" stroke-width="1.3"/>
+<text x="421.0" y="385.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Cliente del Gateway</text>
+<rect x="660.0" y="336.0" width="1000.0" height="104.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="672.0" y="358.0" font-size="15" font-weight="600" text-anchor="start" fill="#222">API Gateway · reverse proxy de aplicación</text>
+<text x="1034.6" y="358.0" font-size="11" font-weight="normal" text-anchor="start" fill="#666">Node.js · TypeScript</text>
+<rect x="672.0" y="370.0" width="199.0" height="22.0" rx="3" fill="#FFFDE7" stroke="#F9A825" stroke-width="1.3"/>
+<text x="679.0" y="385.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Catálogo de rutas (allowlist)</text>
+<rect x="879.0" y="370.0" width="186.3" height="22.0" rx="3" fill="#FFFDE7" stroke="#F9A825" stroke-width="1.3"/>
+<text x="886.0" y="385.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Validación JWT RS256 (JWKS)</text>
+<rect x="1073.3" y="370.0" width="179.9" height="22.0" rx="3" fill="#FFFDE7" stroke="#F9A825" stroke-width="1.3"/>
+<text x="1080.3" y="385.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Sesión vigente en Identity</text>
+<rect x="1261.2" y="370.0" width="90.6" height="22.0" rx="3" fill="#FFFDE7" stroke="#F9A825" stroke-width="1.3"/>
+<text x="1268.2" y="385.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Rol por ruta</text>
+<rect x="1359.7" y="370.0" width="109.7" height="22.0" rx="3" fill="#FFFDE7" stroke="#F9A825" stroke-width="1.3"/>
+<text x="1366.7" y="385.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Límites de tasa</text>
+<rect x="1477.4" y="370.0" width="39.5" height="22.0" rx="3" fill="#FFFDE7" stroke="#F9A825" stroke-width="1.3"/>
+<text x="1484.4" y="385.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">CORS</text>
+<rect x="672.0" y="398.0" width="173.5" height="22.0" rx="3" fill="#FFFDE7" stroke="#F9A825" stroke-width="1.3"/>
+<text x="679.0" y="413.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Ruta anónima /api/ballots</text>
+<rect x="853.5" y="398.0" width="301.1" height="22.0" rx="3" fill="#FFFDE7" stroke="#F9A825" stroke-width="1.3"/>
+<text x="860.5" y="413.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">Respuestas saneadas (sin hosts ni frameworks)</text>
+<rect x="30.0" y="466.0" width="1640.0" height="276.0" rx="6" fill="#E8F5E9" stroke="#00A651" stroke-width="2"/>
+<rect x="30.0" y="466.0" width="170.0" height="276.0" rx="6" fill="#00A651" stroke="#00A651" stroke-width="2"/>
+<text x="115.0" y="598.0" font-size="13" font-weight="600" text-anchor="middle" fill="#fff">Capa 2</text>
+<text x="115.0" y="617.0" font-size="15" font-weight="600" text-anchor="middle" fill="#fff">Lógica de negocio</text>
+<rect x="224.0" y="498.0" width="168.0" height="236.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="308.0" y="520.0" font-size="14" font-weight="600" text-anchor="middle" fill="#222">Auth</text>
+<text x="308.0" y="536.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#666">Python · FastAPI</text>
+<rect x="231.0" y="550.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="308.0" y="565.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Login y MFA</text>
+<rect x="231.0" y="575.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="308.0" y="590.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Sesiones</text>
+<rect x="231.0" y="600.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="308.0" y="615.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Usuarios y roles</text>
+<rect x="231.0" y="625.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="308.0" y="640.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Permisos</text>
+<rect x="231.0" y="650.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="308.0" y="665.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Emisión de JWT</text>
+<rect x="231.0" y="675.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="308.0" y="690.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Modelo de usuarios</text>
+<rect x="405.0" y="498.0" width="168.0" height="236.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="489.0" y="520.0" font-size="14" font-weight="600" text-anchor="middle" fill="#222">Identity</text>
+<text x="489.0" y="536.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#666">Python · FastAPI</text>
+<rect x="412.0" y="550.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="489.0" y="565.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Padrón electoral</text>
+<rect x="412.0" y="575.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="489.0" y="590.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Elegibilidad</text>
+<rect x="412.0" y="600.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="489.0" y="615.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Credencial anónima</text>
+<rect x="412.0" y="625.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="489.0" y="640.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Parámetros de urna</text>
+<rect x="412.0" y="650.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="489.0" y="665.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Cliente Blind Sig.</text>
+<rect x="412.0" y="675.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="489.0" y="690.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Cliente Ballot (gRPC)</text>
+<rect x="586.0" y="498.0" width="168.0" height="236.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="670.0" y="520.0" font-size="14" font-weight="600" text-anchor="middle" fill="#222">Blind Signature</text>
+<text x="670.0" y="536.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#666">Python · FastAPI</text>
+<rect x="593.0" y="550.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="670.0" y="565.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">API interna /v1/sign</text>
+<rect x="593.0" y="575.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="670.0" y="590.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Firma ciega RSA</text>
+<rect x="593.0" y="600.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="670.0" y="615.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Almacén de claves</text>
+<rect x="593.0" y="625.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="670.0" y="640.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Configuración</text>
+<rect x="767.0" y="498.0" width="168.0" height="236.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="851.0" y="520.0" font-size="14" font-weight="600" text-anchor="middle" fill="#222">Election</text>
+<text x="851.0" y="536.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#666">Python · FastAPI</text>
+<rect x="774.0" y="550.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="851.0" y="565.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">API de urnas</text>
+<rect x="774.0" y="575.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="851.0" y="590.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Casos de uso</text>
+<rect x="774.0" y="600.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="851.0" y="615.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Reglas y ciclo de vida</text>
+<rect x="774.0" y="625.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="851.0" y="640.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Parámetros firmados</text>
+<rect x="774.0" y="650.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="851.0" y="665.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Llave de la urna</text>
+<rect x="774.0" y="675.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="851.0" y="690.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Modelo relacional</text>
+<rect x="774.0" y="700.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="851.0" y="715.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Productor de eventos</text>
+<rect x="948.0" y="498.0" width="168.0" height="236.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="1032.0" y="520.0" font-size="14" font-weight="600" text-anchor="middle" fill="#222">Ballot</text>
+<text x="1032.0" y="536.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#666">Go</text>
+<rect x="955.0" y="550.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1032.0" y="565.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">API anónima HTTP</text>
+<rect x="955.0" y="575.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1032.0" y="590.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">API gRPC de admin.</text>
+<rect x="955.0" y="600.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1032.0" y="615.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Aceptación del voto</text>
+<rect x="955.0" y="625.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1032.0" y="640.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Token y gasto único</text>
+<rect x="955.0" y="650.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1032.0" y="665.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Ciclo de la urna</text>
+<rect x="955.0" y="675.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1032.0" y="690.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Adaptador MongoDB</text>
+<rect x="955.0" y="700.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1032.0" y="715.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Eventos</text>
+<rect x="1129.0" y="498.0" width="168.0" height="236.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="1213.0" y="520.0" font-size="14" font-weight="600" text-anchor="middle" fill="#222">Tally</text>
+<text x="1213.0" y="536.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#666">Go</text>
+<rect x="1136.0" y="550.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1213.0" y="565.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">API interna</text>
+<rect x="1136.0" y="575.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1213.0" y="590.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Orquestador</text>
+<rect x="1136.0" y="600.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1213.0" y="615.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Cliente de Ballot</text>
+<rect x="1136.0" y="625.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1213.0" y="640.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Descifrado</text>
+<rect x="1136.0" y="650.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1213.0" y="665.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Conteo</text>
+<rect x="1136.0" y="675.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1213.0" y="690.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Publicación de eventos</text>
+<rect x="1310.0" y="498.0" width="168.0" height="236.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="1394.0" y="520.0" font-size="14" font-weight="600" text-anchor="middle" fill="#222">Analytics</text>
+<text x="1394.0" y="536.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#666">Rust · axum</text>
+<rect x="1317.0" y="550.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1394.0" y="565.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">API REST</text>
+<rect x="1317.0" y="575.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1394.0" y="590.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Consumidor RabbitMQ</text>
+<rect x="1317.0" y="600.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1394.0" y="615.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Contratos de eventos</text>
+<rect x="1317.0" y="625.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1394.0" y="640.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Cálculo de informes</text>
+<rect x="1317.0" y="650.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1394.0" y="665.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Persistencia</text>
+<rect x="1491.0" y="498.0" width="168.0" height="236.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="1575.0" y="520.0" font-size="14" font-weight="600" text-anchor="middle" fill="#222">Notifications</text>
+<text x="1575.0" y="536.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#666">Node.js · TypeScript</text>
+<rect x="1498.0" y="550.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1575.0" y="565.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Dominio</text>
+<rect x="1498.0" y="575.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1575.0" y="590.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Servicio de aplicación</text>
+<rect x="1498.0" y="600.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1575.0" y="615.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Consumidor RabbitMQ</text>
+<rect x="1498.0" y="625.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1575.0" y="640.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">Repositorio MongoDB</text>
+<rect x="1498.0" y="650.0" width="154.0" height="22.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="1575.0" y="665.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">API HTTP</text>
+<rect x="218.0" y="476.0" width="361.0" height="264.0" rx="5" fill="none" stroke="#666" stroke-width="1.3" stroke-dasharray="5 4"/>
+<text x="224.0" y="489.0" font-size="10.5" font-weight="normal" text-anchor="start" fill="#555" font-style="italic">mismo despliegue: identity/</text>
+<rect x="30.0" y="756.0" width="1640.0" height="244.0" rx="6" fill="#FFF3E0" stroke="#FB8C00" stroke-width="2"/>
+<rect x="30.0" y="756.0" width="170.0" height="244.0" rx="6" fill="#FB8C00" stroke="#FB8C00" stroke-width="2"/>
+<text x="115.0" y="872.0" font-size="13" font-weight="600" text-anchor="middle" fill="#fff">Capa 1</text>
+<text x="115.0" y="891.0" font-size="15" font-weight="600" text-anchor="middle" fill="#fff">Datos y mensajería</text>
+<path d="M230.0,784 L230.0,892 A78.0,9 0 0 0 386.0,892 L386.0,784" fill="#fff" stroke="#808080" stroke-width="2"/>
+<ellipse cx="308.0" cy="784" rx="78.0" ry="9" fill="#fff" stroke="#808080" stroke-width="2"/>
+<text x="308.0" y="810.0" font-size="13" font-weight="600" text-anchor="middle" fill="#222">Auth DB</text>
+<text x="308.0" y="825.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">PostgreSQL</text>
+<rect x="238.0" y="836.0" width="140.0" height="21.0" rx="3" fill="#FFF8EE" stroke="#FB8C00" stroke-width="1.2"/>
+<text x="308.0" y="850.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">usuarios</text>
+<rect x="238.0" y="862.0" width="140.0" height="21.0" rx="3" fill="#FFF8EE" stroke="#FB8C00" stroke-width="1.2"/>
+<text x="308.0" y="876.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">sesiones · roles</text>
+<path d="M411.0,784 L411.0,892 A78.0,9 0 0 0 567.0,892 L567.0,784" fill="#fff" stroke="#808080" stroke-width="2"/>
+<ellipse cx="489.0" cy="784" rx="78.0" ry="9" fill="#fff" stroke="#808080" stroke-width="2"/>
+<text x="489.0" y="810.0" font-size="13" font-weight="600" text-anchor="middle" fill="#222">Census</text>
+<text x="489.0" y="825.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">PostgreSQL</text>
+<rect x="419.0" y="836.0" width="140.0" height="21.0" rx="3" fill="#FFF8EE" stroke="#FB8C00" stroke-width="1.2"/>
+<text x="489.0" y="850.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">padrón electoral</text>
+<path d="M592.0,784 L592.0,892 A78.0,9 0 0 0 748.0,892 L748.0,784" fill="#fff" stroke="#808080" stroke-width="2"/>
+<ellipse cx="670.0" cy="784" rx="78.0" ry="9" fill="#fff" stroke="#808080" stroke-width="2"/>
+<text x="670.0" y="810.0" font-size="13" font-weight="600" text-anchor="middle" fill="#222">Claves RSA</text>
+<text x="670.0" y="825.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">volumen de archivos</text>
+<rect x="600.0" y="836.0" width="140.0" height="21.0" rx="3" fill="#FFF8EE" stroke="#FB8C00" stroke-width="1.2"/>
+<text x="670.0" y="850.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">una clave por elección</text>
+<path d="M773.0,784 L773.0,892 A78.0,9 0 0 0 929.0,892 L929.0,784" fill="#fff" stroke="#808080" stroke-width="2"/>
+<ellipse cx="851.0" cy="784" rx="78.0" ry="9" fill="#fff" stroke="#808080" stroke-width="2"/>
+<text x="851.0" y="810.0" font-size="13" font-weight="600" text-anchor="middle" fill="#222">Elections</text>
+<text x="851.0" y="825.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">PostgreSQL</text>
+<rect x="781.0" y="836.0" width="140.0" height="21.0" rx="3" fill="#FFF8EE" stroke="#FB8C00" stroke-width="1.2"/>
+<text x="851.0" y="850.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">urnas · opciones</text>
+<rect x="781.0" y="862.0" width="140.0" height="21.0" rx="3" fill="#FFF8EE" stroke="#FB8C00" stroke-width="1.2"/>
+<text x="851.0" y="876.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">llaves cifradas</text>
+<path d="M954.0,784 L954.0,892 A78.0,9 0 0 0 1110.0,892 L1110.0,784" fill="#fff" stroke="#808080" stroke-width="2"/>
+<ellipse cx="1032.0" cy="784" rx="78.0" ry="9" fill="#fff" stroke="#808080" stroke-width="2"/>
+<text x="1032.0" y="810.0" font-size="13" font-weight="600" text-anchor="middle" fill="#222">Votes</text>
+<text x="1032.0" y="825.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">MongoDB (réplica)</text>
+<rect x="962.0" y="836.0" width="140.0" height="21.0" rx="3" fill="#FFF8EE" stroke="#FB8C00" stroke-width="1.2"/>
+<text x="1032.0" y="850.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">papeletas anónimas</text>
+<rect x="962.0" y="862.0" width="140.0" height="21.0" rx="3" fill="#FFF8EE" stroke="#FB8C00" stroke-width="1.2"/>
+<text x="1032.0" y="876.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">tokens gastados</text>
+<path d="M1316.0,784 L1316.0,892 A78.0,9 0 0 0 1472.0,892 L1472.0,784" fill="#fff" stroke="#808080" stroke-width="2"/>
+<ellipse cx="1394.0" cy="784" rx="78.0" ry="9" fill="#fff" stroke="#808080" stroke-width="2"/>
+<text x="1394.0" y="810.0" font-size="13" font-weight="600" text-anchor="middle" fill="#222">Results</text>
+<text x="1394.0" y="825.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">MongoDB</text>
+<rect x="1324.0" y="836.0" width="140.0" height="21.0" rx="3" fill="#FFF8EE" stroke="#FB8C00" stroke-width="1.2"/>
+<text x="1394.0" y="850.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">informes</text>
+<path d="M1497.0,784 L1497.0,892 A78.0,9 0 0 0 1653.0,892 L1653.0,784" fill="#fff" stroke="#808080" stroke-width="2"/>
+<ellipse cx="1575.0" cy="784" rx="78.0" ry="9" fill="#fff" stroke="#808080" stroke-width="2"/>
+<text x="1575.0" y="810.0" font-size="13" font-weight="600" text-anchor="middle" fill="#222">Notif. record</text>
+<text x="1575.0" y="825.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">MongoDB</text>
+<rect x="1505.0" y="836.0" width="140.0" height="21.0" rx="3" fill="#FFF8EE" stroke="#FB8C00" stroke-width="1.2"/>
+<text x="1575.0" y="850.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">notificaciones</text>
+<rect x="1137.0" y="784.0" width="152.0" height="110.0" rx="4" fill="none" stroke="#BDBDBD" stroke-width="1.3" stroke-dasharray="4 3"/>
+<text x="1213.0" y="834.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#888" font-style="italic">sin almacén</text>
+<text x="1213.0" y="848.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#888" font-style="italic">propio</text>
+<rect x="224.0" y="916.0" width="1436.0" height="70.0" rx="5" fill="#F3E5F5" stroke="#8E24AA" stroke-width="2.2"/>
+<text x="236.0" y="938.0" font-size="15" font-weight="600" text-anchor="start" fill="#6A1B9A">Message Broker · RabbitMQ</text>
+<text x="452.0" y="938.0" font-size="11" font-weight="normal" text-anchor="start" fill="#6A1B9A">exchanges topic duraderos · colas con DLQ</text>
+<rect x="236.0" y="952.0" width="109.7" height="22.0" rx="3" fill="#FBF3FD" stroke="#8E24AA" stroke-width="1.3"/>
+<text x="243.0" y="967.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">election.events</text>
+<rect x="353.7" y="952.0" width="90.6" height="22.0" rx="3" fill="#FBF3FD" stroke="#8E24AA" stroke-width="1.3"/>
+<text x="360.7" y="967.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">votes.events</text>
+<rect x="452.3" y="952.0" width="90.6" height="22.0" rx="3" fill="#FBF3FD" stroke="#8E24AA" stroke-width="1.3"/>
+<text x="459.3" y="967.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">tally.events</text>
+<rect x="550.8" y="952.0" width="141.6" height="22.0" rx="3" fill="#FBF3FD" stroke="#8E24AA" stroke-width="1.3"/>
+<text x="557.8" y="967.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">colas por consumidor</text>
+<rect x="700.4" y="952.0" width="122.5" height="22.0" rx="3" fill="#FBF3FD" stroke="#8E24AA" stroke-width="1.3"/>
+<text x="707.4" y="967.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">DLQ (dead-letter)</text>
+<rect x="830.9" y="952.0" width="109.7" height="22.0" rx="3" fill="#FBF3FD" stroke="#8E24AA" stroke-width="1.3"/>
+<text x="837.9" y="967.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">identity.events</text>
+<rect x="30.0" y="1018.0" width="1640.0" height="128.0" rx="5" fill="#fff" stroke="#ddd" stroke-width="2"/>
+<text x="46.0" y="1042.0" font-size="14" font-weight="600" text-anchor="start" fill="#222">Notación</text>
+<rect x="46.0" y="1058.0" width="46.0" height="26.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
+<text x="104.0" y="1076.0" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Componente</text>
+<rect x="230.0" y="1062.0" width="40.0" height="20.0" rx="3" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.3"/>
+<text x="278.0" y="1076.0" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Módulo de presentación</text>
+<rect x="454.0" y="1062.0" width="40.0" height="20.0" rx="3" fill="#FFEBEE" stroke="#E53935" stroke-width="1.3"/>
+<text x="502.0" y="1076.0" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Módulo de borde</text>
+<rect x="629.0" y="1062.0" width="40.0" height="20.0" rx="3" fill="#FFFDE7" stroke="#F9A825" stroke-width="1.3"/>
+<text x="677.0" y="1076.0" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Módulo de comunicación</text>
+<rect x="853.0" y="1062.0" width="40.0" height="20.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
+<text x="901.0" y="1076.0" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Módulo de lógica</text>
+<rect x="1035.0" y="1062.0" width="40.0" height="20.0" rx="3" fill="#FFF8EE" stroke="#FB8C00" stroke-width="1.3"/>
+<text x="1083.0" y="1076.0" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Contenido del almacén</text>
+<rect x="46.0" y="1098.0" width="46.0" height="26.0" rx="5" fill="none" stroke="#666" stroke-width="1.3" stroke-dasharray="5 4"/>
+<text x="104.0" y="1116.0" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Mismo despliegue (contenedor)</text>
+<text x="330.0" y="1116.0" font-size="12" font-weight="normal" text-anchor="start" fill="#555">Cada capa solo usa la inmediatamente inferior; las dependencias entre componentes se describen en la vista de componentes y conectores.</text></svg>
