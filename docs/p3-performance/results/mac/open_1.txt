@@ -1,0 +1,46 @@
+
+
+  █ THRESHOLDS 
+
+    http_req_duration{route:open}
+    ✓ 'max>=0' max=48.64ms
+
+    http_req_failed{route:open}
+    ✓ 'rate>=0' rate=0.00%
+
+    http_reqs{route:open}
+    ✓ 'count>=0' count=30
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 30      0.978563/s
+    checks_succeeded...: 100.00% 30 out of 30
+    checks_failed......: 0.00%   0 out of 30
+
+    ✓ status 200
+
+    CUSTOM
+    status_2xx.....................: 30     0.978563/s
+
+    HTTP
+    http_req_duration..............: avg=20.65ms med=18.92ms p(90)=31.04ms p(95)=38.11ms max=48.64ms
+      { expected_response:true }...: avg=20.65ms med=18.92ms p(90)=31.04ms p(95)=38.11ms max=48.64ms
+      { route:open }...............: avg=20.65ms med=18.92ms p(90)=31.04ms p(95)=38.11ms max=48.64ms
+    http_req_failed................: 0.00%  0 out of 30
+      { route:open }...............: 0.00%  0 out of 30
+    http_reqs......................: 30     0.978563/s
+      { route:open }...............: 30     0.978563/s
+
+    EXECUTION
+    iteration_duration.............: avg=1.02s   med=1.02s   p(90)=1.03s   p(95)=1.03s   max=1.05s  
+    iterations.....................: 30     0.978563/s
+    vus............................: 1      min=1       max=1
+    vus_max........................: 1      min=1       max=1
+
+    NETWORK
+    data_received..................: 8.7 kB 285 B/s
+    data_sent......................: 2.8 kB 92 B/s
+
+
+
