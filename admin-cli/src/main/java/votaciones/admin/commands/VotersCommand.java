@@ -28,7 +28,7 @@ public class VotersCommand {
 
         @Override
         void run() {
-            JsonNode voters = cli().identity().get(ElectionsCommand.path(electionId) + "/voters");
+            JsonNode voters = cli().api().get(ElectionsCommand.voterRollPath(electionId));
             if (printedAsJson(voters)) {
                 return;
             }
@@ -57,10 +57,10 @@ public class VotersCommand {
 
         @Override
         void run() {
-            ApiClient identity = cli().identity();
-            String path = ElectionsCommand.path(electionId) + "/voters";
+            ApiClient api = cli().api();
+            String path = ElectionsCommand.voterRollPath(electionId);
             for (int userId : userIds) {
-                JsonNode entry = identity.post(path, Map.of("user_id", userId, "is_eligible", !ineligible));
+                JsonNode entry = api.post(path, Map.of("user_id", userId, "is_eligible", !ineligible));
                 if (!printedAsJson(entry)) {
                     out().println("Usuario " + userId + " inscrito en la urna " + electionId
                             + (ineligible ? " (no elegible)." : "."));
@@ -90,8 +90,8 @@ public class VotersCommand {
 
         @Override
         void run() {
-            JsonNode entry = cli().identity().patch(
-                    ElectionsCommand.path(electionId) + "/voters/" + userId,
+            JsonNode entry = cli().api().patch(
+                    ElectionsCommand.voterRollPath(electionId) + "/" + userId,
                     Map.of("is_eligible", eligibility.eligible));
             if (!printedAsJson(entry)) {
                 out().println("Usuario " + userId + " en la urna " + electionId + ": elegible "

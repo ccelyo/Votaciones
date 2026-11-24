@@ -34,18 +34,28 @@ import java.util.Map;
         })
 public class ElectionsCommand {
 
+    /** Ruta de la urna en el catálogo del Gateway; valida el id antes de construirla. */
     static String path(String electionId) {
+        return "/api/elections/" + validId(electionId);
+    }
+
+    /** Padrón de la urna: vive bajo {@code /api/identity}, no bajo {@code /api/elections}. */
+    static String voterRollPath(String electionId) {
+        return "/api/identity/elections/" + validId(electionId) + "/voters";
+    }
+
+    private static String validId(String electionId) {
         if (!electionId.matches("[1-9][0-9]{0,9}")) {
             throw new IllegalArgumentException("El id de la elección debe ser un entero positivo: " + electionId);
         }
-        return "/elections/" + electionId;
+        return electionId;
     }
 
     @Command(name = "list", description = "Lista todas las urnas, las más recientes primero.")
     static class ListElections extends AdminCommand {
         @Override
         void run() {
-            JsonNode elections = cli().identity().get("/elections");
+            JsonNode elections = cli().api().get("/api/elections");
             if (printedAsJson(elections)) {
                 return;
             }
@@ -118,7 +128,7 @@ public class ElectionsCommand {
             body.put("closes_at", closesAt.getEpochSecond());
             body.put("open", !draft);
 
-            JsonNode created = cli().identity().post("/elections", body);
+            JsonNode created = cli().api().post("/api/elections", body);
             if (printedAsJson(created)) {
                 return;
             }
@@ -147,14 +157,14 @@ public class ElectionsCommand {
 
         @Override
         void run() {
-            JsonNode opened = cli().identity().post(path(electionId) + "/open", null);
+            JsonNode opened = cli().api().post(path(electionId) + "/open", null);
             if (!printedAsJson(opened)) {
                 out().println("Urna " + text(opened, "election_id") + ": " + text(opened, "status") + ".");
             }
         }
     }
 
-    @Command(name = "close", description = "Cierra la urna en ballot y en identity. Es irreversible.")
+    @Command(name = "close", description = "Cierra la urna. Es irreversible.")
     static class Close extends AdminCommand {
         @Parameters(paramLabel = "ID")
         String electionId;
@@ -168,7 +178,7 @@ public class ElectionsCommand {
                 out().println("Cancelado.");
                 return;
             }
-            JsonNode closed = cli().identity().post(path(electionId) + "/close", null);
+            JsonNode closed = cli().api().post(path(electionId) + "/close", null);
             if (!printedAsJson(closed)) {
                 out().println("Urna " + text(closed, "election_id") + ": " + text(closed, "status") + ".");
             }
@@ -182,7 +192,7 @@ public class ElectionsCommand {
 
         @Override
         void run() {
-            JsonNode status = cli().identity().get(path(electionId) + "/status");
+            JsonNode status = cli().api().get(path(electionId) + "/status");
             if (printedAsJson(status)) {
                 return;
             }
@@ -207,8 +217,8 @@ public class ElectionsCommand {
 
         @Override
         void run() {
-            ApiClient identity = cli().identity();
-            JsonNode status = identity.get(path(electionId) + "/status");
+            ApiClient api = cli().api();
+            JsonNode status = api.get(path(electionId) + "/status");
             boolean closed = "closed".equals(status.path("identity_status").asText())
                     && "closed".equals(status.path("ballot_status").asText());
             if (!closed) {
@@ -216,7 +226,7 @@ public class ElectionsCommand {
                     out().println("Cancelado: no se cerró la urna.");
                     return;
                 }
-                identity.post(path(electionId) + "/close", null);
+                api.post(path(electionId) + "/close", null);
                 if (!cli().jsonOutput()) {
                     out().println("Urna " + electionId + " cerrada.");
                 }

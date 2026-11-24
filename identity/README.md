@@ -158,8 +158,12 @@ Reglas de validación para el Gateway:
 4. **No reenviar el JWT a `ballot`**: la zona de votación es anónima y no debe recibir datos de identidad.
 
 Identidad además comprueba en cada petición que la sesión del `jti` no esté revocada (`/logout`) y
-que el usuario siga activo, y toma el rol de la base de datos. El Gateway, sin estado, acepta un
-JWT revocado hasta su `exp`; por eso la vigencia es corta.
+que el usuario siga activo, y toma el rol de la base de datos. Con `GATEWAY_SESSION_CHECK=identity`
+(escenario de seguridad 2) el Gateway también lo comprueba: antes de reenviar una ruta `user` o
+`admin` consulta `GET /auth/me` por mTLS y reutiliza la respuesta como máximo
+`GATEWAY_SESSION_CACHE_TTL_MS` (5 s). Un `logout` o un `PATCH /users/{id}` que pasan por el Gateway
+invalidan esa caché al instante; si la revocación llega por otro camino (o hay varias réplicas del
+Gateway), la ventana es como mucho ese TTL, no el `exp` del JWT.
 
 La clave del JWT (`jwt_signing.pem`) es **distinta** de la de firma ciega: esta última firma lo que
 envía el votante, así que con la misma clave cualquiera podría obtener un JWT forjado.

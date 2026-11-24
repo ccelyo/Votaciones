@@ -45,6 +45,8 @@ export const ROUTES: readonly RouteDefinition[] = [
   { method: "GET", path: "/api/auth/me", service: "auth", upstreamPath: "/auth/me", access: "user", description: "Usuario autenticado" },
   { method: "POST", path: "/api/auth/logout", service: "auth", upstreamPath: "/logout", access: "user", description: "Revoca la sesión" },
   { method: "GET", path: "/api/auth/users", service: "auth", upstreamPath: "/users", access: "admin", description: "Directorio de usuarios" },
+  { method: "POST", path: "/api/auth/users", service: "auth", upstreamPath: "/users", access: "admin", description: "Crea un usuario" },
+  { method: "PATCH", path: "/api/auth/users/:userId", service: "auth", upstreamPath: "/users/:userId", access: "admin", description: "Activa o desactiva un usuario" },
 
   // --- Election (Fabian) ---------------------------------------------------
   { method: "GET", path: "/api/elections/open", service: "election", upstreamPath: "/elections/open", access: "public", description: "Elecciones abiertas" },
@@ -52,12 +54,13 @@ export const ROUTES: readonly RouteDefinition[] = [
   { method: "POST", path: "/api/elections", service: "election", upstreamPath: "/elections", access: "admin", description: "Crea una elección" },
   { method: "GET", path: "/api/elections/:electionId/parameters", service: "election", upstreamPath: "/elections/:electionId/parameters", access: "user", description: "Opciones, ventana de tiempo y clave del token" },
   { method: "GET", path: "/api/elections/:electionId/status", service: "election", upstreamPath: "/elections/:electionId/status", access: "admin", description: "Estado y participación" },
+  { method: "POST", path: "/api/elections/:electionId/open", service: "election", upstreamPath: "/elections/:electionId/open", access: "admin", description: "Abre la urna" },
   { method: "POST", path: "/api/elections/:electionId/close", service: "election", upstreamPath: "/elections/:electionId/close", access: "admin", description: "Cierra la urna" },
 
   // --- Identity (Kevin) ----------------------------------------------------
   { method: "GET", path: "/api/identity/keys", service: "identity", upstreamPath: "/keys", access: "public", description: "Claves públicas de identidad" },
   { method: "GET", path: "/api/identity/elections/:electionId/eligibility", service: "identity", upstreamPath: "/elections/:electionId/eligibility", access: "user", description: "Elegibilidad del votante" },
-  { method: "POST", path: "/api/identity/tokens/blind", service: "identity", upstreamPath: "/tokens/blind", access: "user", description: "Firma ciega del token (Identity → Blind Signature)" },
+  { method: "POST", path: "/api/identity/tokens/blind", service: "identity", upstreamPath: "/tokens/blind", access: "user", description: "Firma ciega del token de voto" },
   { method: "POST", path: "/api/identity/vote-confirmation", service: "identity", upstreamPath: "/vote-confirmation", access: "user", description: "Marca al votante como participante" },
   { method: "GET", path: "/api/identity/elections/:electionId/voters", service: "identity", upstreamPath: "/elections/:electionId/voters", access: "admin", description: "Padrón de la elección" },
   { method: "POST", path: "/api/identity/elections/:electionId/voters", service: "identity", upstreamPath: "/elections/:electionId/voters", access: "admin", description: "Inscribe un votante" },

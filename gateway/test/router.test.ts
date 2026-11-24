@@ -46,3 +46,30 @@ test("codifica los parámetros al construir la ruta del servicio", () => {
     "/v1/elections/a%2Fb/results",
   );
 });
+
+test("las operaciones administrativas de la CLI están en el catálogo", () => {
+  const cases: [string, string, string, Record<string, string>][] = [
+    ["POST", "/api/auth/users", "/users", {}],
+    ["PATCH", "/api/auth/users/5", "/users/:userId", { userId: "5" }],
+    ["POST", "/api/elections/7/open", "/elections/:electionId/open", { electionId: "7" }],
+  ];
+  for (const [method, path, upstreamPath, params] of cases) {
+    const result = router.match(method, path);
+    assert.equal(result.kind, "found", path);
+    if (result.kind !== "found") continue;
+    assert.equal(result.match.route.upstreamPath, upstreamPath);
+    assert.equal(result.match.route.access, "admin");
+    assert.deepEqual(result.match.params, params);
+  }
+  // `GET /api/elections/open` (público) no se confunde con abrir una urna.
+  const open = router.match("GET", "/api/elections/open");
+  assert.equal(open.kind === "found" && open.match.route.access, "public");
+});
+
+test("los parámetros codificados de las rutas nuevas se decodifican y se vuelven a codificar", () => {
+  const result = router.match("PATCH", "/api/auth/users/5%2F..%2Fadmin");
+  assert.equal(result.kind, "found");
+  if (result.kind !== "found") return;
+  assert.equal(result.match.params.userId, "5/../admin");
+  assert.equal(buildUpstreamPath(result.match.route.upstreamPath, result.match.params), "/users/5%2F..%2Fadmin");
+});

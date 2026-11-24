@@ -7,7 +7,7 @@ import picocli.CommandLine.Command;
 public class WhoamiCommand extends AdminCommand {
     @Override
     void run() {
-        JsonNode me = cli().identity().get("/auth/me");
+        JsonNode me = cli().api().get("/api/auth/me");
         if (printedAsJson(me)) {
             return;
         }

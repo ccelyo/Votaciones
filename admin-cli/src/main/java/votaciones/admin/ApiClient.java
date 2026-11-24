@@ -13,9 +13,16 @@ import java.net.http.HttpResponse;
 import javax.net.ssl.SSLContext;
 import java.time.Duration;
 
-/** Cliente HTTP/JSON de identity (o del Gateway) y de la API pública de ballot. */
+/**
+ * Cliente HTTP/JSON del API Gateway (detrás del WAF).
+ *
+ * <p>Solo acepta rutas del catálogo público ({@code /api/...}): así la CLI no puede
+ * depender de rutas internas de un servicio ni saltarse el Gateway.
+ */
 public class ApiClient {
     private static final Duration TIMEOUT = Duration.ofSeconds(20);
+    /** Prefijo de todas las rutas públicas del Gateway. */
+    public static final String API_PREFIX = "/api/";
 
     // HTTP/1.1: con http:// el cliente de Java intenta el upgrade a h2c y uvicorn lo rechaza con 400.
     private final HttpClient http;
@@ -54,6 +61,7 @@ public class ApiClient {
     }
 
     public JsonNode send(String method, String path, Object body) {
+        requireCatalogPath(path);
         HttpRequest.Builder request = HttpRequest.newBuilder(URI.create(baseUrl + path))
                 .timeout(TIMEOUT)
                 .header("Accept", "application/json");
@@ -74,6 +82,30 @@ public class ApiClient {
         } catch (InterruptedException error) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Petición interrumpida", error);
+        }
+    }
+
+    /**
+     * Exige una ruta del catálogo: empieza por {@code /api/} y no tiene segmentos vacíos,
+     * {@code .} ni {@code ..} (tampoco codificados como {@code %2e}), barras invertidas ni
+     * {@code %2f}. Solo se mira la parte anterior a {@code ?}: la consulta va tal cual.
+     */
+    static void requireCatalogPath(String path) {
+        String route = path == null ? "" : path.split("[?#]", 2)[0];
+        boolean valid = route.startsWith(API_PREFIX) && !route.contains("//") && !route.contains("\\")
+                && !route.toLowerCase(java.util.Locale.ROOT).contains("%2f")
+                && !route.toLowerCase(java.util.Locale.ROOT).contains("%5c");
+        if (valid) {
+            for (String segment : route.split("/")) {
+                String decoded = segment.replaceAll("(?i)%2e", ".");
+                if (decoded.equals(".") || decoded.equals("..")) {
+                    valid = false;
+                    break;
+                }
+            }
+        }
+        if (!valid) {
+            throw new IllegalArgumentException("Ruta fuera del catálogo del Gateway: " + path);
         }
     }
 

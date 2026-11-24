@@ -10,6 +10,13 @@ import type { ServiceName } from "./routes.ts";
  */
 export type AuthMode = "jwt" | "passthrough";
 
+/**
+ * - `identity`: mediación completa. Cada petición autenticada se revalida contra la
+ *   sesión vigente en identity (`GET /auth/me`): revocación, usuario activo y rol actual.
+ * - `off`: solo se valida el JWT sin estado (por defecto, para pruebas y desarrollo).
+ */
+export type SessionCheck = "identity" | "off";
+
 export interface GatewayConfig {
   port: number;
   upstreams: Partial<Record<ServiceName, string>>;
@@ -32,6 +39,10 @@ export interface GatewayConfig {
   trustForwardedFor: boolean;
   upstreamTimeoutMs: number;
   maxBodyBytes: number;
+  sessionCheck: SessionCheck;
+  /** Tiempo que se reutiliza una sesión ya comprobada en identity. */
+  sessionCacheTtlMs: number;
+  sessionCacheMax: number;
 }
 
 const SERVICES: ServiceName[] = [
@@ -101,6 +112,15 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): GatewayConfig 
     throw new Error("GATEWAY_AUTH_MODE=jwt requiere GATEWAY_JWKS_URL");
   }
 
+  const sessionCheck = (env.GATEWAY_SESSION_CHECK?.trim() || "off") as SessionCheck;
+  if (sessionCheck !== "identity" && sessionCheck !== "off") {
+    throw new Error("GATEWAY_SESSION_CHECK debe ser identity u off");
+  }
+  if (sessionCheck === "identity") {
+    if (!upstreams.auth) throw new Error("GATEWAY_SESSION_CHECK=identity requiere GATEWAY_AUTH_URL");
+    if (authMode !== "jwt") throw new Error("GATEWAY_SESSION_CHECK=identity requiere GATEWAY_AUTH_MODE=jwt");
+  }
+
   return {
     port: integer(env, "GATEWAY_PORT", 8088),
     upstreams,
@@ -126,5 +146,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): GatewayConfig 
     trustForwardedFor: env.GATEWAY_TRUST_FORWARDED_FOR === "true",
     upstreamTimeoutMs: integer(env, "GATEWAY_UPSTREAM_TIMEOUT_MS", 10_000),
     maxBodyBytes: integer(env, "GATEWAY_MAX_BODY_BYTES", 1024 * 1024),
+    sessionCheck,
+    sessionCacheTtlMs: integer(env, "GATEWAY_SESSION_CACHE_TTL_MS", 5_000),
+    sessionCacheMax: Math.max(1, integer(env, "GATEWAY_SESSION_CACHE_MAX", 10_000)),
   };
 }

@@ -24,10 +24,10 @@ public class LoginCommand extends AdminCommand {
         String user = username != null ? username : readLine("Usuario: ");
         String password = passwordStdin ? readLine("") : readSecret("Contraseña: ");
 
-        ApiClient identity = cli().anonymousIdentity();
-        JsonNode challenge = identity.post("/login", Map.of("username", user, "password", password));
+        ApiClient api = cli().anonymousApi();
+        JsonNode challenge = api.post("/api/auth/login", Map.of("username", user, "password", password));
         String code = mfaCode != null ? mfaCode : readLine("Código MFA: ");
-        JsonNode session = identity.post("/login/mfa", Map.of(
+        JsonNode session = api.post("/api/auth/login/mfa", Map.of(
                 "challenge_id", challenge.path("challenge_id").asText(),
                 "code", code));
 

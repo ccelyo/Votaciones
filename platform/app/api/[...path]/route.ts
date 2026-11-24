@@ -14,6 +14,8 @@ const FORWARDED_RESPONSE_HEADERS = [
   "content-type",
   "cache-control",
   "retry-after",
+  // Id de correlación con el log del Gateway (escenario de seguridad 2).
+  "x-request-id",
 ];
 
 type Context = { params: Promise<{ path: string[] }> };

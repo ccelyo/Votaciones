@@ -16,7 +16,7 @@ COMPOSE=(docker compose -f docker-compose.yml -f performance-tests/deploy/docker
 # No se levantan `mobile` ni `election`: el Gateway no depende de ellos.
 "${COMPOSE[@]}" up -d --build platform
 
-echo "Esperando a que el Gateway reporte todos los servicios en ok (hasta 5 min)..."
+echo "Esperando a que el Gateway responda ready (todos los servicios en ok; hasta 5 min)..."
 for _ in $(seq 1 60); do
   if curl -fsS "http://127.0.0.1:${GATEWAY_PORT}/readyz" >/dev/null 2>&1; then
     echo "Gateway listo:"; curl -s "http://127.0.0.1:${GATEWAY_PORT}/readyz"; echo

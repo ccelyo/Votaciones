@@ -1,0 +1,198 @@
+0. Sidecars de ACL (denegación por defecto) y servicios sin NET_ADMIN
+  [OK]    waf-fw: política INPUT DROP, 2 flujo(s) permitido(s)
+  [OK]    waf sin NET_ADMIN
+  [OK]    platform-fw: política INPUT DROP, 1 flujo(s) permitido(s)
+  [OK]    platform sin NET_ADMIN
+  [OK]    gateway-fw: política INPUT DROP, 2 flujo(s) permitido(s)
+  [OK]    gateway sin NET_ADMIN
+  [OK]    identity-fw: política INPUT DROP, 1 flujo(s) permitido(s)
+  [OK]    identity sin NET_ADMIN
+  [OK]    election-fw: política INPUT DROP, 0 flujo(s) permitido(s)
+  [OK]    election sin NET_ADMIN
+  [OK]    ballot-fw: política INPUT DROP, 3 flujo(s) permitido(s)
+  [OK]    ballot sin NET_ADMIN
+  [OK]    tally-fw: política INPUT DROP, 1 flujo(s) permitido(s)
+  [OK]    tally sin NET_ADMIN
+  [OK]    analytics-fw: política INPUT DROP, 1 flujo(s) permitido(s)
+  [OK]    analytics sin NET_ADMIN
+  [OK]    notification-fw: política INPUT DROP, 1 flujo(s) permitido(s)
+  [OK]    notification sin NET_ADMIN
+  [OK]    rabbitmq-fw: política INPUT DROP, 5 flujo(s) permitido(s)
+  [OK]    rabbitmq sin NET_ADMIN
+1. Puertos publicados en el host (esperado: solo el WAF 3000/8088 y mobile 8092)
+  [OK]    analytics sin puertos en el host
+  [OK]    analytics-fw sin puertos en el host
+  [OK]    ballot sin puertos en el host
+  [OK]    ballot-fw sin puertos en el host
+  [OK]    blind-signature sin puertos en el host
+  [OK]    election sin puertos en el host
+  [OK]    election-fw sin puertos en el host
+  [OK]    gateway sin puertos en el host
+  [OK]    gateway-fw sin puertos en el host
+  [OK]    identity sin puertos en el host
+  [OK]    identity-fw sin puertos en el host
+  [OK]    mobile publica: 0.0.0.0:8092->80/tcp, [::]:8092->80/tcp
+  [OK]    mongo sin puertos en el host
+  [OK]    mongo-results sin puertos en el host
+  [OK]    notification sin puertos en el host
+  [OK]    notification-fw sin puertos en el host
+  [OK]    notifications-mongo sin puertos en el host
+  [OK]    platform sin puertos en el host
+  [OK]    platform-fw sin puertos en el host
+  [OK]    postgres sin puertos en el host
+  [OK]    postgres-census sin puertos en el host
+  [OK]    postgres-elections sin puertos en el host
+  [OK]    rabbitmq sin puertos en el host
+  [OK]    rabbitmq-fw sin puertos en el host
+  [OK]    tally sin puertos en el host
+  [OK]    tally-fw sin puertos en el host
+  [OK]    waf publica: 0.0.0.0:3000->8443/tcp, [::]:3000->8443/tcp, 0.0.0.0:8088->8444/tcp, [::]:8088->8444/tcp
+  [OK]    waf-fw sin puertos en el host
+  [OK]    localhost:8000 cerrado en el host
+  [OK]    localhost:8001 cerrado en el host
+  [OK]    localhost:8080 cerrado en el host
+  [OK]    localhost:9091 cerrado en el host
+  [OK]    localhost:8090 cerrado en el host
+  [OK]    localhost:8100 cerrado en el host
+  [OK]    localhost:5672 cerrado en el host
+  [OK]    localhost:15672 cerrado en el host
+  [OK]    localhost:25672 cerrado en el host
+  [OK]    localhost:4369 cerrado en el host
+  [OK]    localhost:5432 cerrado en el host
+  [OK]    localhost:27017 cerrado en el host
+  [OK]    https://localhost:8088/healthz (WAF -> Gateway) HTTP 200
+  [OK]    https://localhost:3000/ (WAF -> Platform) HTTP 200
+  [OK]    GET /api/elections/open (WAF -> Gateway -> Identity -> Postgres) HTTP 200
+2. Flujos permitidos (tabla de dependencias), con mTLS cuando el servicio lo exige
+  [OK]    gateway -> https://identity:8000/health HTTP 200 (mTLS)
+  [OK]    gateway -> https://ballot:8080/healthz HTTP 200 (mTLS)
+  [OK]    gateway -> https://tally:8092/healthz HTTP 200 (mTLS)
+  [OK]    gateway -> https://analytics:8090/healthz HTTP 200 (mTLS)
+  [OK]    gateway -> https://notification:3000/healthz HTTP 200 (mTLS)
+  [OK]    waf -> https://gateway:8088/healthz HTTP 200 (mTLS)
+  [OK]    waf -> https://platform:3000/ HTTP 200 (mTLS)
+  [OK]    platform -> https://gateway:8088/healthz HTTP 200 (mTLS)
+  [OK]    tally -> https://ballot:8080/healthz HTTP 200 (mTLS)
+  [OK]    identity -> ballot:9091 conecta (permitido)
+  [OK]    identity -> blind-signature:8100 conecta (permitido)
+  [OK]    identity -> postgres-census:5432 conecta (permitido)
+  [OK]    identity -> postgres:5432 conecta (permitido)
+  [OK]    ballot -> mongo:27017 conecta (permitido)
+  [OK]    ballot -> rabbitmq:5672 conecta (permitido)
+  [OK]    election -> postgres-elections:5432 conecta (permitido)
+  [OK]    election -> rabbitmq:5672 conecta (permitido)
+  [OK]    tally -> rabbitmq:5672 conecta (permitido)
+  [OK]    analytics -> mongo-results:27017 conecta (permitido)
+  [OK]    analytics -> rabbitmq:5672 conecta (permitido)
+  [OK]    notification -> notifications-mongo:27017 conecta (permitido)
+  [OK]    notification -> rabbitmq:5672 conecta (permitido)
+3. Conexiones no necesarias (servicio comprometido intentando moverse)
+  [OK]    gateway -> ballot:9091 descartado por la ACL de entrada — riesgo 1 del Lab 5 (gRPC de administración de Ballot)
+  [OK]    gateway -> blind-signature:8100 sin red compartida (nombre no resuelve)
+  [OK]    gateway -> election:8000 sin red compartida (nombre no resuelve)
+  [OK]    gateway -> mongo-results:27017 sin red compartida (nombre no resuelve)
+  [OK]    gateway -> mongo:27017 sin red compartida (nombre no resuelve)
+  [OK]    gateway -> notifications-mongo:27017 sin red compartida (nombre no resuelve)
+  [OK]    gateway -> platform:3000 descartado por la ACL de entrada
+  [OK]    gateway -> postgres-census:5432 sin red compartida (nombre no resuelve)
+  [OK]    gateway -> postgres-elections:5432 sin red compartida (nombre no resuelve)
+  [OK]    gateway -> postgres:5432 sin red compartida (nombre no resuelve)
+  [OK]    gateway -> rabbitmq:15672 sin red compartida (nombre no resuelve)
+  [OK]    gateway -> rabbitmq:5672 sin red compartida (nombre no resuelve)
+  [OK]    gateway -> waf:8444 descartado por la ACL de entrada
+  [OK]    identity -> ballot:8080 descartado por la ACL de entrada — riesgo 2 del Lab 5
+  [OK]    identity -> election:8000 sin red compartida (nombre no resuelve)
+  [OK]    identity -> gateway:8088 descartado por la ACL de entrada
+  [OK]    identity -> mongo:27017 sin red compartida (nombre no resuelve)
+  [OK]    identity -> rabbitmq:5672 sin red compartida (nombre no resuelve)
+  [OK]    identity -> tally:8092 sin red compartida (nombre no resuelve)
+  [OK]    notification -> rabbitmq:15672 descartado por la ACL de entrada — riesgo 3 del Lab 5 (API de gestión, guest/guest)
+  [OK]    notification -> tally:8092 sin red compartida (nombre no resuelve) — riesgo 4 del Lab 5
+  [OK]    notification -> analytics:8090 sin red compartida (nombre no resuelve) — riesgo 5 del Lab 5
+  [OK]    notification -> ballot:8080 sin red compartida (nombre no resuelve)
+  [OK]    notification -> ballot:9091 sin red compartida (nombre no resuelve)
+  [OK]    notification -> gateway:8088 descartado por la ACL de entrada
+  [OK]    notification -> mongo-results:27017 sin red compartida (nombre no resuelve)
+  [OK]    election -> rabbitmq:15672 descartado por la ACL de entrada — riesgo 6 del Lab 5
+  [OK]    election -> ballot:9091 sin red compartida (nombre no resuelve)
+  [OK]    election -> identity:8000 sin red compartida (nombre no resuelve)
+  [OK]    election -> postgres:5432 sin red compartida (nombre no resuelve)
+  [OK]    rabbitmq -> election:8000 descartado por la ACL de entrada — riesgo 7 del Lab 5 (Election acepta X-Dev-User)
+  [OK]    rabbitmq -> ballot:9091 descartado por la ACL de entrada — riesgo 8 del Lab 5
+  [OK]    rabbitmq -> analytics:8090 descartado por la ACL de entrada
+  [OK]    rabbitmq -> ballot:8080 descartado por la ACL de entrada
+  [OK]    rabbitmq -> notification:3000 descartado por la ACL de entrada
+  [OK]    rabbitmq -> tally:8092 descartado por la ACL de entrada
+  [OK]    ballot -> gateway:8088 descartado por la ACL de entrada
+  [OK]    ballot -> identity:8000 descartado por la ACL de entrada
+  [OK]    ballot -> mongo-results:27017 sin red compartida (nombre no resuelve)
+  [OK]    ballot -> rabbitmq:15672 descartado por la ACL de entrada
+  [OK]    ballot -> tally:8092 descartado por la ACL de entrada
+  [OK]    tally -> analytics:8090 sin red compartida (nombre no resuelve)
+  [OK]    tally -> ballot:9091 descartado por la ACL de entrada
+  [OK]    tally -> gateway:8088 descartado por la ACL de entrada
+  [OK]    tally -> mongo:27017 sin red compartida (nombre no resuelve)
+  [OK]    tally -> notification:3000 sin red compartida (nombre no resuelve)
+  [OK]    tally -> rabbitmq:15672 descartado por la ACL de entrada
+  [OK]    analytics -> gateway:8088 descartado por la ACL de entrada
+  [OK]    analytics -> mongo:27017 sin red compartida (nombre no resuelve)
+  [OK]    analytics -> notification:3000 sin red compartida (nombre no resuelve)
+  [OK]    analytics -> rabbitmq:15672 descartado por la ACL de entrada
+  [OK]    analytics -> tally:8092 sin red compartida (nombre no resuelve)
+  [OK]    platform -> ballot:8080 sin red compartida (nombre no resuelve)
+  [OK]    platform -> identity:8000 sin red compartida (nombre no resuelve)
+  [OK]    platform -> mongo:27017 sin red compartida (nombre no resuelve)
+  [OK]    platform -> waf:8443 descartado por la ACL de entrada
+  [OK]    waf -> ballot:8080 sin red compartida (nombre no resuelve)
+  [OK]    waf -> identity:8000 sin red compartida (nombre no resuelve)
+  [OK]    waf -> mongo:27017 sin red compartida (nombre no resuelve)
+  [OK]    waf -> postgres:5432 sin red compartida (nombre no resuelve)
+  [OK]    waf -> rabbitmq:5672 sin red compartida (nombre no resuelve)
+  [OK]    waf -> tally:8092 sin red compartida (nombre no resuelve)
+  [OK]    blind-signature -> identity:8000 descartado por la ACL de entrada
+  [OK]    mongo -> ballot:8080 descartado por la ACL de entrada
+  [OK]    mongo -> ballot:9091 descartado por la ACL de entrada
+4. Atacante externo en la red de borde (votaciones_edge-net)
+  [OK]    atacante -> waf:8443 (entrada pública)
+  [OK]    atacante -> waf:8444 (entrada pública)
+  [OK]    atacante -> gateway:8088 (nodns)
+  [OK]    atacante -> platform:3000 (nodns)
+  [OK]    atacante -> identity:8000 (nodns)
+  [OK]    atacante -> ballot:8080 (nodns)
+  [OK]    atacante -> ballot:9091 (nodns)
+  [OK]    atacante -> tally:8092 (nodns)
+  [OK]    atacante -> postgres:5432 (nodns)
+  [OK]    atacante -> mongo:27017 (nodns)
+  [OK]    atacante -> rabbitmq:5672 (nodns)
+  [OK]    nmap: solo 10.89.10.2:8443/8444 (WAF) responde
+  [OK]    nmap: 479 de 481 puertos filtered en 37 IP (todas las de los servicios)
+5. Registro de los intentos denegados (docker compose logs <servicio>-fw)
+  [OK]    ballot-fw registró 21 intento(s) denegado(s)
+  [OK]    rabbitmq-fw registró 15 intento(s) denegado(s)
+  [OK]    gateway-fw registró 15 intento(s) denegado(s)
+  [OK]    identity-fw registró 6 intento(s) denegado(s)
+  [OK]    notification-fw registró 3 intento(s) denegado(s)
+  [OK]    election-fw registró 3 intento(s) denegado(s)
+  [OK]    tally-fw registró 6 intento(s) denegado(s)
+  [OK]    analytics-fw registró 3 intento(s) denegado(s)
+   Ejemplo (ballot-fw):
+        2026-11-24 01:23:37.588489 IP 10.89.31.3.54932 > 10.89.31.2.9091: Flags [S], seq 1140520990, win 64240, option
+        2026-11-24 01:23:38.612526 IP 10.89.31.3.54932 > 10.89.31.2.9091: Flags [S], seq 1140520990, win 64240, option
+        2026-11-24 01:23:39.636257 IP 10.89.31.3.54932 > 10.89.31.2.9091: Flags [S], seq 1140520990, win 64240, option
+   Contadores de la ACL de Ballot:
+        Chain INPUT (policy DROP 0 packets, 0 bytes)
+         pkts bytes target     prot opt in     out     source               destination         
+          144  8452 ACCEPT     0    --  lo     *       0.0.0.0/0            0.0.0.0/0           
+          800  205K ACCEPT     0    --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+            0     0 DROP       0    --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate INVALID
+            5   300 ACCEPT     6    --  *      *       10.89.31.0/24        0.0.0.0/0            tcp dpt:8080 ctstate NEW
+            3   180 ACCEPT     6    --  *      *       10.89.41.0/24        0.0.0.0/0            tcp dpt:8080 ctstate NEW
+            3   180 ACCEPT     6    --  *      *       10.89.40.0/24        0.0.0.0/0            tcp dpt:9091 ctstate NEW
+           42  2520 NFLOG      0    --  *      *       0.0.0.0/0            0.0.0.0/0            limit: avg 30/min burst 60 nflog-prefix "SEG-DENY ballot" nflog-group 1
+           42  2520 DROP       0    --  *      *       0.0.0.0/0            0.0.0.0/0           
+6. Reinicio de Ballot (RESTART_TEST=1): el sidecar debe reaplicar la ACL solo
+  [OK]    ACL de ballot reaplicada 1 s después del reinicio
+  [OK]    gateway -> ballot:9091 descartado por la ACL de entrada — tras el reinicio
+  [OK]    identity -> ballot:9091 conecta (permitido)
+
+Resumen: 174 correctas, 0 fallidas
