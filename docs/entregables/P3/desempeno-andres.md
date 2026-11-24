@@ -28,7 +28,7 @@ En el Lab 6 medí el mismo endpoint contra el Gateway en HTTP. Aquí dejé puest
 | Equipo | FELIPE, Intel i5-12400 (12 hilos), 32 GB RAM |
 | Generador | k6 0.54.0 dentro de Docker, en la misma máquina. Comparte CPU con el sistema. |
 | Duración | 30 s por nivel, pausa de 1 s. Calentamiento de 10 s a 5 VUs, descartado. |
-| TLS | El certificado no es de una CA pública. k6 no verifica el nombre, pero el handshake sí se hace. |
+| TLS | El certificado no está firmado por un certificado de autorización público reconocido. k6 no verifica el nombre, pero el handshake sí se hace. |
 | Límite de tasa | `GATEWAY_RATE_LIMIT_DEFAULT=0` con `docs/lab6-performance/docker-compose.perf.yml`. Todas las VUs salen de la misma IP; con el límite puesto la prueba mediría 429 y no la capacidad. |
 | Commit | `189c55f` |
 

@@ -22,10 +22,10 @@ flutter pub get
 flutter run --dart-define=GATEWAY_URL=https://localhost:8088
 ```
 
-El Gateway presenta un certificado TLS firmado por la CA local de desarrollo en
+El Gateway presenta un certificado TLS firmado por el certificado de autorización público local de desarrollo en
 `.dev-certs/ca-public/ca.crt`. Para ejecutar en un dispositivo o navegador, instala
-esa CA en el almacén de confianza correspondiente; no desactives la validación TLS.
-En despliegues reales, usa certificados de una CA de confianza pública o gestionada.
+ese certificado de autorización público en el almacén de confianza correspondiente; no desactives la validación TLS.
+En despliegues reales, usa certificados de un certificado de autorización público de confianza o gestionado.
 La URL cambia según dónde corre la app y el certificado debe incluir ese host:
 
 | Dónde | `GATEWAY_URL` |
@@ -36,7 +36,7 @@ La URL cambia según dónde corre la app y el certificado debe incluir ese host:
 
 El certificado de desarrollo incluido cubre `localhost` y `127.0.0.1`; para
 emuladores o teléfonos, configura un certificado con SAN para el host/IP usado y
-confía explícitamente en la CA en ese entorno.
+confía explícitamente en el certificado de autorización público en ese entorno.
 
 Usuarios de prueba del compose: `votante1` … `votante10`, contraseña `prueba123`, código `123456`.
 

@@ -140,7 +140,7 @@ sequenceDiagram
 3. **Cifrado híbrido en el navegador:** se genera una llave AES-GCM aleatoria, se cifra el voto con ella y la llave AES se cifra con la **llave pública RSA-OAEP de la urna** (generada por `identity` al crear la urna). La llave privada **nunca** se guarda en `web` ni en `voting` (en P1 queda en un archivo local del admin; el escrutinio es de P2).
 4. **MongoDB "solo insert":** el usuario de aplicación de `voting` tiene un rol con permisos `insert` y `find` sobre `votes`, `issued_tokens` y `used_tokens` (sin `update` ni `remove`). Solo la colección `urna_config` admite `update` (para abrir/cerrar).
 5. **Aislamiento de datos:** dos redes Docker de base de datos separadas (`net_pg`, `net_mongo`); ningún servicio comparte base de datos con otro.
-6. **gRPC con mTLS:** `identity` actúa como cliente y `voting` como servidor, ambos con certificado emitido por una CA propia del proyecto. Sin certificado válido, `voting` rechaza la conexión.
+6. **gRPC con mTLS:** `identity` actúa como cliente y `voting` como servidor, ambos con certificado emitido por un certificado de autorización público propio del proyecto. Sin certificado válido, `voting` rechaza la conexión.
 7. **Orden de operaciones en `POST /votes`:** (a) urna abierta → (b) token emitido y no vencido → (c) insertar en `used_tokens` → (d) insertar en `votes`. Limitación conocida: si falla (d) tras (c), el token queda consumido (documentarlo; la solución real son transacciones con *replica set* de Mongo).
 
 > **Limitación honesta a mencionar en la presentación:** como `identity` genera el token, en teoría podría correlacionarlo con el usuario. P1 mitiga no persistiendo el token; la solución robusta (firmas ciegas) queda para P2.
@@ -251,7 +251,7 @@ votaciones/
 │   ├── identity.openapi.yaml
 │   └── voting.openapi.yaml
 ├── certs/
-│   └── gen-certs.sh            # CA + certs de identity (cliente) y voting (servidor)
+│   └── gen-certs.sh            # certificado de autorización público + certs de identity (cliente) y voting (servidor)
 ├── db/
 │   ├── postgres/init.sql
 │   └── mongo/init.js           # usuario/rol insert-only + índices
@@ -301,7 +301,7 @@ Reemplazar `M1…M8` por los nombres reales. Cada persona tiene un **revisor cru
 | T2.1 | `Dockerfile` *multi-stage* para `web`, `identity` y `voting` | Imágenes que construyen sin errores y corren como usuario no root |
 | T2.2 | `docker-compose.yml` con 5 servicios, healthchecks, volúmenes y dependencias | `docker compose up --build` deja todo en estado *healthy* |
 | T2.3 | Redes aisladas: `net_pg` (identity+postgres), `net_mongo` (voting+mongo), `net_app` (web/identity/voting) | Verificar que `identity` **no** resuelve `mongo` y `voting` **no** resuelve `postgres` |
-| T2.4 | `certs/gen-certs.sh`: CA propia + certificados de servidor (`voting`) y cliente (`identity`) | `make certs` genera los archivos; gRPC sin cert de cliente es rechazado |
+| T2.4 | `certs/gen-certs.sh`: certificado de autorización público propio + certificados de servidor (`voting`) y cliente (`identity`) | `make certs` genera los archivos; gRPC sin cert de cliente es rechazado |
 | T2.5 | `.env.example`, `Makefile` (`up`, `down`, `certs`, `seed`, `test`, `logs`) | Un compañero levanta el sistema en limpio con 4 comandos |
 | T2.6 | Prueba en máquina limpia y sección "Prototype" del artefacto (comandos de descarga y ejecución) | Comandos verificados por alguien que no escribió el código |
 
@@ -433,7 +433,7 @@ cd votaciones
 # 2. Configurar variables de entorno
 cp .env.example .env
 
-# 3. Generar certificados para mTLS (CA, servidor Go, cliente Python)
+# 3. Generar certificados para mTLS (certificado de autorización público, servidor Go, cliente Python)
 make certs
 
 # 4. Construir y levantar todos los contenedores

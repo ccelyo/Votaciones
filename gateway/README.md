@@ -189,10 +189,10 @@ de identidad.
 | `GATEWAY_SESSION_CHECK` | `off` | `identity`: revalida cada sesión en identity (`GET /auth/me`); exige `GATEWAY_AUTH_URL` y modo `jwt`. Compose lo activa |
 | `GATEWAY_SESSION_CACHE_TTL_MS` | `5000` | Tiempo que se reutiliza una sesión ya comprobada (ventana máxima de revocación) |
 | `GATEWAY_SESSION_CACHE_MAX` | `10000` | Sesiones en caché; se expulsa la más antigua |
-| `GATEWAY_TLS_REQUIRED` | `false` | Habilita HTTPS de entrada; exige certificado, clave y CA cliente |
-| `GATEWAY_TLS_CERT_FILE` · `_KEY_FILE` · `_CLIENT_CA_FILE` | — | Identidad TLS del Gateway y CA de los clientes mTLS internos |
+| `GATEWAY_TLS_REQUIRED` | `false` | Habilita HTTPS de entrada; exige certificado, clave y certificado de autorización público de clientes |
+| `GATEWAY_TLS_CERT_FILE` · `_KEY_FILE` · `_CLIENT_CA_FILE` | — | Identidad TLS del Gateway y certificado de autorización público de los clientes mTLS internos |
 | `GATEWAY_UPSTREAM_TLS_REQUIRED` | `false` | Exige HTTPS/mTLS para todos los upstreams |
-| `GATEWAY_UPSTREAM_TLS_CA_FILE` | — | CA que valida los certificados de servicio |
+| `GATEWAY_UPSTREAM_TLS_CA_FILE` | — | Certificado de autorización público que valida los certificados de servicio |
 | `GATEWAY_UPSTREAM_TLS_CERT_FILE` · `_KEY_FILE` | — | Certificado/clave cliente presentados a los upstreams |
 
 En `docker-compose.yml`, Auth y Election apuntan por ahora a `identity`, que todavía
