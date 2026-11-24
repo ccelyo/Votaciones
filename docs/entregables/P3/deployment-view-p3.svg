@@ -1,254 +1,389 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1640" width="100%" font-family="'Open Sans','Segoe UI',Arial,sans-serif">
-<rect width="1800" height="1640" fill="#ffffff"/>
-<defs>
-<marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#0f766e"/></marker>
-<marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#c2410c"/></marker>
-<marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#6d28d9"/></marker>
-<marker id="arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
-<marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#1d4ed8"/></marker>
-<marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#b91c1c"/></marker>
-</defs>
-<text x="900.0" y="34.0" font-size="22" font-weight="700" text-anchor="middle" fill="#1f2937">Votaciones (espivota) · Vista de despliegue (Prototipo 3)</text>
-<text x="900.0" y="57.0" font-size="11.5" font-weight="400" text-anchor="middle" fill="#5b6573">Un solo host Docker Compose: borde WAF, aplicación, servicios, datos y mensajería; redes internas y TLS/mTLS.</text>
-<rect x="20.0" y="78.0" width="1760.0" height="112.0" rx="10" fill="#ffedd5" stroke="#c2410c" stroke-width="1.6" stroke-dasharray="8 5"/>
-<rect x="34.0" y="66.0" width="353.8" height="22.0" rx="4" fill="#ffffff" stroke="none" stroke-width="0"/>
-<text x="42.0" y="82.0" font-size="10.5" font-weight="700" text-anchor="start" fill="#c2410c">CLIENTES EXTERNOS · HTTPS · confían en la CA de desarrollo</text>
-<rect x="100.0" y="108.0" width="430.0" height="62.0" rx="8" fill="#ffffff" stroke="#c2410c" stroke-width="1.8"/>
-<rect x="100.0" y="108.0" width="5.0" height="62.0" rx="2" fill="#c2410c" stroke="#c2410c" stroke-width="0"/>
-<text x="114.0" y="129.0" font-size="12.5" font-weight="700" text-anchor="start" fill="#1f2937">Navegador</text>
-<text x="114.0" y="147.0" font-size="9.6" font-weight="400" text-anchor="start" fill="#5b6573">Web SSR · https://localhost:3000</text>
-<text x="114.0" y="161.0" font-size="9.6" font-weight="400" text-anchor="start" fill="#5b6573">CA local en el almacén</text>
-<rect x="650.0" y="108.0" width="430.0" height="62.0" rx="8" fill="#ffffff" stroke="#c2410c" stroke-width="1.8"/>
-<rect x="650.0" y="108.0" width="5.0" height="62.0" rx="2" fill="#c2410c" stroke="#c2410c" stroke-width="0"/>
-<text x="664.0" y="129.0" font-size="12.5" font-weight="700" text-anchor="start" fill="#1f2937">App móvil</text>
-<text x="664.0" y="147.0" font-size="9.6" font-weight="400" text-anchor="start" fill="#5b6573">Flutter · HTTPS :8088 (API)</text>
-<text x="664.0" y="161.0" font-size="9.6" font-weight="400" text-anchor="start" fill="#5b6573">estático :8092</text>
-<rect x="1200.0" y="108.0" width="430.0" height="62.0" rx="8" fill="#ffffff" stroke="#c2410c" stroke-width="1.8"/>
-<rect x="1200.0" y="108.0" width="5.0" height="62.0" rx="2" fill="#c2410c" stroke="#c2410c" stroke-width="0"/>
-<text x="1214.0" y="129.0" font-size="12.5" font-weight="700" text-anchor="start" fill="#1f2937">CLI administración</text>
-<text x="1214.0" y="147.0" font-size="9.6" font-weight="400" text-anchor="start" fill="#5b6573">Java · https://localhost:8088</text>
-<text x="1214.0" y="161.0" font-size="9.6" font-weight="400" text-anchor="start" fill="#5b6573">VOTACIONES_TLS_CA_FILE</text>
-<rect x="20.0" y="210.0" width="1760.0" height="1110.0" rx="10" fill="#fbfdff" stroke="#1f2937" stroke-width="2.2"/>
-<text x="38.0" y="236.0" font-size="14" font-weight="700" text-anchor="start" fill="#1f2937">localhost · Docker Engine + Docker Compose</text>
-<text x="1760.0" y="236.0" font-size="10" font-weight="400" text-anchor="end" fill="#5b6573">solo los puertos del WAF, mobile y la UI de RabbitMQ (loopback) salen al host</text>
-<rect x="50.0" y="260.0" width="1700.0" height="180.0" rx="10" fill="#fee2e2" stroke="#b91c1c" stroke-width="1.6" stroke-dasharray="8 5"/>
-<rect x="64.0" y="248.0" width="347.7" height="22.0" rx="4" fill="#ffffff" stroke="none" stroke-width="0"/>
-<text x="72.0" y="264.0" font-size="10.5" font-weight="700" text-anchor="start" fill="#b91c1c">BORDE · WAF y estático móvil · únicas entradas publicadas</text>
-<rect x="80.0" y="290.0" width="1280.0" height="120.0" rx="8" fill="#fff7f7" stroke="#b91c1c" stroke-width="1.8"/>
-<rect x="80.0" y="290.0" width="5.0" height="120.0" rx="2" fill="#b91c1c" stroke="#b91c1c" stroke-width="0"/>
-<text x="94.0" y="311.0" font-size="13" font-weight="700" text-anchor="start" fill="#1f2937">waf · nginx + ModSecurity v3 + OWASP CRS 4.25 LTS</text>
-<text x="94.0" y="329.0" font-size="10" font-weight="400" text-anchor="start" fill="#5b6573">publica 3000:8443 (web) y 8088:8444 (API) · TLS 1.2/1.3 · cert waf + CA pública</text>
-<text x="94.0" y="343.0" font-size="10" font-weight="400" text-anchor="start" fill="#5b6573">inspecciona, bloquea con 403 y registra audit log · X-Forwarded-For = IP real</text>
-<text x="94.0" y="357.0" font-size="10" font-weight="400" text-anchor="start" fill="#5b6573">redes: edge-net (host) · waf-web-net (platform) · waf-api-net (gateway)</text>
-<text x="94.0" y="371.0" font-size="10" font-weight="400" text-anchor="start" fill="#5b6573">healthcheck mTLS contra https://localhost:8444/healthz · sin puerto directo a Platform/Gateway</text>
-<path d="M 65.0 307.0 L 76.0 312.0 V 322.0 Q 76.0 331.0 65.0 335.0 Q 54.0 331.0 54.0 322.0 V 312.0 Z" fill="#b91c1c" opacity="0.92"/>
-<text x="65.0" y="323.0" font-size="10" font-weight="700" text-anchor="middle" fill="#ffffff">W</text>
-<rect x="1400.0" y="290.0" width="300.0" height="120.0" rx="8" fill="#ffffff" stroke="#c2410c" stroke-width="1.8"/>
-<rect x="1400.0" y="290.0" width="5.0" height="120.0" rx="2" fill="#c2410c" stroke="#c2410c" stroke-width="0"/>
-<text x="1414.0" y="311.0" font-size="12" font-weight="700" text-anchor="start" fill="#1f2937">mobile · estático</text>
-<text x="1414.0" y="329.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">Nginx · publica 8092:80</text>
-<text x="1414.0" y="343.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">mobile-net (no interna)</text>
-<text x="1414.0" y="357.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">sirve la app Flutter web</text>
-<text x="1414.0" y="371.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">excepción: no pasa por el WAF</text>
-<path d="M 315 170 V 290" fill="none" stroke="#c2410c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-orange)" opacity="1.0"/>
-<rect x="288.3" y="221.0" width="69.4" height="18.0" rx="9" fill="#ffffff" stroke="#c2410c" stroke-width="1"/>
-<text x="323.0" y="233.4" font-size="9" font-weight="700" text-anchor="middle" fill="#c2410c">HTTPS :3000</text>
-<path d="M 865 170 V 290" fill="none" stroke="#c2410c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-orange)" opacity="1.0"/>
-<rect x="838.3" y="221.0" width="69.4" height="18.0" rx="9" fill="#ffffff" stroke="#c2410c" stroke-width="1"/>
-<text x="873.0" y="233.4" font-size="9" font-weight="700" text-anchor="middle" fill="#c2410c">HTTPS :8088</text>
-<path d="M 1415 170 V 290" fill="none" stroke="#c2410c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-orange)" opacity="1.0"/>
-<rect x="1388.3" y="221.0" width="69.4" height="18.0" rx="9" fill="#ffffff" stroke="#c2410c" stroke-width="1"/>
-<text x="1423.0" y="233.4" font-size="9" font-weight="700" text-anchor="middle" fill="#c2410c">HTTPS :8088</text>
-<rect x="50.0" y="470.0" width="1700.0" height="190.0" rx="10" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1.6" stroke-dasharray="8 5"/>
-<rect x="64.0" y="458.0" width="372.1" height="22.0" rx="4" fill="#ffffff" stroke="none" stroke-width="0"/>
-<text x="72.0" y="474.0" font-size="10.5" font-weight="700" text-anchor="start" fill="#1d4ed8">APLICACIÓN · frontend-net (internal) · sin puertos en el host</text>
-<rect x="90.0" y="500.0" width="760.0" height="130.0" rx="8" fill="#ffffff" stroke="#1d4ed8" stroke-width="1.8"/>
-<rect x="90.0" y="500.0" width="5.0" height="130.0" rx="2" fill="#1d4ed8" stroke="#1d4ed8" stroke-width="0"/>
-<text x="104.0" y="521.0" font-size="13" font-weight="700" text-anchor="start" fill="#1f2937">platform · Web SSR + BFF</text>
-<text x="104.0" y="539.0" font-size="9.8" font-weight="400" text-anchor="start" fill="#5b6573">Next.js/TypeScript · https :3000 interno</text>
-<text x="104.0" y="553.0" font-size="9.8" font-weight="400" text-anchor="start" fill="#5b6573">redes: waf-web-net + frontend-net</text>
-<text x="104.0" y="567.0" font-size="9.8" font-weight="400" text-anchor="start" fill="#5b6573">mTLS a Gateway · PLATFORM_GATEWAY_TLS_REQUIRED=true</text>
-<text x="104.0" y="581.0" font-size="9.8" font-weight="400" text-anchor="start" fill="#5b6573">volumen: .dev-certs/platform + ca-public (ro)</text>
-<rect x="950.0" y="500.0" width="760.0" height="130.0" rx="8" fill="#ffffff" stroke="#1d4ed8" stroke-width="1.8"/>
-<rect x="950.0" y="500.0" width="5.0" height="130.0" rx="2" fill="#1d4ed8" stroke="#1d4ed8" stroke-width="0"/>
-<text x="964.0" y="521.0" font-size="13" font-weight="700" text-anchor="start" fill="#1f2937">gateway · API Gateway</text>
-<text x="964.0" y="539.0" font-size="9.8" font-weight="400" text-anchor="start" fill="#5b6573">Node.js/TypeScript · https :8088 interno</text>
-<text x="964.0" y="553.0" font-size="9.8" font-weight="400" text-anchor="start" fill="#5b6573">JWT RS256/JWKS · rate limit · RBAC public/user/admin/anonymous</text>
-<text x="964.0" y="567.0" font-size="9.8" font-weight="400" text-anchor="start" fill="#5b6573">redes: waf-api-net + frontend-net + gw-identity/ballot/tally/analytics/notification</text>
-<text x="964.0" y="581.0" font-size="9.8" font-weight="400" text-anchor="start" fill="#5b6573">mTLS a upstreams · .dev-certs/gateway + ca-public (ro)</text>
-<path d="M 850 565 H 950" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" opacity="1.0"/>
-<rect x="883.0" y="548.0" width="34.0" height="18.0" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="1"/>
-<text x="900.0" y="560.4" font-size="9" font-weight="700" text-anchor="middle" fill="#0f766e">mTLS</text>
-<path d="M 500 410 V 500" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" opacity="1.0"/>
-<rect x="518.0" y="461.0" width="34.0" height="18.0" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="1"/>
-<text x="535.0" y="473.4" font-size="9" font-weight="700" text-anchor="middle" fill="#0f766e">mTLS</text>
-<path d="M 1300 410 V 500" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" opacity="1.0"/>
-<rect x="1318.0" y="461.0" width="34.0" height="18.0" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="1"/>
-<text x="1335.0" y="473.4" font-size="9" font-weight="700" text-anchor="middle" fill="#0f766e">mTLS</text>
-<rect x="50.0" y="690.0" width="1700.0" height="230.0" rx="10" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.6" stroke-dasharray="8 5"/>
-<rect x="64.0" y="678.0" width="408.7" height="22.0" rx="4" fill="#ffffff" stroke="none" stroke-width="0"/>
-<text x="72.0" y="694.0" font-size="10.5" font-weight="700" text-anchor="start" fill="#0f766e">SERVICIOS · una red por upstream · mTLS · certificados por servicio</text>
-<rect x="75.0" y="720.0" width="220.0" height="120.0" rx="8" fill="#ffffff" stroke="#0f766e" stroke-width="1.8"/>
-<rect x="75.0" y="720.0" width="5.0" height="120.0" rx="2" fill="#0f766e" stroke="#0f766e" stroke-width="0"/>
-<text x="89.0" y="741.0" font-size="12.2" font-weight="700" text-anchor="start" fill="#1f2937">identity</text>
-<text x="89.0" y="759.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">FastAPI · https :8000</text>
-<text x="89.0" y="773.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">Auth + Identity · RBAC</text>
-<text x="89.0" y="787.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">gw-identity + vote-link</text>
-<text x="89.0" y="801.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">identity-data + signer</text>
-<rect x="310.0" y="720.0" width="220.0" height="120.0" rx="8" fill="#ffffff" stroke="#0f766e" stroke-width="1.8"/>
-<rect x="310.0" y="720.0" width="5.0" height="120.0" rx="2" fill="#0f766e" stroke="#0f766e" stroke-width="0"/>
-<text x="324.0" y="741.0" font-size="12.2" font-weight="700" text-anchor="start" fill="#1f2937">election</text>
-<text x="324.0" y="759.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">Python · https :8000</text>
-<text x="324.0" y="773.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">urnas · election.events</text>
-<text x="324.0" y="787.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">election-data-net</text>
-<text x="324.0" y="801.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">ELECTION_DEV_AUTH=true</text>
-<rect x="545.0" y="720.0" width="220.0" height="120.0" rx="8" fill="#ffffff" stroke="#0f766e" stroke-width="1.8"/>
-<rect x="545.0" y="720.0" width="5.0" height="120.0" rx="2" fill="#0f766e" stroke="#0f766e" stroke-width="0"/>
-<text x="559.0" y="741.0" font-size="12.2" font-weight="700" text-anchor="start" fill="#1f2937">blind-signature</text>
-<text x="559.0" y="759.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">Python · http :8100</text>
-<text x="559.0" y="773.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">firma ciega · keys</text>
-<text x="559.0" y="787.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">signer-net</text>
-<text x="559.0" y="801.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">X-Internal-Token (sin TLS)</text>
-<rect x="780.0" y="720.0" width="220.0" height="120.0" rx="8" fill="#ffffff" stroke="#0f766e" stroke-width="1.8"/>
-<rect x="780.0" y="720.0" width="5.0" height="120.0" rx="2" fill="#0f766e" stroke="#0f766e" stroke-width="0"/>
-<text x="794.0" y="741.0" font-size="12.2" font-weight="700" text-anchor="start" fill="#1f2937">ballot</text>
-<text x="794.0" y="759.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">Go · HTTP :8080</text>
-<text x="794.0" y="773.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">gRPC :9091 · mTLS</text>
-<text x="794.0" y="787.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">gw-ballot + vote-link</text>
-<text x="794.0" y="801.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">tally-ballot + ballot-data + mq-ballot</text>
-<rect x="1015.0" y="720.0" width="220.0" height="120.0" rx="8" fill="#ffffff" stroke="#0f766e" stroke-width="1.8"/>
-<rect x="1015.0" y="720.0" width="5.0" height="120.0" rx="2" fill="#0f766e" stroke="#0f766e" stroke-width="0"/>
-<text x="1029.0" y="741.0" font-size="12.2" font-weight="700" text-anchor="start" fill="#1f2937">tally</text>
-<text x="1029.0" y="759.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">Go · https :8092</text>
-<text x="1029.0" y="773.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">escrutinio · tally.events</text>
-<text x="1029.0" y="787.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">gw-tally + tally-ballot</text>
-<text x="1029.0" y="801.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">messaging-net</text>
-<rect x="1250.0" y="720.0" width="220.0" height="120.0" rx="8" fill="#ffffff" stroke="#0f766e" stroke-width="1.8"/>
-<rect x="1250.0" y="720.0" width="5.0" height="120.0" rx="2" fill="#0f766e" stroke="#0f766e" stroke-width="0"/>
-<text x="1264.0" y="741.0" font-size="12.2" font-weight="700" text-anchor="start" fill="#1f2937">analytics</text>
-<text x="1264.0" y="759.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">Rust · https :8090</text>
-<text x="1264.0" y="773.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">proyecciones · recompute</text>
-<text x="1264.0" y="787.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">gw-analytics + results-data</text>
-<text x="1264.0" y="801.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">messaging-net</text>
-<rect x="1485.0" y="720.0" width="220.0" height="120.0" rx="8" fill="#ffffff" stroke="#0f766e" stroke-width="1.8"/>
-<rect x="1485.0" y="720.0" width="5.0" height="120.0" rx="2" fill="#0f766e" stroke="#0f766e" stroke-width="0"/>
-<text x="1499.0" y="741.0" font-size="12.2" font-weight="700" text-anchor="start" fill="#1f2937">notification</text>
-<text x="1499.0" y="759.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">TypeScript · https :3000</text>
-<text x="1499.0" y="773.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">avisos · eventos</text>
-<text x="1499.0" y="787.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">gw-notification + notif-data</text>
-<text x="1499.0" y="801.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">messaging-net</text>
-<text x="70.0" y="866.0" font-size="9.5" font-weight="400" text-anchor="start" fill="#5b6573">Nota RBAC: Tally y Analytics delegan la autorización en el Gateway; Election conserva ELECTION_DEV_AUTH=true en Compose.</text>
-<text x="70.0" y="886.0" font-size="9.5" font-weight="400" text-anchor="start" fill="#c2410c">Nota de cobertura: POST /users, PATCH /users/{id} y POST /elections/{id}/open no están en el catálogo del Gateway (escenario 5).</text>
-<path d="M 1330 630 V 665" fill="none" stroke="#0f766e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" opacity="1.0"/>
-<path d="M 185 665 H 1595" fill="none" stroke="#0f766e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" opacity="1.0"/>
-<path d="M 185 665 V 720" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" opacity="1.0"/>
-<path d="M 420 665 V 720" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" opacity="1.0"/>
-<path d="M 655 665 V 720" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" opacity="1.0"/>
-<path d="M 890 665 V 720" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" opacity="1.0"/>
-<path d="M 1125 665 V 720" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" opacity="1.0"/>
-<path d="M 1360 665 V 720" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" opacity="1.0"/>
-<path d="M 1595 665 V 720" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" opacity="1.0"/>
-<rect x="592.2" y="648.0" width="215.6" height="18.0" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="1"/>
-<text x="700.0" y="660.4" font-size="9" font-weight="700" text-anchor="middle" fill="#0f766e">gw-*-net · HTTPS + mTLS · rutas por rol</text>
-<rect x="50.0" y="940.0" width="1700.0" height="180.0" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="1.6" stroke-dasharray="8 5"/>
-<rect x="64.0" y="928.0" width="396.5" height="22.0" rx="4" fill="#ffffff" stroke="none" stroke-width="0"/>
-<text x="72.0" y="944.0" font-size="10.5" font-weight="700" text-anchor="start" fill="#475569">DATOS Y MENSAJERÍA · redes internal:true · volúmenes persistentes</text>
-<path d="M 75.0 982.0 V 1063.0 A 110.0 12 0 0 0 295.0 1063.0 V 982.0 Z" fill="#f1f5f9" stroke="#475569" stroke-width="1.8"/>
-<ellipse cx="185.0" cy="982.0" rx="110.0" ry="12" fill="#ffffff" stroke="#475569" stroke-width="1.8"/>
-<text x="185.0" y="1004.0" font-size="11.5" font-weight="700" text-anchor="middle" fill="#1f2937">postgres</text>
-<text x="185.0" y="1020.0" font-size="9.4" font-weight="400" text-anchor="middle" fill="#5b6573">Auth DB</text>
-<text x="185.0" y="1032.5" font-size="9.4" font-weight="400" text-anchor="middle" fill="#5b6573">identity-data-net</text>
-<text x="185.0" y="1045.0" font-size="9.4" font-weight="400" text-anchor="middle" fill="#5b6573">postgres-data</text>
-<path d="M 310.0 982.0 V 1063.0 A 110.0 12 0 0 0 530.0 1063.0 V 982.0 Z" fill="#f1f5f9" stroke="#475569" stroke-width="1.8"/>
-<ellipse cx="420.0" cy="982.0" rx="110.0" ry="12" fill="#ffffff" stroke="#475569" stroke-width="1.8"/>
-<text x="420.0" y="1004.0" font-size="11.5" font-weight="700" text-anchor="middle" fill="#1f2937">postgres-census</text>
-<text x="420.0" y="1020.0" font-size="9.4" font-weight="400" text-anchor="middle" fill="#5b6573">Census</text>
-<text x="420.0" y="1032.5" font-size="9.4" font-weight="400" text-anchor="middle" fill="#5b6573">identity-data-net</text>
-<text x="420.0" y="1045.0" font-size="9.4" font-weight="400" text-anchor="middle" fill="#5b6573">census-data</text>
-<path d="M 545.0 982.0 V 1063.0 A 110.0 12 0 0 0 765.0 1063.0 V 982.0 Z" fill="#f1f5f9" stroke="#475569" stroke-width="1.8"/>
-<ellipse cx="655.0" cy="982.0" rx="110.0" ry="12" fill="#ffffff" stroke="#475569" stroke-width="1.8"/>
-<text x="655.0" y="1004.0" font-size="11.5" font-weight="700" text-anchor="middle" fill="#1f2937">postgres-elections</text>
-<text x="655.0" y="1020.0" font-size="9.4" font-weight="400" text-anchor="middle" fill="#5b6573">Elections</text>
-<text x="655.0" y="1032.5" font-size="9.4" font-weight="400" text-anchor="middle" fill="#5b6573">election-data-net</text>
-<text x="655.0" y="1045.0" font-size="9.4" font-weight="400" text-anchor="middle" fill="#5b6573">elections-data</text>
-<path d="M 780.0 982.0 V 1063.0 A 110.0 12 0 0 0 1000.0 1063.0 V 982.0 Z" fill="#f1f5f9" stroke="#475569" stroke-width="1.8"/>
-<ellipse cx="890.0" cy="982.0" rx="110.0" ry="12" fill="#ffffff" stroke="#475569" stroke-width="1.8"/>
-<text x="890.0" y="1004.0" font-size="11.5" font-weight="700" text-anchor="middle" fill="#1f2937">mongo</text>
-<text x="890.0" y="1020.0" font-size="9.4" font-weight="400" text-anchor="middle" fill="#5b6573">Votes</text>
-<text x="890.0" y="1032.5" font-size="9.4" font-weight="400" text-anchor="middle" fill="#5b6573">ballot-data-net</text>
-<text x="890.0" y="1045.0" font-size="9.4" font-weight="400" text-anchor="middle" fill="#5b6573">mongo-data</text>
-<path d="M 1015.0 982.0 V 1063.0 A 110.0 12 0 0 0 1235.0 1063.0 V 982.0 Z" fill="#f1f5f9" stroke="#475569" stroke-width="1.8"/>
-<ellipse cx="1125.0" cy="982.0" rx="110.0" ry="12" fill="#ffffff" stroke="#475569" stroke-width="1.8"/>
-<text x="1125.0" y="1004.0" font-size="11.5" font-weight="700" text-anchor="middle" fill="#1f2937">mongo-results</text>
-<text x="1125.0" y="1020.0" font-size="9.4" font-weight="400" text-anchor="middle" fill="#5b6573">Results</text>
-<text x="1125.0" y="1032.5" font-size="9.4" font-weight="400" text-anchor="middle" fill="#5b6573">results-data-net</text>
-<text x="1125.0" y="1045.0" font-size="9.4" font-weight="400" text-anchor="middle" fill="#5b6573">results-data</text>
-<path d="M 1250.0 982.0 V 1063.0 A 110.0 12 0 0 0 1470.0 1063.0 V 982.0 Z" fill="#f1f5f9" stroke="#475569" stroke-width="1.8"/>
-<ellipse cx="1360.0" cy="982.0" rx="110.0" ry="12" fill="#ffffff" stroke="#475569" stroke-width="1.8"/>
-<text x="1360.0" y="1004.0" font-size="11.5" font-weight="700" text-anchor="middle" fill="#1f2937">notifications-mongo</text>
-<text x="1360.0" y="1020.0" font-size="9.4" font-weight="400" text-anchor="middle" fill="#5b6573">Notif DB</text>
-<text x="1360.0" y="1032.5" font-size="9.4" font-weight="400" text-anchor="middle" fill="#5b6573">notif-data-net</text>
-<text x="1360.0" y="1045.0" font-size="9.4" font-weight="400" text-anchor="middle" fill="#5b6573">notifications-data</text>
-<rect x="1485.0" y="970.0" width="220.0" height="105.0" rx="8" fill="#ede9fe" stroke="#6d28d9" stroke-width="1.8"/>
-<rect x="1485.0" y="970.0" width="5.0" height="105.0" rx="2" fill="#6d28d9" stroke="#6d28d9" stroke-width="0"/>
-<text x="1499.0" y="991.0" font-size="12" font-weight="700" text-anchor="start" fill="#1f2937">rabbitmq</text>
-<text x="1499.0" y="1009.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">AMQP :5672 interno</text>
-<text x="1499.0" y="1023.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">UI 127.0.0.1:15672</text>
-<text x="1499.0" y="1037.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">mq-ballot-net</text>
-<text x="1499.0" y="1051.0" font-size="9.2" font-weight="400" text-anchor="start" fill="#5b6573">messaging-net</text>
-<path d="M 185 840 V 970" fill="none" stroke="#475569" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-gray)" opacity="0.7"/>
-<path d="M 420 840 V 970" fill="none" stroke="#475569" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-gray)" opacity="0.7"/>
-<path d="M 890 840 V 970" fill="none" stroke="#475569" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-gray)" opacity="0.7"/>
-<path d="M 585 840 V 970" fill="none" stroke="#475569" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-gray)" opacity="0.7"/>
-<path d="M 1125 840 V 970" fill="none" stroke="#475569" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-gray)" opacity="0.7"/>
-<path d="M 1580 840 V 900 H 1360 V 970" fill="none" stroke="#475569" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-gray)" opacity="0.7"/>
-<rect x="679.6" y="896.0" width="200.8" height="18.0" rx="9" fill="#ffffff" stroke="#475569" stroke-width="1"/>
-<text x="780.0" y="908.4" font-size="8.8" font-weight="700" text-anchor="middle" fill="#475569">SQL / MongoDB · sin salida a Internet</text>
-<path d="M 585 840 V 920 H 1600 V 970" fill="none" stroke="#6d28d9" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-purple)" opacity="1.0" stroke-dasharray="5 4"/>
-<path d="M 890 840 V 920 H 1600 V 970" fill="none" stroke="#6d28d9" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-purple)" opacity="1.0" stroke-dasharray="5 4"/>
-<path d="M 1125 840 V 920 H 1600 V 970" fill="none" stroke="#6d28d9" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-purple)" opacity="1.0" stroke-dasharray="5 4"/>
-<path d="M 1360 840 V 920 H 1600 V 970" fill="none" stroke="#6d28d9" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-purple)" opacity="1.0" stroke-dasharray="5 4"/>
-<path d="M 1595 840 V 920 H 1600 V 970" fill="none" stroke="#6d28d9" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-purple)" opacity="1.0" stroke-dasharray="5 4"/>
-<rect x="1626.1" y="916.0" width="47.7" height="18.0" rx="9" fill="#ffffff" stroke="#6d28d9" stroke-width="1"/>
-<text x="1650.0" y="928.4" font-size="8.8" font-weight="700" text-anchor="middle" fill="#6d28d9">eventos</text>
-<rect x="75.0" y="1140.0" width="760.0" height="80.0" rx="8" fill="#ffffff" stroke="#0f766e" stroke-width="1.8"/>
-<rect x="75.0" y="1140.0" width="5.0" height="80.0" rx="2" fill="#0f766e" stroke="#0f766e" stroke-width="0"/>
-<text x="89.0" y="1161.0" font-size="12" font-weight="700" text-anchor="start" fill="#1f2937">Material TLS · dev-certificates (one-shot)</text>
-<text x="89.0" y="1179.0" font-size="9.4" font-weight="400" text-anchor="start" fill="#5b6573">security/dev-certs genera una CA local y certificados con SAN por servicio.</text>
-<text x="89.0" y="1193.0" font-size="9.4" font-weight="400" text-anchor="start" fill="#5b6573">Monta .dev-certs/ y .dev-certs/ca-public/ en cada contenedor (ro).</text>
-<text x="89.0" y="1207.0" font-size="9.4" font-weight="400" text-anchor="start" fill="#5b6573">La clave de la CA no se monta en los servicios; en producción se sustituye por certificados gestionados.</text>
-<rect x="865.0" y="1140.0" width="840.0" height="80.0" rx="8" fill="#ffffff" stroke="#475569" stroke-width="1.8"/>
-<rect x="865.0" y="1140.0" width="5.0" height="80.0" rx="2" fill="#475569" stroke="#475569" stroke-width="0"/>
-<text x="879.0" y="1161.0" font-size="12" font-weight="700" text-anchor="start" fill="#1f2937">Volúmenes persistentes</text>
-<text x="879.0" y="1179.0" font-size="9.4" font-weight="400" text-anchor="start" fill="#5b6573">postgres-data · census-data · elections-data · mongo-data · results-data · notifications-data</text>
-<text x="879.0" y="1193.0" font-size="9.4" font-weight="400" text-anchor="start" fill="#5b6573">identity-keys · election-keys · blind-signature-keys</text>
-<text x="879.0" y="1207.0" font-size="9.4" font-weight="400" text-anchor="start" fill="#5b6573">Los almacenes y RabbitMQ solo son alcanzables por sus redes internas.</text>
-<text x="40.0" y="1245.0" font-size="9.8" font-weight="400" text-anchor="start" fill="#5b6573">Puertos publicados en el host: WAF 3000→8443 y 8088→8444 · mobile 8092→80 (estático) · RabbitMQ UI 127.0.0.1:15672.</text>
-<text x="40.0" y="1265.0" font-size="9.8" font-weight="400" text-anchor="start" fill="#5b6573">Redes no internas: edge-net (WAF), mobile-net (mobile) y dev-access-net (solo loopback). El resto son internal:true.</text>
-<text x="40.0" y="1285.0" font-size="9.8" font-weight="600" text-anchor="start" fill="#b91c1c">Hallazgo de integración: main (e1f8691) perdió el bloque networks en el merge del canal seguro; la topología mostrada es la de Lab 5 + WAF.</text>
-<text x="40.0" y="1305.0" font-size="9.8" font-weight="400" text-anchor="start" fill="#b91c1c">Antes de la demo debe restaurarse el bloque networks y las membresías de ballot, identity, election, tally, analytics y notification.</text>
-<rect x="50.0" y="1340.0" width="1700.0" height="105.0" rx="10" fill="#ffffff" stroke="#475569" stroke-width="1.6" stroke-dasharray="8 5"/>
-<rect x="64.0" y="1328.0" width="120.0" height="22.0" rx="4" fill="#ffffff" stroke="none" stroke-width="0"/>
-<text x="72.0" y="1344.0" font-size="10.5" font-weight="700" text-anchor="start" fill="#475569">LEYENDA</text>
-<path d="M 75 1370 H 135" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" opacity="1.0"/>
-<text x="145.0" y="1374.0" font-size="10" font-weight="400" text-anchor="start" fill="#1f2937">HTTPS / mTLS</text>
-<path d="M 300 1370 H 360" fill="none" stroke="#c2410c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-orange)" opacity="1.0" stroke-dasharray="6 4"/>
-<text x="370.0" y="1374.0" font-size="10" font-weight="400" text-anchor="start" fill="#1f2937">canal sin TLS (limitación)</text>
-<path d="M 590 1370 H 650" fill="none" stroke="#6d28d9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-purple)" opacity="1.0" stroke-dasharray="5 4"/>
-<text x="660.0" y="1374.0" font-size="10" font-weight="400" text-anchor="start" fill="#1f2937">AMQP / eventos</text>
-<path d="M 800.0 1370.0 V 1378.0 A 27.5 12 0 0 0 855.0 1378.0 V 1370.0 Z" fill="#f1f5f9" stroke="#475569" stroke-width="1.8"/>
-<ellipse cx="827.5" cy="1370.0" rx="27.5" ry="12" fill="#ffffff" stroke="#475569" stroke-width="1.8"/>
-<text x="827.5" y="1392.0" font-size="11.5" font-weight="700" text-anchor="middle" fill="#1f2937"></text>
-<text x="865.0" y="1374.0" font-size="10" font-weight="400" text-anchor="start" fill="#1f2937">almacén / volumen</text>
-<path d="M 1050.0 1357.0 L 1061.0 1362.0 V 1372.0 Q 1061.0 1381.0 1050.0 1385.0 Q 1039.0 1381.0 1039.0 1372.0 V 1362.0 Z" fill="#b91c1c" opacity="0.92"/>
-<text x="1050.0" y="1373.0" font-size="10" font-weight="700" text-anchor="middle" fill="#ffffff">W</text>
-<text x="1070.0" y="1374.0" font-size="10" font-weight="400" text-anchor="start" fill="#1f2937">WAF</text>
-<rect x="1154.0" y="1368.0" width="12.0" height="10.0" rx="2" fill="#0f766e" stroke="#0f766e" stroke-width="1"/>
-<path d="M 1156.5 1368.0 V 1365.0 a 3.5 3.5 0 0 1 7 0 V 1368.0" fill="none" stroke="#0f766e" stroke-width="1.7"/>
-<text x="1175.0" y="1374.0" font-size="10" font-weight="400" text-anchor="start" fill="#1f2937">certificado / mTLS</text>
-<rect x="1313.0" y="1361.0" width="34.0" height="18.0" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="1"/>
-<text x="1330.0" y="1373.4" font-size="9" font-weight="700" text-anchor="middle" fill="#0f766e">RBAC</text>
-<text x="1365.0" y="1374.0" font-size="10" font-weight="400" text-anchor="start" fill="#1f2937">autorización por rol</text>
-<text x="75.0" y="1405.0" font-size="10" font-weight="400" text-anchor="start" fill="#5b6573">Cada contenedor de servicio monta únicamente su certificado y la CA pública; los puertos internos no se publican.</text>
-<text x="75.0" y="1425.0" font-size="10" font-weight="400" text-anchor="start" fill="#5b6573">El WAF es el único punto de entrada HTTP; mobile y la UI de RabbitMQ son excepciones acotadas (estático / loopback).</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 2450" width="100%" font-family="Arial, Segoe UI, sans-serif">
+<defs><marker id="deployed-in" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#334155"/></marker><style>
+.title{font-size:23px;font-weight:700;fill:#172033}.subtitle{font-size:12px;fill:#475569}.section{font-size:12px;font-weight:700;fill:#334155}.small{font-size:8px;fill:#475569}.body{font-size:9px;fill:#334155}.comphead{font-size:8px;font-weight:700;fill:#64748b}.comptitle{font-size:11px;font-weight:700;fill:#172033}.compdesc{font-size:9px;fill:#526176}.container-title{font-size:10px;font-weight:700;fill:#172033}.env-tag{font-size:8px;font-weight:700;fill:#64748b}.env-runtime{font-size:10px;font-weight:700;fill:#172033}.env-detail{font-size:8.5px;fill:#526176}.port{font-size:9px;font-weight:700;fill:#172033}.net{fill:#fff;stroke:#64748b;stroke-width:.8;stroke-dasharray:2 2}.net-text{font-size:7.6px;font-weight:600;fill:#334155}.deployed{fill:none;stroke:#334155;stroke-width:1.1;stroke-dasharray:2 3;marker-end:url(#deployed-in)}.legend{font-size:9px;fill:#475569}</style></defs>
+<rect width="1600" height="2450" fill="#fff"/>
+<text x="800" y="36" class="title" text-anchor="middle">Votaciones (espivota) · Vista de despliegue (Prototipo 3)</text>
+<text x="800" y="58" class="subtitle" text-anchor="middle">Relaciones: deployed_in (componente / artefacto → exec env) · Puertos: HOST | CONTENEDOR · sin numero en HOST = no publicado</text>
+<text x="30" y="91" class="section">COMPONENTES / ARTEFACTOS</text>
+<text x="620" y="91" class="section" text-anchor="middle">deployed_in</text>
+<rect x="385" y="105" width="1165" height="1995" rx="8" class="device" fill="#fbfcfe" stroke="#8663c7" stroke-width="1.7"/>
+<text x="967" y="124" class="section" text-anchor="middle">«device» Host Docker · Docker Engine + Compose · 18 contenedores de aplicación</text>
+<rect x="405" y="132" width="1125" height="106" rx="4" class="container" fill="#e7eefb" stroke="#6485b6" stroke-width="1.1"/>
+<text x="419" y="148" class="container-title">«container» mobile</text>
+<rect x="1153" y="155" width="357" height="67" rx="2" class="exec" fill="#fff" stroke="#475569" stroke-width="1"/>
+<text x="1165" y="168" class="env-tag">«exec env»</text>
+<text x="1165" y="183" class="env-runtime">nginx:1.27-alpine</text>
+<text x="1165" y="200" class="env-detail">Flutter web precompilado · HTTP</text>
+<text x="423" y="179" class="port">8092</text>
+<text x="1138" y="179" class="port" text-anchor="end">80</text>
+<rect x="30" y="146" width="330" height="76" rx="0" fill="#fff" stroke="#334155" stroke-width="1.2"/>
+<text x="42" y="163" class="comphead">«component»</text>
+<text x="42" y="181" class="comptitle">App movil</text>
+<text x="42" y="199" class="compdesc">Flutter: build web estatico</text>
+<path d="M 360 184 H 1149" class="deployed"/>
+<rect x="720" y="172" width="112" height="16" rx="0" fill="#fbfcfe" stroke="none" />
+<text x="776" y="184" class="small" text-anchor="middle">deployed_in</text>
+<rect x="419.0" y="210" width="55.5" height="12" rx="5" class="net"/>
+<text x="446.8" y="218.5" class="net-text" text-anchor="middle">mobile-net</text>
+<rect x="405" y="240" width="1125" height="106" rx="4" class="container" fill="#e7eefb" stroke="#6485b6" stroke-width="1.1"/>
+<text x="419" y="256" class="container-title">«container» waf</text>
+<rect x="1153" y="263" width="357" height="67" rx="2" class="exec" fill="#fff" stroke="#475569" stroke-width="1"/>
+<text x="1165" y="276" class="env-tag">«exec env»</text>
+<text x="1165" y="291" class="env-runtime">owasp/modsecurity-crs 4.25.2 · Nginx</text>
+<text x="1165" y="308" class="env-detail">TLS · web y API</text>
+<text x="423" y="287" class="port">3000 / 8088</text>
+<text x="1138" y="287" class="port" text-anchor="end">8443 / 8444</text>
+<rect x="30" y="254" width="330" height="76" rx="0" fill="#fff" stroke="#334155" stroke-width="1.2"/>
+<text x="42" y="271" class="comphead">«component»</text>
+<text x="42" y="289" class="comptitle">WAF de borde</text>
+<text x="42" y="307" class="compdesc">Nginx · ModSecurity v3 · OWASP CRS</text>
+<path d="M 360 292 H 1149" class="deployed"/>
+<rect x="720" y="280" width="112" height="16" rx="0" fill="#fbfcfe" stroke="none" />
+<text x="776" y="292" class="small" text-anchor="middle">deployed_in</text>
+<rect x="419.0" y="318" width="54.0" height="12" rx="5" class="net"/>
+<text x="446.0" y="326.5" class="net-text" text-anchor="middle">edge-net</text>
+<rect x="478.0" y="318" width="59.8" height="12" rx="5" class="net"/>
+<text x="507.9" y="326.5" class="net-text" text-anchor="middle">waf-web-net</text>
+<rect x="542.9" y="318" width="59.8" height="12" rx="5" class="net"/>
+<text x="572.8" y="326.5" class="net-text" text-anchor="middle">waf-api-net</text>
+<rect x="405" y="348" width="1125" height="106" rx="4" class="container" fill="#e7eefb" stroke="#6485b6" stroke-width="1.1"/>
+<text x="419" y="364" class="container-title">«container» platform</text>
+<rect x="1153" y="371" width="357" height="67" rx="2" class="exec" fill="#fff" stroke="#475569" stroke-width="1"/>
+<text x="1165" y="384" class="env-tag">«exec env»</text>
+<text x="1165" y="399" class="env-runtime">Node.js 22 · node:22-alpine</text>
+<text x="1165" y="416" class="env-detail">Next.js SSR/BFF · HTTPS</text>
+<text x="1138" y="395" class="port" text-anchor="end">3000</text>
+<rect x="30" y="362" width="330" height="76" rx="0" fill="#fff" stroke="#334155" stroke-width="1.2"/>
+<text x="42" y="379" class="comphead">«component»</text>
+<text x="42" y="397" class="comptitle">Platform · Web SSR + BFF</text>
+<text x="42" y="415" class="compdesc">Next.js · TypeScript</text>
+<path d="M 360 400 H 1149" class="deployed"/>
+<rect x="720" y="388" width="112" height="16" rx="0" fill="#fbfcfe" stroke="none" />
+<text x="776" y="400" class="small" text-anchor="middle">deployed_in</text>
+<rect x="419.0" y="426" width="59.8" height="12" rx="5" class="net"/>
+<text x="448.9" y="434.5" class="net-text" text-anchor="middle">waf-web-net</text>
+<rect x="483.9" y="426" width="64.2" height="12" rx="5" class="net"/>
+<text x="516.0" y="434.5" class="net-text" text-anchor="middle">frontend-net</text>
+<rect x="405" y="456" width="1125" height="106" rx="4" class="container" fill="#e7eefb" stroke="#6485b6" stroke-width="1.1"/>
+<text x="419" y="472" class="container-title">«container» gateway</text>
+<rect x="1153" y="479" width="357" height="67" rx="2" class="exec" fill="#fff" stroke="#475569" stroke-width="1"/>
+<text x="1165" y="492" class="env-tag">«exec env»</text>
+<text x="1165" y="507" class="env-runtime">Node.js 22 · node:22-alpine</text>
+<text x="1165" y="524" class="env-detail">Gateway TypeScript · HTTPS</text>
+<text x="1138" y="503" class="port" text-anchor="end">8088</text>
+<rect x="30" y="470" width="330" height="76" rx="0" fill="#fff" stroke="#334155" stroke-width="1.2"/>
+<text x="42" y="487" class="comphead">«component»</text>
+<text x="42" y="505" class="comptitle">API Gateway</text>
+<text x="42" y="523" class="compdesc">Node.js · TypeScript</text>
+<path d="M 360 508 H 1149" class="deployed"/>
+<rect x="720" y="496" width="112" height="16" rx="0" fill="#fbfcfe" stroke="none" />
+<text x="776" y="508" class="small" text-anchor="middle">deployed_in</text>
+<rect x="419.0" y="534" width="59.8" height="12" rx="5" class="net"/>
+<text x="448.9" y="542.5" class="net-text" text-anchor="middle">waf-api-net</text>
+<rect x="483.9" y="534" width="64.2" height="12" rx="5" class="net"/>
+<text x="516.0" y="542.5" class="net-text" text-anchor="middle">frontend-net</text>
+<rect x="553.0" y="534" width="77.2" height="12" rx="5" class="net"/>
+<text x="591.7" y="542.5" class="net-text" text-anchor="middle">gw-identity-net</text>
+<rect x="635.3" y="534" width="68.5" height="12" rx="5" class="net"/>
+<text x="669.6" y="542.5" class="net-text" text-anchor="middle">gw-ballot-net</text>
+<rect x="708.8" y="534" width="64.2" height="12" rx="5" class="net"/>
+<text x="740.9" y="542.5" class="net-text" text-anchor="middle">gw-tally-net</text>
+<rect x="778.0" y="534" width="81.6" height="12" rx="5" class="net"/>
+<text x="818.8" y="542.5" class="net-text" text-anchor="middle">gw-analytics-net</text>
+<rect x="864.6" y="534" width="94.6" height="12" rx="5" class="net"/>
+<text x="912.0" y="542.5" class="net-text" text-anchor="middle">gw-notification-net</text>
+<rect x="405" y="564" width="1125" height="106" rx="4" class="container" fill="#e3f0e2" stroke="#69956b" stroke-width="1.1"/>
+<text x="419" y="580" class="container-title">«container» identity</text>
+<rect x="1153" y="587" width="357" height="67" rx="2" class="exec" fill="#fff" stroke="#475569" stroke-width="1"/>
+<text x="1165" y="600" class="env-tag">«exec env»</text>
+<text x="1165" y="615" class="env-runtime">Python 3.13 · python:3.13-slim</text>
+<text x="1165" y="632" class="env-detail">FastAPI · Auth e Identity co-desplegados</text>
+<text x="1138" y="611" class="port" text-anchor="end">8000</text>
+<rect x="30" y="571" width="330" height="43" rx="0" fill="#fff" stroke="#334155" stroke-width="1.2"/>
+<text x="42" y="588" class="comptitle">«component» Auth</text>
+<text x="42" y="604" class="compdesc">Autenticacion</text>
+<path d="M 360 593 H 1149" class="deployed"/>
+<rect x="720" y="582" width="112" height="15" rx="0" fill="#fbfcfe" stroke="none" />
+<text x="776" y="593" class="small" text-anchor="middle">deployed_in</text>
+<rect x="30" y="619" width="330" height="43" rx="0" fill="#fff" stroke="#334155" stroke-width="1.2"/>
+<text x="42" y="636" class="comptitle">«component» Identity</text>
+<text x="42" y="652" class="compdesc">Identidad y votantes</text>
+<path d="M 360 641 H 1149" class="deployed"/>
+<rect x="720" y="630" width="112" height="15" rx="0" fill="#fbfcfe" stroke="none" />
+<text x="776" y="641" class="small" text-anchor="middle">deployed_in</text>
+<rect x="419.0" y="642" width="77.2" height="12" rx="5" class="net"/>
+<text x="457.6" y="650.5" class="net-text" text-anchor="middle">gw-identity-net</text>
+<rect x="501.2" y="642" width="85.9" height="12" rx="5" class="net"/>
+<text x="544.2" y="650.5" class="net-text" text-anchor="middle">identity-data-net</text>
+<rect x="592.2" y="642" width="55.5" height="12" rx="5" class="net"/>
+<text x="620.0" y="650.5" class="net-text" text-anchor="middle">signer-net</text>
+<rect x="652.7" y="642" width="68.5" height="12" rx="5" class="net"/>
+<text x="687.0" y="650.5" class="net-text" text-anchor="middle">vote-link-net</text>
+<rect x="405" y="672" width="1125" height="106" rx="4" class="container" fill="#e3f0e2" stroke="#69956b" stroke-width="1.1"/>
+<text x="419" y="688" class="container-title">«container» blind-signature</text>
+<rect x="1153" y="695" width="357" height="67" rx="2" class="exec" fill="#fff" stroke="#475569" stroke-width="1"/>
+<text x="1165" y="708" class="env-tag">«exec env»</text>
+<text x="1165" y="723" class="env-runtime">Python 3.13 · python:3.13-slim</text>
+<text x="1165" y="740" class="env-detail">FastAPI/Uvicorn · HTTP</text>
+<text x="1138" y="719" class="port" text-anchor="end">8100</text>
+<rect x="30" y="686" width="330" height="76" rx="0" fill="#fff" stroke="#334155" stroke-width="1.2"/>
+<text x="42" y="703" class="comphead">«component»</text>
+<text x="42" y="721" class="comptitle">Blind Signature</text>
+<text x="42" y="739" class="compdesc">Python · firma ciega</text>
+<path d="M 360 724 H 1149" class="deployed"/>
+<rect x="720" y="712" width="112" height="16" rx="0" fill="#fbfcfe" stroke="none" />
+<text x="776" y="724" class="small" text-anchor="middle">deployed_in</text>
+<rect x="419.0" y="750" width="55.5" height="12" rx="5" class="net"/>
+<text x="446.8" y="758.5" class="net-text" text-anchor="middle">signer-net</text>
+<rect x="405" y="780" width="1125" height="106" rx="4" class="container" fill="#e3f0e2" stroke="#69956b" stroke-width="1.1"/>
+<text x="419" y="796" class="container-title">«container» ballot</text>
+<rect x="1153" y="803" width="357" height="67" rx="2" class="exec" fill="#fff" stroke="#475569" stroke-width="1"/>
+<text x="1165" y="816" class="env-tag">«exec env»</text>
+<text x="1165" y="831" class="env-runtime">distroless/static-debian12</text>
+<text x="1165" y="848" class="env-detail">Binario Go estatico · Go no instalado</text>
+<text x="1138" y="827" class="port" text-anchor="end">8080 / 9091</text>
+<rect x="30" y="794" width="330" height="76" rx="0" fill="#fff" stroke="#334155" stroke-width="1.2"/>
+<text x="42" y="811" class="comphead">«component»</text>
+<text x="42" y="829" class="comptitle">Ballot</text>
+<text x="42" y="847" class="compdesc">Go · papeletas y recibos</text>
+<path d="M 360 832 H 1149" class="deployed"/>
+<rect x="720" y="820" width="112" height="16" rx="0" fill="#fbfcfe" stroke="none" />
+<text x="776" y="832" class="small" text-anchor="middle">deployed_in</text>
+<rect x="419.0" y="858" width="68.5" height="12" rx="5" class="net"/>
+<text x="453.3" y="866.5" class="net-text" text-anchor="middle">gw-ballot-net</text>
+<rect x="492.6" y="858" width="68.5" height="12" rx="5" class="net"/>
+<text x="526.8" y="866.5" class="net-text" text-anchor="middle">vote-link-net</text>
+<rect x="566.1" y="858" width="81.6" height="12" rx="5" class="net"/>
+<text x="606.9" y="866.5" class="net-text" text-anchor="middle">tally-ballot-net</text>
+<rect x="652.7" y="858" width="77.2" height="12" rx="5" class="net"/>
+<text x="691.3" y="866.5" class="net-text" text-anchor="middle">ballot-data-net</text>
+<rect x="735.0" y="858" width="68.5" height="12" rx="5" class="net"/>
+<text x="769.2" y="866.5" class="net-text" text-anchor="middle">mq-ballot-net</text>
+<rect x="405" y="888" width="1125" height="106" rx="4" class="container" fill="#e3f0e2" stroke="#69956b" stroke-width="1.1"/>
+<text x="419" y="904" class="container-title">«container» election</text>
+<rect x="1153" y="911" width="357" height="67" rx="2" class="exec" fill="#fff" stroke="#475569" stroke-width="1"/>
+<text x="1165" y="924" class="env-tag">«exec env»</text>
+<text x="1165" y="939" class="env-runtime">Python 3.13 · python:3.13-slim</text>
+<text x="1165" y="956" class="env-detail">FastAPI · HTTPS</text>
+<text x="1138" y="935" class="port" text-anchor="end">8000</text>
+<rect x="30" y="902" width="330" height="76" rx="0" fill="#fff" stroke="#334155" stroke-width="1.2"/>
+<text x="42" y="919" class="comphead">«component»</text>
+<text x="42" y="937" class="comptitle">Election</text>
+<text x="42" y="955" class="compdesc">Python · ciclo electoral</text>
+<path d="M 360 940 H 1149" class="deployed"/>
+<rect x="720" y="928" width="112" height="16" rx="0" fill="#fbfcfe" stroke="none" />
+<text x="776" y="940" class="small" text-anchor="middle">deployed_in</text>
+<rect x="419.0" y="966" width="85.9" height="12" rx="5" class="net"/>
+<text x="462.0" y="974.5" class="net-text" text-anchor="middle">election-data-net</text>
+<rect x="509.9" y="966" width="77.2" height="12" rx="5" class="net"/>
+<text x="548.6" y="974.5" class="net-text" text-anchor="middle">mq-election-net</text>
+<rect x="405" y="996" width="1125" height="106" rx="4" class="container" fill="#e3f0e2" stroke="#69956b" stroke-width="1.1"/>
+<text x="419" y="1012" class="container-title">«container» tally</text>
+<rect x="1153" y="1019" width="357" height="67" rx="2" class="exec" fill="#fff" stroke="#475569" stroke-width="1"/>
+<text x="1165" y="1032" class="env-tag">«exec env»</text>
+<text x="1165" y="1047" class="env-runtime">distroless/static-debian12</text>
+<text x="1165" y="1064" class="env-detail">Binario Go estatico · Go no instalado</text>
+<text x="1138" y="1043" class="port" text-anchor="end">8092</text>
+<rect x="30" y="1010" width="330" height="76" rx="0" fill="#fff" stroke="#334155" stroke-width="1.2"/>
+<text x="42" y="1027" class="comphead">«component»</text>
+<text x="42" y="1045" class="comptitle">Tally</text>
+<text x="42" y="1063" class="compdesc">Go · escrutinio</text>
+<path d="M 360 1048 H 1149" class="deployed"/>
+<rect x="720" y="1036" width="112" height="16" rx="0" fill="#fbfcfe" stroke="none" />
+<text x="776" y="1048" class="small" text-anchor="middle">deployed_in</text>
+<rect x="419.0" y="1074" width="64.2" height="12" rx="5" class="net"/>
+<text x="451.1" y="1082.5" class="net-text" text-anchor="middle">gw-tally-net</text>
+<rect x="488.2" y="1074" width="81.6" height="12" rx="5" class="net"/>
+<text x="529.0" y="1082.5" class="net-text" text-anchor="middle">tally-ballot-net</text>
+<rect x="574.8" y="1074" width="64.2" height="12" rx="5" class="net"/>
+<text x="606.9" y="1082.5" class="net-text" text-anchor="middle">mq-tally-net</text>
+<rect x="405" y="1104" width="1125" height="106" rx="4" class="container" fill="#e3f0e2" stroke="#69956b" stroke-width="1.1"/>
+<text x="419" y="1120" class="container-title">«container» analytics</text>
+<rect x="1153" y="1127" width="357" height="67" rx="2" class="exec" fill="#fff" stroke="#475569" stroke-width="1"/>
+<text x="1165" y="1140" class="env-tag">«exec env»</text>
+<text x="1165" y="1155" class="env-runtime">distroless/cc-debian12</text>
+<text x="1165" y="1172" class="env-detail">Binario Rust · Rust no instalado · HTTPS</text>
+<text x="1138" y="1151" class="port" text-anchor="end">8090</text>
+<rect x="30" y="1118" width="330" height="76" rx="0" fill="#fff" stroke="#334155" stroke-width="1.2"/>
+<text x="42" y="1135" class="comphead">«component»</text>
+<text x="42" y="1153" class="comptitle">Analytics</text>
+<text x="42" y="1171" class="compdesc">Rust · proyecciones y resultados</text>
+<path d="M 360 1156 H 1149" class="deployed"/>
+<rect x="720" y="1144" width="112" height="16" rx="0" fill="#fbfcfe" stroke="none" />
+<text x="776" y="1156" class="small" text-anchor="middle">deployed_in</text>
+<rect x="419.0" y="1182" width="81.6" height="12" rx="5" class="net"/>
+<text x="459.8" y="1190.5" class="net-text" text-anchor="middle">gw-analytics-net</text>
+<rect x="505.6" y="1182" width="81.6" height="12" rx="5" class="net"/>
+<text x="546.4" y="1190.5" class="net-text" text-anchor="middle">results-data-net</text>
+<rect x="592.2" y="1182" width="81.6" height="12" rx="5" class="net"/>
+<text x="633.0" y="1190.5" class="net-text" text-anchor="middle">mq-analytics-net</text>
+<rect x="405" y="1212" width="1125" height="106" rx="4" class="container" fill="#e3f0e2" stroke="#69956b" stroke-width="1.1"/>
+<text x="419" y="1228" class="container-title">«container» notification</text>
+<rect x="1153" y="1235" width="357" height="67" rx="2" class="exec" fill="#fff" stroke="#475569" stroke-width="1"/>
+<text x="1165" y="1248" class="env-tag">«exec env»</text>
+<text x="1165" y="1263" class="env-runtime">Node.js 22 · node:22-alpine</text>
+<text x="1165" y="1280" class="env-detail">TypeScript compilado · HTTPS</text>
+<text x="1138" y="1259" class="port" text-anchor="end">3000</text>
+<rect x="30" y="1226" width="330" height="76" rx="0" fill="#fff" stroke="#334155" stroke-width="1.2"/>
+<text x="42" y="1243" class="comphead">«component»</text>
+<text x="42" y="1261" class="comptitle">Notifications</text>
+<text x="42" y="1279" class="compdesc">TypeScript · avisos</text>
+<path d="M 360 1264 H 1149" class="deployed"/>
+<rect x="720" y="1252" width="112" height="16" rx="0" fill="#fbfcfe" stroke="none" />
+<text x="776" y="1264" class="small" text-anchor="middle">deployed_in</text>
+<rect x="419.0" y="1290" width="94.6" height="12" rx="5" class="net"/>
+<text x="466.3" y="1298.5" class="net-text" text-anchor="middle">gw-notification-net</text>
+<rect x="518.6" y="1290" width="72.9" height="12" rx="5" class="net"/>
+<text x="555.1" y="1298.5" class="net-text" text-anchor="middle">notif-data-net</text>
+<rect x="596.5" y="1290" width="94.6" height="12" rx="5" class="net"/>
+<text x="643.9" y="1298.5" class="net-text" text-anchor="middle">mq-notification-net</text>
+<rect x="405" y="1320" width="1125" height="106" rx="4" class="container" fill="#fff4dc" stroke="#c69c49" stroke-width="1.1"/>
+<text x="419" y="1336" class="container-title">«container» postgres</text>
+<rect x="1153" y="1343" width="357" height="67" rx="2" class="exec" fill="#fff" stroke="#475569" stroke-width="1"/>
+<text x="1165" y="1356" class="env-tag">«exec env»</text>
+<text x="1165" y="1371" class="env-runtime">PostgreSQL 16 · postgres:16-alpine</text>
+<text x="1165" y="1388" class="env-detail">Base Auth</text>
+<text x="1138" y="1367" class="port" text-anchor="end">5432</text>
+<rect x="30" y="1334" width="330" height="76" rx="0" fill="#fff" stroke="#334155" stroke-width="1.2"/>
+<text x="42" y="1351" class="comphead">«component»</text>
+<text x="42" y="1369" class="comptitle">Auth DB</text>
+<text x="42" y="1387" class="compdesc">Base de datos de autenticacion</text>
+<path d="M 360 1372 H 1149" class="deployed"/>
+<rect x="720" y="1360" width="112" height="16" rx="0" fill="#fbfcfe" stroke="none" />
+<text x="776" y="1372" class="small" text-anchor="middle">deployed_in</text>
+<rect x="419.0" y="1398" width="85.9" height="12" rx="5" class="net"/>
+<text x="462.0" y="1406.5" class="net-text" text-anchor="middle">identity-data-net</text>
+<rect x="405" y="1428" width="1125" height="106" rx="4" class="container" fill="#fff4dc" stroke="#c69c49" stroke-width="1.1"/>
+<text x="419" y="1444" class="container-title">«container» postgres-census</text>
+<rect x="1153" y="1451" width="357" height="67" rx="2" class="exec" fill="#fff" stroke="#475569" stroke-width="1"/>
+<text x="1165" y="1464" class="env-tag">«exec env»</text>
+<text x="1165" y="1479" class="env-runtime">PostgreSQL 16 · postgres:16-alpine</text>
+<text x="1165" y="1496" class="env-detail">Census</text>
+<text x="1138" y="1475" class="port" text-anchor="end">5432</text>
+<rect x="30" y="1442" width="330" height="76" rx="0" fill="#fff" stroke="#334155" stroke-width="1.2"/>
+<text x="42" y="1459" class="comphead">«component»</text>
+<text x="42" y="1477" class="comptitle">Census</text>
+<text x="42" y="1495" class="compdesc">Base del padron electoral</text>
+<path d="M 360 1480 H 1149" class="deployed"/>
+<rect x="720" y="1468" width="112" height="16" rx="0" fill="#fbfcfe" stroke="none" />
+<text x="776" y="1480" class="small" text-anchor="middle">deployed_in</text>
+<rect x="419.0" y="1506" width="85.9" height="12" rx="5" class="net"/>
+<text x="462.0" y="1514.5" class="net-text" text-anchor="middle">identity-data-net</text>
+<rect x="405" y="1536" width="1125" height="106" rx="4" class="container" fill="#fff4dc" stroke="#c69c49" stroke-width="1.1"/>
+<text x="419" y="1552" class="container-title">«container» postgres-elections</text>
+<rect x="1153" y="1559" width="357" height="67" rx="2" class="exec" fill="#fff" stroke="#475569" stroke-width="1"/>
+<text x="1165" y="1572" class="env-tag">«exec env»</text>
+<text x="1165" y="1587" class="env-runtime">PostgreSQL 16 · postgres:16-alpine</text>
+<text x="1165" y="1604" class="env-detail">Elections</text>
+<text x="1138" y="1583" class="port" text-anchor="end">5432</text>
+<rect x="30" y="1550" width="330" height="76" rx="0" fill="#fff" stroke="#334155" stroke-width="1.2"/>
+<text x="42" y="1567" class="comphead">«component»</text>
+<text x="42" y="1585" class="comptitle">Elections DB</text>
+<text x="42" y="1603" class="compdesc">Base de urnas y estado electoral</text>
+<path d="M 360 1588 H 1149" class="deployed"/>
+<rect x="720" y="1576" width="112" height="16" rx="0" fill="#fbfcfe" stroke="none" />
+<text x="776" y="1588" class="small" text-anchor="middle">deployed_in</text>
+<rect x="419.0" y="1614" width="85.9" height="12" rx="5" class="net"/>
+<text x="462.0" y="1622.5" class="net-text" text-anchor="middle">election-data-net</text>
+<rect x="405" y="1644" width="1125" height="106" rx="4" class="container" fill="#fff4dc" stroke="#c69c49" stroke-width="1.1"/>
+<text x="419" y="1660" class="container-title">«container» mongo</text>
+<rect x="1153" y="1667" width="357" height="67" rx="2" class="exec" fill="#fff" stroke="#475569" stroke-width="1"/>
+<text x="1165" y="1680" class="env-tag">«exec env»</text>
+<text x="1165" y="1695" class="env-runtime">MongoDB 8 · mongo:8.0</text>
+<text x="1165" y="1712" class="env-detail">Votes</text>
+<text x="1138" y="1691" class="port" text-anchor="end">27017</text>
+<rect x="30" y="1658" width="330" height="76" rx="0" fill="#fff" stroke="#334155" stroke-width="1.2"/>
+<text x="42" y="1675" class="comphead">«component»</text>
+<text x="42" y="1693" class="comptitle">Votes DB</text>
+<text x="42" y="1711" class="compdesc">Papeletas cifradas y recibos</text>
+<path d="M 360 1696 H 1149" class="deployed"/>
+<rect x="720" y="1684" width="112" height="16" rx="0" fill="#fbfcfe" stroke="none" />
+<text x="776" y="1696" class="small" text-anchor="middle">deployed_in</text>
+<rect x="419.0" y="1722" width="77.2" height="12" rx="5" class="net"/>
+<text x="457.6" y="1730.5" class="net-text" text-anchor="middle">ballot-data-net</text>
+<rect x="405" y="1752" width="1125" height="106" rx="4" class="container" fill="#fff4dc" stroke="#c69c49" stroke-width="1.1"/>
+<text x="419" y="1768" class="container-title">«container» mongo-results</text>
+<rect x="1153" y="1775" width="357" height="67" rx="2" class="exec" fill="#fff" stroke="#475569" stroke-width="1"/>
+<text x="1165" y="1788" class="env-tag">«exec env»</text>
+<text x="1165" y="1803" class="env-runtime">MongoDB 8 · mongo:8.0</text>
+<text x="1165" y="1820" class="env-detail">Results</text>
+<text x="1138" y="1799" class="port" text-anchor="end">27017</text>
+<rect x="30" y="1766" width="330" height="76" rx="0" fill="#fff" stroke="#334155" stroke-width="1.2"/>
+<text x="42" y="1783" class="comphead">«component»</text>
+<text x="42" y="1801" class="comptitle">Results DB</text>
+<text x="42" y="1819" class="compdesc">Proyecciones e informes</text>
+<path d="M 360 1804 H 1149" class="deployed"/>
+<rect x="720" y="1792" width="112" height="16" rx="0" fill="#fbfcfe" stroke="none" />
+<text x="776" y="1804" class="small" text-anchor="middle">deployed_in</text>
+<rect x="419.0" y="1830" width="81.6" height="12" rx="5" class="net"/>
+<text x="459.8" y="1838.5" class="net-text" text-anchor="middle">results-data-net</text>
+<rect x="405" y="1860" width="1125" height="106" rx="4" class="container" fill="#fff4dc" stroke="#c69c49" stroke-width="1.1"/>
+<text x="419" y="1876" class="container-title">«container» notifications-mongo</text>
+<rect x="1153" y="1883" width="357" height="67" rx="2" class="exec" fill="#fff" stroke="#475569" stroke-width="1"/>
+<text x="1165" y="1896" class="env-tag">«exec env»</text>
+<text x="1165" y="1911" class="env-runtime">MongoDB 8 · mongo:8.0</text>
+<text x="1165" y="1928" class="env-detail">Notifications</text>
+<text x="1138" y="1907" class="port" text-anchor="end">27017</text>
+<rect x="30" y="1874" width="330" height="76" rx="0" fill="#fff" stroke="#334155" stroke-width="1.2"/>
+<text x="42" y="1891" class="comphead">«component»</text>
+<text x="42" y="1909" class="comptitle">Notifications DB</text>
+<text x="42" y="1927" class="compdesc">Historial de notificaciones</text>
+<path d="M 360 1912 H 1149" class="deployed"/>
+<rect x="720" y="1900" width="112" height="16" rx="0" fill="#fbfcfe" stroke="none" />
+<text x="776" y="1912" class="small" text-anchor="middle">deployed_in</text>
+<rect x="419.0" y="1938" width="72.9" height="12" rx="5" class="net"/>
+<text x="455.4" y="1946.5" class="net-text" text-anchor="middle">notif-data-net</text>
+<rect x="405" y="1968" width="1125" height="106" rx="4" class="container" fill="#f8e3e5" stroke="#bf6b73" stroke-width="1.1"/>
+<text x="419" y="1984" class="container-title">«container» rabbitmq</text>
+<rect x="1153" y="1991" width="357" height="67" rx="2" class="exec" fill="#fff" stroke="#475569" stroke-width="1"/>
+<text x="1165" y="2004" class="env-tag">«exec env»</text>
+<text x="1165" y="2019" class="env-runtime">RabbitMQ 4 · rabbitmq:4-management-alpine</text>
+<text x="1165" y="2036" class="env-detail">AMQP · UI 15672 solo con overlay (127.0.0.1)</text>
+<text x="1138" y="2015" class="port" text-anchor="end">5672 / 15672*</text>
+<rect x="30" y="1982" width="330" height="76" rx="0" fill="#fff" stroke="#334155" stroke-width="1.2"/>
+<text x="42" y="1999" class="comphead">«component»</text>
+<text x="42" y="2017" class="comptitle">RabbitMQ</text>
+<text x="42" y="2035" class="compdesc">Mensajeria y colas</text>
+<path d="M 360 2020 H 1149" class="deployed"/>
+<rect x="720" y="2008" width="112" height="16" rx="0" fill="#fbfcfe" stroke="none" />
+<text x="776" y="2020" class="small" text-anchor="middle">deployed_in</text>
+<rect x="419.0" y="2046" width="68.5" height="12" rx="5" class="net"/>
+<text x="453.3" y="2054.5" class="net-text" text-anchor="middle">mq-ballot-net</text>
+<rect x="492.6" y="2046" width="77.2" height="12" rx="5" class="net"/>
+<text x="531.2" y="2054.5" class="net-text" text-anchor="middle">mq-election-net</text>
+<rect x="574.8" y="2046" width="64.2" height="12" rx="5" class="net"/>
+<text x="606.9" y="2054.5" class="net-text" text-anchor="middle">mq-tally-net</text>
+<rect x="644.0" y="2046" width="81.6" height="12" rx="5" class="net"/>
+<text x="684.8" y="2054.5" class="net-text" text-anchor="middle">mq-analytics-net</text>
+<rect x="730.6" y="2046" width="94.6" height="12" rx="5" class="net"/>
+<text x="777.9" y="2054.5" class="net-text" text-anchor="middle">mq-notification-net</text>
+<rect x="385" y="2125" width="1165" height="235" rx="8" class="device" fill="#f3f4f6" stroke="#8663c7" stroke-width="1.7"/>
+<rect x="400" y="2113" width="300" height="24" rx="0" fill="#fff" stroke="none" />
+<text x="410" y="2130" class="section">«device» Equipos externos</text>
+<rect x="30" y="2148" width="330" height="76" rx="0" fill="#fff" stroke="#334155" stroke-width="1.2"/>
+<text x="42" y="2179" class="comphead">«component»</text>
+<text x="42" y="2197" class="comptitle">Cliente web / navegador</text>
+<text x="42" y="2215" class="compdesc">Componente cliente de la vista C&amp;C</text>
+<rect x="1050" y="2156" width="460" height="62" rx="2" class="exec" fill="#fff" stroke="#475569" stroke-width="1"/>
+<text x="1064" y="2172" class="env-tag">«device» Equipo usuario</text>
+<text x="1064" y="2190" class="env-runtime">«exec env» Navegador web</text>
+<text x="1064" y="2206" class="env-detail">Artefacto cliente web</text>
+<path d="M 360 2187 H 1046" class="deployed"/>
+<rect x="690" y="2175" width="112" height="16" rx="0" fill="#f3f4f6" stroke="none" />
+<text x="746" y="2187" class="small" text-anchor="middle">deployed_in</text>
+<rect x="30" y="2249" width="330" height="76" rx="0" fill="#fff" stroke="#334155" stroke-width="1.2"/>
+<text x="42" y="2280" class="comphead">«component»</text>
+<text x="42" y="2298" class="comptitle">CLI de administracion</text>
+<text x="42" y="2316" class="compdesc">votaciones-admin.jar · Java</text>
+<rect x="1050" y="2257" width="460" height="62" rx="2" class="exec" fill="#fff" stroke="#475569" stroke-width="1"/>
+<text x="1064" y="2273" class="env-tag">«device» Equipo administrador</text>
+<text x="1064" y="2291" class="env-runtime">«exec env» JVM / JDK 21</text>
+<text x="1064" y="2307" class="env-detail">Fuera de Docker Compose</text>
+<path d="M 360 2288 H 1046" class="deployed"/>
+<rect x="690" y="2276" width="112" height="16" rx="0" fill="#f3f4f6" stroke="none" />
+<text x="746" y="2288" class="small" text-anchor="middle">deployed_in</text>
+<path d="M 34 2396 H 104" class="deployed"/>
+<text x="115" y="2399" class="legend">deployed_in: unico tipo de relacion dibujado entre componentes / artefactos y entornos.</text>
+<text x="30" y="2417" class="legend">Puertos: cifra a la izquierda = host; cifra a la derecha = contenedor. Si no aparece cifra en HOST, no hay publicacion.</text>
+<text x="30" y="2432" class="legend">Redes Docker: etiquetas dentro de cada «container» indican membresia, no conectores. RabbitMQ UI: solo overlay local.</text>
 </svg>
