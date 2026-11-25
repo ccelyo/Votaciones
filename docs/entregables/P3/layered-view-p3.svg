@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1700 1180" width="100%" font-family="'Open Sans','Segoe UI',Arial,sans-serif"><rect width="1700" height="1180" fill="#fff"/>
-<text x="850.0" y="34.0" font-size="22" font-weight="600" text-anchor="middle" fill="#222">Votaciones (espivota) · Vista por capas del sistema (Prototipo 3)</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1910 1180" width="100%" font-family="'Open Sans','Segoe UI',Arial,sans-serif"><rect width="1910" height="1180" fill="#fff"/>
+<text x="955.0" y="34.0" font-size="22" font-weight="600" text-anchor="middle" fill="#222">Votaciones (espivota) · Vista por capas del sistema (Prototipo 3)</text>
 <rect x="30.0" y="64.0" width="1640.0" height="140.0" rx="6" fill="#E3F2FD" stroke="#1E88E5" stroke-width="2"/>
 <rect x="30.0" y="64.0" width="170.0" height="140.0" rx="6" fill="#1E88E5" stroke="#1E88E5" stroke-width="2"/>
 <text x="115.0" y="128.0" font-size="13" font-weight="600" text-anchor="middle" fill="#fff">Capa 5</text>
@@ -252,7 +252,25 @@
 <rect x="224.0" y="916.0" width="1436.0" height="50.0" rx="5" fill="#F3E5F5" stroke="#8E24AA" stroke-width="2.2"/>
 <text x="236.0" y="946.0" font-size="15" font-weight="600" text-anchor="start" fill="#6A1B9A">Message Broker · RabbitMQ</text>
 <text x="452.0" y="946.0" font-size="11" font-weight="normal" text-anchor="start" fill="#6A1B9A">exchanges topic duraderos · colas con DLQ</text>
-<rect x="30.0" y="1018.0" width="1640.0" height="128.0" rx="5" fill="#fff" stroke="#ddd" stroke-width="2"/>
+<rect x="1690.0" y="64.0" width="190.0" height="140.0" rx="6" fill="#FAFAFA" stroke="#5C6BC0" stroke-width="2.2" stroke-dasharray="8 4"/>
+<text x="1785.0" y="111.5" font-size="14" font-weight="700" text-anchor="middle" fill="#5C6BC0">Tier 1 · Cliente</text>
+<text x="1785.0" y="131.5" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">Dispositivo del usuario:</text>
+<text x="1785.0" y="146.5" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">navegador, celular o</text>
+<text x="1785.0" y="161.5" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">terminal del administrador</text>
+<rect x="1690.0" y="218.0" width="190.0" height="524.0" rx="6" fill="#FAFAFA" stroke="#455A64" stroke-width="2.2" stroke-dasharray="8 4"/>
+<text x="1785.0" y="450.0" font-size="14" font-weight="700" text-anchor="middle" fill="#455A64">Tier 2 · Aplicación</text>
+<text x="1785.0" y="470.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">Contenedores Docker de</text>
+<text x="1785.0" y="485.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">borde, comunicación y</text>
+<text x="1785.0" y="500.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">lógica de negocio,</text>
+<text x="1785.0" y="515.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">cada uno en sus redes</text>
+<rect x="1690.0" y="756.0" width="190.0" height="244.0" rx="6" fill="#FAFAFA" stroke="#6D4C41" stroke-width="2.2" stroke-dasharray="8 4"/>
+<text x="1785.0" y="848.0" font-size="14" font-weight="700" text-anchor="middle" fill="#6D4C41">Tier 3 · Datos</text>
+<text x="1785.0" y="868.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">Contenedores de</text>
+<text x="1785.0" y="883.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">almacenamiento y</text>
+<text x="1785.0" y="898.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">mensajería en redes</text>
+<text x="1785.0" y="913.0" font-size="11" font-weight="normal" text-anchor="middle" fill="#444">internas</text>
+<text x="1785.0" y="56.0" font-size="11" font-weight="600" text-anchor="middle" fill="#666" font-style="italic">Separación física</text>
+<rect x="30.0" y="1018.0" width="1850.0" height="128.0" rx="5" fill="#fff" stroke="#ddd" stroke-width="2"/>
 <text x="46.0" y="1042.0" font-size="14" font-weight="600" text-anchor="start" fill="#222">Notación</text>
 <rect x="46.0" y="1058.0" width="46.0" height="26.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
 <text x="104.0" y="1076.0" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Componente</text>
@@ -266,4 +284,9 @@
 <text x="901.0" y="1076.0" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Módulo de lógica</text>
 <rect x="46.0" y="1098.0" width="46.0" height="26.0" rx="5" fill="none" stroke="#666" stroke-width="1.3" stroke-dasharray="5 4"/>
 <text x="104.0" y="1116.0" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Mismo despliegue (contenedor)</text>
-<text x="330.0" y="1116.0" font-size="12" font-weight="normal" text-anchor="start" fill="#555">Cada capa usa su misma capa o las inferiores, nunca las superiores; las dependencias entre componentes se describen en la vista de componentes y conectores.</text></svg>
+<rect x="1080.0" y="1058.0" width="46.0" height="26.0" rx="5" fill="#FAFAFA" stroke="#455A64" stroke-width="2.2" stroke-dasharray="8 4"/>
+<text x="1138.0" y="1076.0" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Tier: separación física</text>
+<rect x="1330.0" y="1058.0" width="46.0" height="26.0" rx="5" fill="#E8F5E9" stroke="#00A651" stroke-width="2"/>
+<text x="1388.0" y="1076.0" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Capa (layer): separación lógica</text>
+<text x="1080.0" y="1042.0" font-size="12" font-weight="normal" text-anchor="start" fill="#555" font-style="italic">Cada componente es un segmento de su capa</text>
+<text x="330.0" y="1116.0" font-size="12" font-weight="normal" text-anchor="start" fill="#555">Relaciones: allowed-to-use-below (una capa usa la inferior) y allowed-to-use (un segmento usa otro de su misma capa); nunca hacia una capa superior.</text></svg>
