@@ -222,68 +222,36 @@
 <ellipse cx="308.0" cy="784" rx="78.0" ry="9" fill="#fff" stroke="#808080" stroke-width="2"/>
 <text x="308.0" y="810.0" font-size="13" font-weight="600" text-anchor="middle" fill="#222">Auth DB</text>
 <text x="308.0" y="825.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">PostgreSQL</text>
-<rect x="238.0" y="836.0" width="140.0" height="21.0" rx="3" fill="#FFF8EE" stroke="#FB8C00" stroke-width="1.2"/>
-<text x="308.0" y="850.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">usuarios</text>
-<rect x="238.0" y="862.0" width="140.0" height="21.0" rx="3" fill="#FFF8EE" stroke="#FB8C00" stroke-width="1.2"/>
-<text x="308.0" y="876.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">sesiones · roles</text>
 <path d="M411.0,784 L411.0,892 A78.0,9 0 0 0 567.0,892 L567.0,784" fill="#fff" stroke="#808080" stroke-width="2"/>
 <ellipse cx="489.0" cy="784" rx="78.0" ry="9" fill="#fff" stroke="#808080" stroke-width="2"/>
 <text x="489.0" y="810.0" font-size="13" font-weight="600" text-anchor="middle" fill="#222">Census</text>
 <text x="489.0" y="825.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">PostgreSQL</text>
-<rect x="419.0" y="836.0" width="140.0" height="21.0" rx="3" fill="#FFF8EE" stroke="#FB8C00" stroke-width="1.2"/>
-<text x="489.0" y="850.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">padrón electoral</text>
 <path d="M592.0,784 L592.0,892 A78.0,9 0 0 0 748.0,892 L748.0,784" fill="#fff" stroke="#808080" stroke-width="2"/>
 <ellipse cx="670.0" cy="784" rx="78.0" ry="9" fill="#fff" stroke="#808080" stroke-width="2"/>
 <text x="670.0" y="810.0" font-size="13" font-weight="600" text-anchor="middle" fill="#222">Claves RSA</text>
 <text x="670.0" y="825.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">volumen de archivos</text>
-<rect x="600.0" y="836.0" width="140.0" height="21.0" rx="3" fill="#FFF8EE" stroke="#FB8C00" stroke-width="1.2"/>
-<text x="670.0" y="850.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">una clave por elección</text>
 <path d="M773.0,784 L773.0,892 A78.0,9 0 0 0 929.0,892 L929.0,784" fill="#fff" stroke="#808080" stroke-width="2"/>
 <ellipse cx="851.0" cy="784" rx="78.0" ry="9" fill="#fff" stroke="#808080" stroke-width="2"/>
 <text x="851.0" y="810.0" font-size="13" font-weight="600" text-anchor="middle" fill="#222">Elections</text>
 <text x="851.0" y="825.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">PostgreSQL</text>
-<rect x="781.0" y="836.0" width="140.0" height="21.0" rx="3" fill="#FFF8EE" stroke="#FB8C00" stroke-width="1.2"/>
-<text x="851.0" y="850.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">urnas · opciones</text>
-<rect x="781.0" y="862.0" width="140.0" height="21.0" rx="3" fill="#FFF8EE" stroke="#FB8C00" stroke-width="1.2"/>
-<text x="851.0" y="876.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">llaves cifradas</text>
 <path d="M954.0,784 L954.0,892 A78.0,9 0 0 0 1110.0,892 L1110.0,784" fill="#fff" stroke="#808080" stroke-width="2"/>
 <ellipse cx="1032.0" cy="784" rx="78.0" ry="9" fill="#fff" stroke="#808080" stroke-width="2"/>
 <text x="1032.0" y="810.0" font-size="13" font-weight="600" text-anchor="middle" fill="#222">Votes</text>
 <text x="1032.0" y="825.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">MongoDB (réplica)</text>
-<rect x="962.0" y="836.0" width="140.0" height="21.0" rx="3" fill="#FFF8EE" stroke="#FB8C00" stroke-width="1.2"/>
-<text x="1032.0" y="850.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">papeletas anónimas</text>
-<rect x="962.0" y="862.0" width="140.0" height="21.0" rx="3" fill="#FFF8EE" stroke="#FB8C00" stroke-width="1.2"/>
-<text x="1032.0" y="876.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">tokens gastados</text>
 <path d="M1316.0,784 L1316.0,892 A78.0,9 0 0 0 1472.0,892 L1472.0,784" fill="#fff" stroke="#808080" stroke-width="2"/>
 <ellipse cx="1394.0" cy="784" rx="78.0" ry="9" fill="#fff" stroke="#808080" stroke-width="2"/>
 <text x="1394.0" y="810.0" font-size="13" font-weight="600" text-anchor="middle" fill="#222">Results</text>
 <text x="1394.0" y="825.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">MongoDB</text>
-<rect x="1324.0" y="836.0" width="140.0" height="21.0" rx="3" fill="#FFF8EE" stroke="#FB8C00" stroke-width="1.2"/>
-<text x="1394.0" y="850.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">informes</text>
 <path d="M1497.0,784 L1497.0,892 A78.0,9 0 0 0 1653.0,892 L1653.0,784" fill="#fff" stroke="#808080" stroke-width="2"/>
 <ellipse cx="1575.0" cy="784" rx="78.0" ry="9" fill="#fff" stroke="#808080" stroke-width="2"/>
 <text x="1575.0" y="810.0" font-size="13" font-weight="600" text-anchor="middle" fill="#222">Notif. record</text>
 <text x="1575.0" y="825.0" font-size="10" font-weight="normal" text-anchor="middle" fill="#666">MongoDB</text>
-<rect x="1505.0" y="836.0" width="140.0" height="21.0" rx="3" fill="#FFF8EE" stroke="#FB8C00" stroke-width="1.2"/>
-<text x="1575.0" y="850.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#222">notificaciones</text>
 <rect x="1137.0" y="784.0" width="152.0" height="110.0" rx="4" fill="none" stroke="#BDBDBD" stroke-width="1.3" stroke-dasharray="4 3"/>
 <text x="1213.0" y="834.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#888" font-style="italic">sin almacén</text>
 <text x="1213.0" y="848.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#888" font-style="italic">propio</text>
-<rect x="224.0" y="916.0" width="1436.0" height="70.0" rx="5" fill="#F3E5F5" stroke="#8E24AA" stroke-width="2.2"/>
-<text x="236.0" y="938.0" font-size="15" font-weight="600" text-anchor="start" fill="#6A1B9A">Message Broker · RabbitMQ</text>
-<text x="452.0" y="938.0" font-size="11" font-weight="normal" text-anchor="start" fill="#6A1B9A">exchanges topic duraderos · colas con DLQ</text>
-<rect x="236.0" y="952.0" width="109.7" height="22.0" rx="3" fill="#FBF3FD" stroke="#8E24AA" stroke-width="1.3"/>
-<text x="243.0" y="967.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">election.events</text>
-<rect x="353.7" y="952.0" width="90.6" height="22.0" rx="3" fill="#FBF3FD" stroke="#8E24AA" stroke-width="1.3"/>
-<text x="360.7" y="967.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">votes.events</text>
-<rect x="452.3" y="952.0" width="90.6" height="22.0" rx="3" fill="#FBF3FD" stroke="#8E24AA" stroke-width="1.3"/>
-<text x="459.3" y="967.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">tally.events</text>
-<rect x="550.8" y="952.0" width="141.6" height="22.0" rx="3" fill="#FBF3FD" stroke="#8E24AA" stroke-width="1.3"/>
-<text x="557.8" y="967.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">colas por consumidor</text>
-<rect x="700.4" y="952.0" width="122.5" height="22.0" rx="3" fill="#FBF3FD" stroke="#8E24AA" stroke-width="1.3"/>
-<text x="707.4" y="967.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">DLQ (dead-letter)</text>
-<rect x="830.9" y="952.0" width="109.7" height="22.0" rx="3" fill="#FBF3FD" stroke="#8E24AA" stroke-width="1.3"/>
-<text x="837.9" y="967.0" font-size="11" font-weight="normal" text-anchor="start" fill="#222">identity.events</text>
+<rect x="224.0" y="916.0" width="1436.0" height="50.0" rx="5" fill="#F3E5F5" stroke="#8E24AA" stroke-width="2.2"/>
+<text x="236.0" y="946.0" font-size="15" font-weight="600" text-anchor="start" fill="#6A1B9A">Message Broker · RabbitMQ</text>
+<text x="452.0" y="946.0" font-size="11" font-weight="normal" text-anchor="start" fill="#6A1B9A">exchanges topic duraderos · colas con DLQ</text>
 <rect x="30.0" y="1018.0" width="1640.0" height="128.0" rx="5" fill="#fff" stroke="#ddd" stroke-width="2"/>
 <text x="46.0" y="1042.0" font-size="14" font-weight="600" text-anchor="start" fill="#222">Notación</text>
 <rect x="46.0" y="1058.0" width="46.0" height="26.0" rx="4" fill="#fff" stroke="#808080" stroke-width="2.5"/>
@@ -296,8 +264,6 @@
 <text x="677.0" y="1076.0" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Módulo de comunicación</text>
 <rect x="853.0" y="1062.0" width="40.0" height="20.0" rx="3" fill="#F1FAF3" stroke="#00A651" stroke-width="1.3"/>
 <text x="901.0" y="1076.0" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Módulo de lógica</text>
-<rect x="1035.0" y="1062.0" width="40.0" height="20.0" rx="3" fill="#FFF8EE" stroke="#FB8C00" stroke-width="1.3"/>
-<text x="1083.0" y="1076.0" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Contenido del almacén</text>
 <rect x="46.0" y="1098.0" width="46.0" height="26.0" rx="5" fill="none" stroke="#666" stroke-width="1.3" stroke-dasharray="5 4"/>
 <text x="104.0" y="1116.0" font-size="12" font-weight="normal" text-anchor="start" fill="#222">Mismo despliegue (contenedor)</text>
 <text x="330.0" y="1116.0" font-size="12" font-weight="normal" text-anchor="start" fill="#555">Cada capa usa su misma capa o las inferiores, nunca las superiores; las dependencias entre componentes se describen en la vista de componentes y conectores.</text></svg>
